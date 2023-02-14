@@ -25,7 +25,7 @@ use aerospike::{
     WritePolicy,
 };
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn map_operations() {
     let _ = env_logger::try_init();
 

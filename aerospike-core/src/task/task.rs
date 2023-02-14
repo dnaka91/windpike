@@ -14,8 +14,7 @@
 // the License.
 
 use crate::errors::{ErrorKind, Result};
-use aerospike_rt::sleep;
-use aerospike_rt::time::{Duration, Instant};
+use tokio::time::{Duration, Instant};
 
 /// Status of task
 #[derive(Debug, Clone, Copy)]
@@ -44,7 +43,7 @@ pub trait Task {
         loop {
             // Sleep first to give task a chance to complete and help avoid case where task hasn't
             // started yet.
-            sleep(POLL_INTERVAL).await;
+            tokio::time::sleep(POLL_INTERVAL).await;
 
             match self.query_status().await {
                 Ok(Status::NotFound) => {

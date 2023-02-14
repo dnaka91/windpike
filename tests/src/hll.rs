@@ -5,7 +5,7 @@ use aerospike::operations::hll;
 use aerospike::operations::hll::HLLPolicy;
 use aerospike::{as_key, as_list, as_val, Bins, FloatValue, ReadPolicy, Value, WritePolicy};
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn hll() {
     let _ = env_logger::try_init();
 

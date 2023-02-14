@@ -19,7 +19,7 @@ use env_logger;
 
 use crate::common;
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn serialize() {
     let _ = env_logger::try_init();
 

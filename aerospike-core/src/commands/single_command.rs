@@ -21,8 +21,7 @@ use crate::errors::{ErrorKind, Result, ResultExt};
 use crate::net::Connection;
 use crate::policy::Policy;
 use crate::Key;
-use aerospike_rt::sleep;
-use aerospike_rt::time::Instant;
+use tokio::time::Instant;
 
 pub struct SingleCommand<'a> {
     cluster: Arc<Cluster>,
@@ -79,10 +78,10 @@ impl<'a> SingleCommand<'a> {
             // Sleep before trying again, after the first iteration
             if iterations > 1 {
                 if let Some(sleep_between_retries) = policy.sleep_between_retries() {
-                    sleep(sleep_between_retries).await;
+                    tokio::time::sleep(sleep_between_retries).await;
                 } else {
                     // yield to free space for the runtime to execute other futures between runs because the loop would block the thread
-                    aerospike_rt::task::yield_now().await;
+                    tokio::task::yield_now().await;
                 }
             }
 

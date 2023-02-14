@@ -64,7 +64,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
     set_name
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn expression_hll() {
     let _ = env_logger::try_init();
     let client = common::client().await;

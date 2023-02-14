@@ -53,7 +53,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
     set_name
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn query_single_consumer() {
     let _ = env_logger::try_init();
 
@@ -99,7 +99,7 @@ async fn query_single_consumer() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn query_nobins() {
     let _ = env_logger::try_init();
 
@@ -127,7 +127,7 @@ async fn query_nobins() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn query_multi_consumer() {
     let _ = env_logger::try_init();
 
@@ -172,7 +172,7 @@ async fn query_multi_consumer() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn query_node() {
     let _ = env_logger::try_init();
 
@@ -187,7 +187,7 @@ async fn query_node() {
         let client = client.clone();
         let count = count.clone();
         let set_name = set_name.clone();
-        threads.push(aerospike_rt::spawn(async move {
+        threads.push(tokio::spawn(async move {
             let qpolicy = QueryPolicy::default();
             let mut statement = Statement::new(namespace, &set_name, Bins::All);
             statement.add_filter(as_range!("bin", 0, 99));

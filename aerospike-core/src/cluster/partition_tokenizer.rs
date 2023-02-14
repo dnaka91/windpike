@@ -23,7 +23,7 @@ use crate::cluster::Node;
 use crate::commands::Message;
 use crate::errors::{ErrorKind, Result};
 use crate::net::Connection;
-use aerospike_rt::RwLock;
+use tokio::sync::RwLock;
 
 const REPLICAS_NAME: &str = "replicas-master";
 

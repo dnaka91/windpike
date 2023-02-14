@@ -21,8 +21,8 @@ use aerospike::operations::lists;
 use aerospike::operations::lists::{ListPolicy, ListReturnType, ListSortFlags};
 use aerospike::{as_bin, as_key, as_list, as_val, as_values, Bins, ReadPolicy, Value, WritePolicy};
 
-#[aerospike_macro::test]
-fn cdt_list() {
+#[tokio::test]
+async fn cdt_list() {
     let _ = env_logger::try_init();
 
     let client = common::client().await;

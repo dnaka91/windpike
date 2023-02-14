@@ -16,7 +16,7 @@
 use crate::common;
 use env_logger;
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn truncate() {
     let _ = env_logger::try_init();
 

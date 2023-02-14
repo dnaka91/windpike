@@ -40,7 +40,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
     set_name
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn scan_single_consumer() {
     let _ = env_logger::try_init();
 
@@ -60,7 +60,7 @@ async fn scan_single_consumer() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn scan_multi_consumer() {
     let _ = env_logger::try_init();
 
@@ -96,7 +96,7 @@ async fn scan_multi_consumer() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn scan_node() {
     let _ = env_logger::try_init();
 
@@ -111,7 +111,7 @@ async fn scan_node() {
         let client = client.clone();
         let count = count.clone();
         let set_name = set_name.clone();
-        threads.push(aerospike_rt::spawn(async move {
+        threads.push(tokio::spawn(async move {
             let spolicy = ScanPolicy::default();
             let rs = client
                 .scan_node(&spolicy, node, namespace, &set_name, Bins::All)

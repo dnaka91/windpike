@@ -83,7 +83,7 @@ impl Queue {
             // Free the lock to prevent deadlocking
             drop(internals);
 
-            let conn = aerospike_rt::timeout(
+            let conn = tokio::time::timeout(
                 Duration::from_secs(5),
                 Connection::new(&self.0.host.address(), &self.0.policy),
             )

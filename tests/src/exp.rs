@@ -43,7 +43,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
     set_name
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn expression_compare() {
     let client = common::client().await;
     let _ = env_logger::try_init();
@@ -113,7 +113,7 @@ async fn expression_compare() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn expression_condition() {
     let _ = env_logger::try_init();
     let client = common::client().await;
@@ -159,7 +159,7 @@ async fn expression_condition() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn expression_data_types() {
     let client = common::client().await;
     let _ = env_logger::try_init();
@@ -221,8 +221,8 @@ async fn expression_data_types() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
-fn expression_aero_5_6() {
+#[tokio::test]
+async fn expression_aero_5_6() {
     let client = common::client().await;
     let _ = env_logger::try_init();
 
@@ -517,8 +517,8 @@ fn expression_aero_5_6() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
-fn expression_rec_ops() {
+#[tokio::test]
+async fn expression_rec_ops() {
     let client = common::client().await;
     let _ = env_logger::try_init();
 
@@ -601,7 +601,7 @@ fn expression_rec_ops() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn expression_commands() {
     let _ = env_logger::try_init();
 

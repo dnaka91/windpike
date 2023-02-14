@@ -33,11 +33,8 @@ use crate::{
     BatchRead, Bin, Bins, CollectionIndexType, IndexType, Key, Record, Recordset, ResultCode,
     Statement, UDFLang, Value,
 };
-use aerospike_rt::fs::File;
-#[cfg(all(any(feature = "rt-tokio"), not(feature = "rt-async-std")))]
-use aerospike_rt::io::AsyncReadExt;
-#[cfg(all(any(feature = "rt-async-std"), not(feature = "rt-tokio")))]
-use futures::AsyncReadExt;
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
 
 /// Instantiate a Client instance to access an Aerospike database cluster and perform database
 /// operations.
@@ -658,7 +655,7 @@ impl Client {
             let set_name = set_name.to_owned();
             let bins = bins.clone();
 
-            aerospike_rt::spawn(async move {
+            tokio::spawn(async move {
                 let mut command = ScanCommand::new(
                     &policy, node, &namespace, &set_name, bins, recordset, partitions,
                 );
@@ -696,7 +693,7 @@ impl Client {
         let namespace = namespace.to_owned();
         let set_name = set_name.to_owned();
 
-        aerospike_rt::spawn(async move {
+        tokio::spawn(async move {
             let mut command = ScanCommand::new(
                 &policy,
                 node,
@@ -757,7 +754,7 @@ impl Client {
             let t_recordset = recordset.clone();
             let policy = policy.clone();
             let statement = statement.clone();
-            aerospike_rt::spawn(async move {
+            tokio::spawn(async move {
                 let mut command =
                     QueryCommand::new(&policy, node, statement, t_recordset, partitions);
                 command.execute().await.unwrap();
@@ -790,7 +787,7 @@ impl Client {
             .node_partitions(node.as_ref(), &statement.namespace)
             .await;
 
-        aerospike_rt::spawn(async move {
+        tokio::spawn(async move {
             let mut command = QueryCommand::new(&policy, node, statement, t_recordset, partitions);
             command.execute().await.unwrap();
         })

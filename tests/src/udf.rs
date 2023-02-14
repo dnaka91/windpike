@@ -18,7 +18,7 @@ use env_logger;
 
 use aerospike::*;
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn execute_udf() {
     let _ = env_logger::try_init();
 

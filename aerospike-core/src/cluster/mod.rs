@@ -18,11 +18,11 @@ pub mod node_validator;
 pub mod partition;
 pub mod partition_tokenizer;
 
-use aerospike_rt::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 use std::sync::Arc;
 use std::vec::Vec;
+use tokio::time::{Duration, Instant};
 
 pub use self::node::Node;
 
@@ -33,10 +33,10 @@ use self::partition_tokenizer::PartitionTokenizer;
 use crate::errors::{ErrorKind, Result};
 use crate::net::Host;
 use crate::policy::ClientPolicy;
-use aerospike_rt::RwLock;
 use futures::channel::mpsc;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::lock::Mutex;
+use tokio::sync::RwLock;
 
 // Cluster encapsulates the aerospike cluster nodes and manages
 // them.
@@ -93,7 +93,7 @@ impl Cluster {
         }
 
         let cluster_for_tend = cluster.clone();
-        let _res = aerospike_rt::spawn(Cluster::tend_thread(cluster_for_tend, rx));
+        let _res = tokio::spawn(Cluster::tend_thread(cluster_for_tend, rx));
         debug!("New cluster initialized and ready to be used...");
         Ok(cluster)
     }
@@ -107,7 +107,7 @@ impl Cluster {
             } else if let Err(err) = cluster.tend().await {
                 log_error_chain!(err, "Error tending cluster");
             }
-            aerospike_rt::sleep(tend_interval).await;
+            tokio::time::sleep(tend_interval).await;
         }
 
         // close all nodes
@@ -179,7 +179,7 @@ impl Cluster {
         let deadline = Instant::now() + timeout;
         let sleep_between_tend = Duration::from_millis(1);
 
-        let handle = aerospike_rt::spawn(async move {
+        let handle = tokio::spawn(async move {
             let mut count: isize = -1;
             loop {
                 if Instant::now() > deadline {
@@ -196,19 +196,13 @@ impl Cluster {
                     break;
                 }
 
-                aerospike_rt::sleep(sleep_between_tend).await;
+                tokio::time::sleep(sleep_between_tend).await;
             }
         });
 
-        #[cfg(all(feature = "rt-tokio", not(feature = "rt-async-std")))]
         return handle
             .await
             .map_err(|err| format!("Error during initial cluster tend: {:?}", err).into());
-        #[cfg(all(feature = "rt-async-std", not(feature = "rt-tokio")))]
-        return {
-            handle.await;
-            Ok(())
-        };
     }
 
     pub const fn cluster_name(&self) -> &Option<String> {

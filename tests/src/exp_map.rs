@@ -25,8 +25,8 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
     set_name
 }
 
-#[aerospike_macro::test]
-fn expression_map() {
+#[tokio::test]
+async fn expression_map() {
     let _ = env_logger::try_init();
     let client = common::client().await;
     let set_name = create_test_set(&client, EXPECTED).await;

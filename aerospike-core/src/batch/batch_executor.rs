@@ -79,7 +79,7 @@ impl BatchExecutor {
             slice_index = thread_size + 1;
             let last_err = last_err.clone();
             let res = res.clone();
-            let handle = aerospike_rt::spawn(async move {
+            let handle = tokio::spawn(async move {
                 //let next_job = async { jobs.lock().await.next().await};
                 for mut cmd in slice {
                     if let Err(err) = cmd.execute().await {

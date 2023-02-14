@@ -22,7 +22,7 @@ use std::time::Duration;
 
 // If registering udf is successful, querying RegisterTask will return Status::Complete
 // If udf does not exist, querying RegisterTask will return error
-#[aerospike_macro::test]
+#[tokio::test]
 async fn register_task_test() {
     let client = common::client().await;
 
@@ -64,7 +64,7 @@ async fn register_task_test() {
 }
 
 // If creating index is successful, querying IndexTask will return Status::Complete
-#[aerospike_macro::test]
+#[tokio::test]
 async fn index_task_test() {
     let client = common::client().await;
     let namespace = common::namespace();

@@ -26,7 +26,7 @@ use crate::commands::Message;
 use crate::errors::{ErrorKind, Result, ResultExt};
 use crate::net::{ConnectionPool, Host, PooledConnection};
 use crate::policy::ClientPolicy;
-use aerospike_rt::RwLock;
+use tokio::sync::RwLock;
 
 pub const PARTITIONS: usize = 4096;
 

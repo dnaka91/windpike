@@ -17,14 +17,9 @@ use crate::commands::admin_command::AdminCommand;
 use crate::commands::buffer::Buffer;
 use crate::errors::{ErrorKind, Result};
 use crate::policy::ClientPolicy;
-#[cfg(all(any(feature = "rt-async-std"), not(feature = "rt-tokio")))]
-use aerospike_rt::async_std::net::Shutdown;
-#[cfg(all(any(feature = "rt-tokio"), not(feature = "rt-async-std")))]
-use aerospike_rt::io::{AsyncReadExt, AsyncWriteExt};
-use aerospike_rt::net::TcpStream;
-use aerospike_rt::time::{Duration, Instant};
-#[cfg(all(any(feature = "rt-async-std"), not(feature = "rt-tokio")))]
-use futures::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
+use tokio::time::{Duration, Instant};
 use std::ops::Add;
 
 #[derive(Debug)]
@@ -45,7 +40,7 @@ pub struct Connection {
 
 impl Connection {
     pub async fn new(addr: &str, policy: &ClientPolicy) -> Result<Self> {
-        let stream = aerospike_rt::timeout(Duration::from_secs(10), TcpStream::connect(addr)).await;
+        let stream = tokio::time::timeout(Duration::from_secs(10), TcpStream::connect(addr)).await;
         if stream.is_err() {
             bail!(ErrorKind::Connection(
                 "Could not open network connection".to_string()

@@ -3,7 +3,7 @@ use aerospike::expressions::{int_bin, int_val, num_add};
 use aerospike::operations::exp::{read_exp, write_exp, ExpReadFlags, ExpWriteFlags};
 use aerospike::{as_bin, as_key, as_val, Bins, ReadPolicy, WritePolicy};
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn exp_ops() {
     let _ = env_logger::try_init();
 

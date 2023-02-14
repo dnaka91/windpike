@@ -47,7 +47,7 @@ pub use self::scan_policy::ScanPolicy;
 pub use self::write_policy::WritePolicy;
 
 use crate::expressions::FilterExpression;
-use aerospike_rt::time::{Duration, Instant};
+use tokio::time::{Duration, Instant};
 use std::option::Option;
 
 /// Trait implemented by most policy types; policies that implement this trait typically encompass

@@ -23,33 +23,20 @@ travis-ci = { repository = "aerospike/aerospike-client-rust" }
 appveyor = { repository = "aerospike/aerospike-client-rust" }
 
 [dependencies]
-aerospike-core = {path = "./aerospike-core", optional = true}
-aerospike-sync = {path = "./aerospike-sync", optional = true}
-aerospike-macro = {path = "./aerospike-macro", optional = true}
+aerospike-core = { path = "./aerospike-core" }
 
 [features]
-default = ["async", "serialization"]
+default = ["serialization"]
 serialization = ["aerospike-core/serialization"]
-async = ["aerospike-core"]
-sync = ["aerospike-sync"]
-rt-tokio = ["aerospike-core/rt-tokio", "aerospike-macro/rt-tokio"]
-rt-async-std = ["aerospike-core/rt-async-std", "aerospike-macro/rt-async-std"]
-
-[[bench]]
-name = "client_server"
-harness = false
 
 [workspace]
-members = ["tools/benchmark", "aerospike-core", "aerospike-rt", "aerospike-sync", "aerospike-macro"]
+members = ["aerospike-core"]
 
 [dev-dependencies]
 env_logger = "0.7"
 hex = "0.4"
-bencher = "0.1"
 serde_json = "1.0"
 rand = "0.7"
 lazy_static = "1.4"
-aerospike-macro = {path = "./aerospike-macro"}
-aerospike-rt = {path = "./aerospike-rt"}
-futures = {version = "0.3.16" }
+futures = { version = "0.3.16" }
 tokio = { version = "1.10.0", features = ["full"] }

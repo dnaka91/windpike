@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use aerospike_rt::time::{Duration, Instant};
+use tokio::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -22,7 +22,6 @@ use crate::errors::{ErrorKind, Result, ResultExt};
 use crate::net::Connection;
 use crate::policy::{BatchPolicy, Policy, PolicyLike};
 use crate::{value, BatchRead, Record, ResultCode, Value};
-use aerospike_rt::sleep;
 
 struct BatchRecord {
     batch_index: usize,
@@ -69,7 +68,7 @@ impl BatchReadCommand {
             // Sleep before trying again, after the first iteration
             if iterations > 1 {
                 if let Some(sleep_between_retries) = base_policy.sleep_between_retries() {
-                    sleep(sleep_between_retries).await;
+                    tokio::time::sleep(sleep_between_retries).await;
                 }
             }
 

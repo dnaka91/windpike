@@ -21,7 +21,7 @@ use env_logger;
 
 use crate::common;
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn batch_get() {
     let _ = env_logger::try_init();
 

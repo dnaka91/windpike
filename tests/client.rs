@@ -22,7 +22,7 @@ use aerospike::Client;
 
 mod common;
 
-#[aerospike_macro::test]
+#[tokio::test]
 #[should_panic(expected = "Failed to connect to host(s).")]
 async fn cluster_name() {
     let policy = &mut common::client_policy().clone();
@@ -30,7 +30,7 @@ async fn cluster_name() {
     Client::new(policy, &common::hosts()).await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn node_names() {
     let client = common::client().await;
     let names = client.node_names().await;
@@ -38,7 +38,7 @@ async fn node_names() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn nodes() {
     let client = common::client().await;
     let nodes = client.nodes().await;
@@ -46,7 +46,7 @@ async fn nodes() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn get_node() {
     let client = common::client().await;
     for name in client.node_names().await {
@@ -56,7 +56,7 @@ async fn get_node() {
     client.close().await.unwrap();
 }
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn close() {
     let client = Client::new(common::client_policy(), &common::hosts())
         .await

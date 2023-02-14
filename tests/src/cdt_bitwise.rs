@@ -20,7 +20,7 @@ use aerospike::operations::bitwise;
 use aerospike::operations::bitwise::{BitPolicy, BitwiseOverflowActions};
 use aerospike::{as_key, Value, WritePolicy};
 
-#[aerospike_macro::test]
+#[tokio::test]
 async fn cdt_bitwise() {
     let _ = env_logger::try_init();
 
