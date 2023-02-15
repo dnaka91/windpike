@@ -13,10 +13,14 @@
 // limitations under the License.
 
 //! Operation Context for nested Operations
-use crate::operations::lists::{list_order_flag, ListOrderType};
-use crate::operations::maps::map_order_flag;
-use crate::operations::MapOrder;
-use crate::Value;
+use crate::{
+    operations::{
+        lists::{list_order_flag, ListOrderType},
+        maps::map_order_flag,
+        MapOrder,
+    },
+    Value,
+};
 
 #[doc(hidden)]
 // Empty Context for scalar operations
@@ -32,8 +36,9 @@ pub enum CtxType {
     MapKey = 0x22,
     MapValue = 0x23,
 }
-/// `CdtContext` defines Nested CDT context. Identifies the location of nested list/map to apply the operation.
-/// for the current level.
+
+/// `CdtContext` defines Nested CDT context. Identifies the location of nested list/map to apply the
+/// operation. for the current level.
 /// An array of CTX identifies location of the list/map on multiple
 /// levels on nesting.
 #[derive(Debug, Clone)]
@@ -93,6 +98,7 @@ pub const fn ctx_list_value(key: Value) -> CdtContext {
         value: key,
     }
 }
+
 /// Defines Lookup map by index offset.
 /// If the index is negative, the resolved index starts backwards from end of list.
 /// If an index is out of bounds, a parameter error will be returned.

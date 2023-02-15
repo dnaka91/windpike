@@ -16,11 +16,15 @@
 //! `HyperLogLog` operations on HLL items nested in lists/maps are not currently
 //! supported by the server.
 
-use crate::msgpack::encoder::pack_hll_op;
-use crate::operations::cdt::{CdtArgument, CdtOperation};
-use crate::operations::cdt_context::DEFAULT_CTX;
-use crate::operations::{Operation, OperationBin, OperationData, OperationType};
-use crate::Value;
+use crate::{
+    msgpack::encoder::pack_hll_op,
+    operations::{
+        cdt::{CdtArgument, CdtOperation},
+        cdt_context::DEFAULT_CTX,
+        Operation, OperationBin, OperationData, OperationType,
+    },
+    Value,
+};
 
 /// `HLLWriteFlags` determines write flags for HLL
 #[derive(Debug, Clone, Copy)]
@@ -131,8 +135,9 @@ pub fn add_with_index<'a>(
 }
 
 /// Create HLL add operation with minhash bits.
-/// Server adds values to HLL set. If HLL bin does not exist, use `indexBitCount` and `minHashBitCount`
-/// to create HLL bin. Server returns number of entries that caused HLL to update a register.
+/// Server adds values to HLL set. If HLL bin does not exist, use `indexBitCount` and
+/// `minHashBitCount` to create HLL bin. Server returns number of entries that caused HLL to update
+/// a register.
 pub fn add_with_index_and_min_hash<'a>(
     policy: &HLLPolicy,
     bin: &'a str,

@@ -13,27 +13,26 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::collections::HashMap;
-use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::result::Result as StdResult;
+use std::{
+    collections::HashMap,
+    fmt,
+    hash::{Hash, Hasher},
+    result::Result as StdResult,
+    vec::Vec,
+};
 
 use byteorder::{ByteOrder, NetworkEndian};
-
-use ripemd160::digest::Digest;
-use ripemd160::Ripemd160;
-
-use std::vec::Vec;
-
-use crate::commands::buffer::Buffer;
-use crate::commands::ParticleType;
-use crate::errors::Result;
-use crate::msgpack::{decoder, encoder};
-
+use ripemd160::{digest::Digest, Ripemd160};
 #[cfg(feature = "serialization")]
 use serde::ser::{SerializeMap, SerializeSeq};
 #[cfg(feature = "serialization")]
 use serde::{Serialize, Serializer};
+
+use crate::{
+    commands::{buffer::Buffer, ParticleType},
+    errors::Result,
+    msgpack::{decoder, encoder},
+};
 
 /// Container for floating point bin values stored in the Aerospike database.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -48,8 +47,8 @@ impl From<FloatValue> for f64 {
     fn from(val: FloatValue) -> f64 {
         match val {
             FloatValue::F32(_) => panic!(
-                "This library does not automatically convert f32 -> f64 to be used in keys \
-                 or bins."
+                "This library does not automatically convert f32 -> f64 to be used in keys or \
+                 bins."
             ),
             FloatValue::F64(val) => f64::from_bits(val),
         }
@@ -60,8 +59,8 @@ impl<'a> From<&'a FloatValue> for f64 {
     fn from(val: &FloatValue) -> f64 {
         match *val {
             FloatValue::F32(_) => panic!(
-                "This library does not automatically convert f32 -> f64 to be used in keys \
-                 or bins."
+                "This library does not automatically convert f32 -> f64 to be used in keys or \
+                 bins."
             ),
             FloatValue::F64(val) => f64::from_bits(val),
         }
@@ -229,8 +228,8 @@ impl Value {
             Value::Nil => ParticleType::NULL,
             Value::Int(_) | Value::Bool(_) => ParticleType::INTEGER,
             Value::UInt(_) => panic!(
-                "Aerospike does not support u64 natively on server-side. Use casting to \
-                 store and retrieve u64 values."
+                "Aerospike does not support u64 natively on server-side. Use casting to store and \
+                 retrieve u64 values."
             ),
             Value::Float(_) => ParticleType::FLOAT,
             Value::String(_) => ParticleType::STRING,
@@ -267,8 +266,8 @@ impl Value {
             Value::Nil => 0,
             Value::Int(_) | Value::Bool(_) | Value::Float(_) => 8,
             Value::UInt(_) => panic!(
-                "Aerospike does not support u64 natively on server-side. Use casting to \
-                 store and retrieve u64 values."
+                "Aerospike does not support u64 natively on server-side. Use casting to store and \
+                 retrieve u64 values."
             ),
             Value::String(ref s) => s.len(),
             Value::Blob(ref b) => b.len(),
@@ -287,8 +286,8 @@ impl Value {
             Value::Nil => 0,
             Value::Int(ref val) => buf.write_i64(*val),
             Value::UInt(_) => panic!(
-                "Aerospike does not support u64 natively on server-side. Use casting to \
-                 store and retrieve u64 values."
+                "Aerospike does not support u64 natively on server-side. Use casting to store and \
+                 retrieve u64 values."
             ),
             Value::Bool(ref val) => buf.write_bool(*val),
             Value::Float(ref val) => buf.write_f64(f64::from(val)),
@@ -798,7 +797,8 @@ mod tests {
         let val: Value =
             as_map!("a" => 1, "b" => 2, "c" => 3, "d" => 4, "e" => 5, "f" => as_map!("test"=>123));
         let json = serde_json::to_string(&val);
-        // We only check for the len of the String because HashMap serialization does not keep the key order. Comparing like the list above is not possible.
+        // We only check for the len of the String because HashMap serialization does not keep the
+        // key order. Comparing like the list above is not possible.
         assert_eq!(json.unwrap().len(), 48, "Map Serialization failed");
     }
 }

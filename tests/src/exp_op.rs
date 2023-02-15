@@ -1,7 +1,11 @@
+use aerospike::{
+    as_bin, as_key, as_val,
+    expressions::{int_bin, int_val, num_add},
+    operations::exp::{read_exp, write_exp, ExpReadFlags, ExpWriteFlags},
+    Bins, ReadPolicy, WritePolicy,
+};
+
 use crate::common;
-use aerospike::expressions::{int_bin, int_val, num_add};
-use aerospike::operations::exp::{read_exp, write_exp, ExpReadFlags, ExpWriteFlags};
-use aerospike::{as_bin, as_key, as_val, Bins, ReadPolicy, WritePolicy};
 
 #[tokio::test]
 async fn exp_ops() {

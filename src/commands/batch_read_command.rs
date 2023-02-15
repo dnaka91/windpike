@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
+
 use tokio::time::{Duration, Instant};
 
-use crate::cluster::Node;
-use crate::commands::{self, Command};
-use crate::errors::{ErrorKind, Result, ResultExt};
-use crate::net::Connection;
-use crate::policy::{BatchPolicy, Policy, PolicyLike};
-use crate::{value, BatchRead, Record, ResultCode, Value};
+use crate::{
+    cluster::Node,
+    commands::{self, Command},
+    errors::{ErrorKind, Result, ResultExt},
+    net::Connection,
+    policy::{BatchPolicy, Policy, PolicyLike},
+    value, BatchRead, Record, ResultCode, Value,
+};
 
 struct BatchRecord {
     batch_index: usize,

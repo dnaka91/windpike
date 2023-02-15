@@ -15,9 +15,11 @@
 
 //! HLL Aerospike Filter Expressions.
 
-use crate::expressions::{int_val, ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY};
-use crate::operations::hll::HLLPolicy;
-use crate::Value;
+use crate::{
+    expressions::{int_val, ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY},
+    operations::hll::HLLPolicy,
+    Value,
+};
 
 const MODULE: i64 = 2;
 

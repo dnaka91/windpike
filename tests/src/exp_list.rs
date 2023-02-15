@@ -1,11 +1,12 @@
-use crate::common;
-
-
-use aerospike::expressions::lists::*;
-use aerospike::expressions::*;
-use aerospike::operations::lists::{ListPolicy, ListReturnType};
-use aerospike::*;
 use std::sync::Arc;
+
+use aerospike::{
+    expressions::{lists::*, *},
+    operations::lists::{ListPolicy, ListReturnType},
+    *,
+};
+
+use crate::common;
 
 const EXPECTED: usize = 100;
 
@@ -561,7 +562,7 @@ async fn expression_list() {
 async fn test_filter(client: &Client, filter: FilterExpression, set_name: &str) -> Arc<Recordset> {
     let namespace = common::namespace();
 
-    let  qpolicy = QueryPolicy {
+    let qpolicy = QueryPolicy {
         filter_expression: Some(filter),
         ..QueryPolicy::default()
     };

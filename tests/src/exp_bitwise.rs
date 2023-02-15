@@ -12,13 +12,15 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-use crate::common;
-
-use aerospike::expressions::bitwise::*;
-use aerospike::expressions::*;
-use aerospike::operations::bitwise::{BitPolicy, BitwiseOverflowActions, BitwiseResizeFlags};
-use aerospike::*;
 use std::sync::Arc;
+
+use aerospike::{
+    expressions::{bitwise::*, *},
+    operations::bitwise::{BitPolicy, BitwiseOverflowActions, BitwiseResizeFlags},
+    *,
+};
+
+use crate::common;
 
 const EXPECTED: usize = 100;
 
@@ -407,7 +409,7 @@ async fn expression_bitwise() {
 async fn test_filter(client: &Client, filter: FilterExpression, set_name: &str) -> Arc<Recordset> {
     let namespace = common::namespace();
 
-    let  qpolicy = QueryPolicy {
+    let qpolicy = QueryPolicy {
         filter_expression: Some(filter),
         ..QueryPolicy::default()
     };

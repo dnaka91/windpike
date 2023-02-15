@@ -13,8 +13,10 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::expressions::FilterExpression;
-use crate::policy::{BasePolicy, Concurrency, PolicyLike};
+use crate::{
+    expressions::FilterExpression,
+    policy::{BasePolicy, Concurrency, PolicyLike},
+};
 
 /// `BatchPolicy` encapsulates parameters for all batch operations.
 #[derive(Debug, Clone)]

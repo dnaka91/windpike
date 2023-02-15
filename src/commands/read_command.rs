@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    collections::{
+        hash_map::Entry::{Occupied, Vacant},
+        HashMap,
+    },
+    sync::Arc,
+    time::Duration,
+};
 
-use crate::cluster::{Cluster, Node};
-use crate::commands::buffer;
-use crate::commands::{Command, SingleCommand};
-use crate::errors::{ErrorKind, Result};
-use crate::net::Connection;
-use crate::policy::ReadPolicy;
-use crate::value::bytes_to_particle;
-use crate::{Bins, Key, Record, ResultCode, Value};
+use crate::{
+    cluster::{Cluster, Node},
+    commands::{buffer, Command, SingleCommand},
+    errors::{ErrorKind, Result},
+    net::Connection,
+    policy::ReadPolicy,
+    value::bytes_to_particle,
+    Bins, Key, Record, ResultCode, Value,
+};
 
 pub struct ReadCommand<'a> {
     pub single_command: SingleCommand<'a>,

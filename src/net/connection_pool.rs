@@ -13,17 +13,23 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::ops::{Deref, DerefMut, Drop};
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::{
+    collections::VecDeque,
+    ops::{Deref, DerefMut, Drop},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 
-use crate::errors::{Error, ErrorKind, Result};
-use crate::net::{Connection, Host};
-use crate::policy::ClientPolicy;
-use futures::executor::block_on;
-use futures::lock::Mutex;
-use std::collections::VecDeque;
-use std::time::Duration;
+use futures::{executor::block_on, lock::Mutex};
+
+use crate::{
+    errors::{Error, ErrorKind, Result},
+    net::{Connection, Host},
+    policy::ClientPolicy,
+};
 
 #[derive(Debug)]
 struct IdleConnection(Connection);

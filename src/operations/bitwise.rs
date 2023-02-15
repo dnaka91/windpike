@@ -27,11 +27,15 @@
 //! // bin result = [[0b00000001, 0b01000010, 0b00000000], [0b01011010]]
 //! ```
 
-use crate::msgpack::encoder::pack_cdt_bit_op;
-use crate::operations::cdt::{CdtArgument, CdtOperation};
-use crate::operations::cdt_context::DEFAULT_CTX;
-use crate::operations::{Operation, OperationBin, OperationData, OperationType};
-use crate::Value;
+use crate::{
+    msgpack::encoder::pack_cdt_bit_op,
+    operations::{
+        cdt::{CdtArgument, CdtOperation},
+        cdt_context::DEFAULT_CTX,
+        Operation, OperationBin, OperationData, OperationType,
+    },
+    Value,
+};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -89,7 +93,8 @@ pub enum BitwiseWriteFlags {
     Partial = 8,
 }
 
-/// `CdtBitwiseOverflowActions` specifies the action to take when bitwise add/subtract results in overflow/underflow.
+/// `CdtBitwiseOverflowActions` specifies the action to take when bitwise add/subtract results in
+/// overflow/underflow.
 #[derive(Debug, Clone)]
 pub enum BitwiseOverflowActions {
     /// Fail specifies to fail operation with error.
@@ -139,10 +144,7 @@ pub fn resize<'a>(
     resize_flags: Option<BitwiseResizeFlags>,
     policy: &'a BitPolicy,
 ) -> Operation<'a> {
-    let mut args = vec![
-        CdtArgument::Int(byte_size),
-        CdtArgument::Byte(policy.flags),
-    ];
+    let mut args = vec![CdtArgument::Int(byte_size), CdtArgument::Byte(policy.flags)];
     if let Some(resize_flags) = resize_flags {
         args.push(CdtArgument::Byte(resize_flags as u8));
     }
@@ -542,8 +544,8 @@ pub fn add<'a>(
 }
 
 /// Creates bit "subtract" operation.
-/// Server subtracts value from byte[] bin starting at bitOffset for bitSize. `bit_size` must be <= 64.
-/// Signed indicates if bits should be treated as a signed number.
+/// Server subtracts value from byte[] bin starting at bitOffset for bitSize. `bit_size` must be <=
+/// 64. Signed indicates if bits should be treated as a signed number.
 /// If add overflows/underflows, `CdtBitwiseOverflowAction` is used.
 /// Server does not return a value.
 ///

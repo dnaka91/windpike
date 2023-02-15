@@ -31,28 +31,21 @@ pub mod write_command;
 
 mod field_type;
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-pub use self::batch_read_command::BatchReadCommand;
-pub use self::delete_command::DeleteCommand;
-pub use self::execute_udf_command::ExecuteUDFCommand;
-pub use self::exists_command::ExistsCommand;
-pub use self::info_command::Message;
-pub use self::operate_command::OperateCommand;
-pub use self::particle_type::ParticleType;
-pub use self::query_command::QueryCommand;
-pub use self::read_command::ReadCommand;
-pub use self::scan_command::ScanCommand;
-pub use self::single_command::SingleCommand;
-pub use self::stream_command::StreamCommand;
-pub use self::touch_command::TouchCommand;
-pub use self::write_command::WriteCommand;
-
-use crate::cluster::Node;
-use crate::errors::{Error, ErrorKind, Result};
-use crate::net::Connection;
-use crate::ResultCode;
+pub use self::{
+    batch_read_command::BatchReadCommand, delete_command::DeleteCommand,
+    execute_udf_command::ExecuteUDFCommand, exists_command::ExistsCommand, info_command::Message,
+    operate_command::OperateCommand, particle_type::ParticleType, query_command::QueryCommand,
+    read_command::ReadCommand, scan_command::ScanCommand, single_command::SingleCommand,
+    stream_command::StreamCommand, touch_command::TouchCommand, write_command::WriteCommand,
+};
+use crate::{
+    cluster::Node,
+    errors::{Error, ErrorKind, Result},
+    net::Connection,
+    ResultCode,
+};
 
 // Command interface describes all commands available
 #[async_trait::async_trait]

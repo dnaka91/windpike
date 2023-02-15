@@ -16,10 +16,11 @@
 //! Types and methods used for long running status queries.
 #![allow(clippy::missing_errors_doc)]
 
-pub use self::index_task::IndexTask;
-pub use self::register_task::RegisterTask;
-pub use self::task::Status;
-pub use self::task::Task;
+pub use self::{
+    index_task::IndexTask,
+    register_task::RegisterTask,
+    task::{Status, Task},
+};
 
 mod index_task;
 mod register_task;

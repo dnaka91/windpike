@@ -20,12 +20,14 @@ pub mod hll;
 pub mod lists;
 pub mod maps;
 pub mod regex_flag;
-use crate::commands::buffer::Buffer;
-use crate::msgpack::encoder::{pack_array_begin, pack_integer, pack_raw_string, pack_value};
-use crate::operations::cdt_context::CdtContext;
-use crate::{ParticleType, Value};
-use std::collections::HashMap;
-use std::fmt::Debug;
+use std::{collections::HashMap, fmt::Debug};
+
+use crate::{
+    commands::buffer::Buffer,
+    msgpack::encoder::{pack_array_begin, pack_integer, pack_raw_string, pack_value},
+    operations::cdt_context::CdtContext,
+    ParticleType, Value,
+};
 
 /// Expression Data Types for usage in some `FilterExpressions` on for example Map and List
 #[derive(Debug, Clone, Copy)]
@@ -175,7 +177,8 @@ impl FilterExpression {
             // Normal Expressions
             match self.cmd.unwrap() {
                 ExpOp::Let => {
-                    // Let wire format: LET <defname1>, <defexp1>, <defname2>, <defexp2>, ..., <scope exp>
+                    // Let wire format: LET <defname1>, <defexp1>, <defname2>, <defexp2>, ...,
+                    // <scope exp>
                     let count = (exps.len() - 1) * 2 + 2;
                     size += pack_array_begin(buf, count);
                 }
@@ -201,7 +204,8 @@ impl FilterExpression {
                 size += pack_integer(buf, cmd as i64);
                 // Regex Flags
                 size += pack_integer(buf, self.flags.unwrap());
-                // Raw String is needed instead of the msgpack String that the pack_value method would use.
+                // Raw String is needed instead of the msgpack String that the pack_value method
+                // would use.
                 size += pack_raw_string(buf, &self.val.clone().unwrap().to_string());
                 // The Bin
                 size += self.bin.clone().unwrap().pack(buf);
@@ -264,7 +268,8 @@ impl FilterExpression {
                 size += pack_integer(buf, cmd as i64);
                 // The Bin Type (INT/String etc.)
                 size += pack_integer(buf, self.module.unwrap() as i64);
-                // The name - Raw String is needed instead of the msgpack String that the pack_value method would use.
+                // The name - Raw String is needed instead of the msgpack String that the pack_value
+                // method would use.
                 size += pack_raw_string(buf, &self.val.clone().unwrap().to_string());
             }
             ExpOp::BinType | ExpOp::Var => {
@@ -272,7 +277,8 @@ impl FilterExpression {
                 size += pack_array_begin(buf, 2);
                 // BinType/Var Operation
                 size += pack_integer(buf, cmd as i64);
-                // The name - Raw String is needed instead of the msgpack String that the pack_value method would use.
+                // The name - Raw String is needed instead of the msgpack String that the pack_value
+                // method would use.
                 size += pack_raw_string(buf, &self.val.clone().unwrap().to_string());
             }
             _ => {
@@ -868,8 +874,8 @@ pub fn le(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 }
 
 /// Create "add" (+) operator that applies to a variable number of expressions.
-/// Return sum of all `FilterExpressions` given. All arguments must resolve to the same type (integer or float).
-/// Requires server version 5.6.0+.
+/// Return sum of all `FilterExpressions` given. All arguments must resolve to the same type
+/// (integer or float). Requires server version 5.6.0+.
 /// ```
 /// use aerospike::expressions::{eq, num_add, int_bin, int_val};
 /// // a + b + c == 10
@@ -910,9 +916,9 @@ pub const fn num_sub(exps: Vec<FilterExpression>) -> FilterExpression {
 }
 
 /// Create "multiply" (*) operator that applies to a variable number of expressions.
-/// Return the product of all `FilterExpressions`. If only one `FilterExpressions` is supplied, return
-/// that `FilterExpressions`. All `FilterExpressions` must resolve to the same type (integer or float).
-/// Requires server version 5.6.0+.
+/// Return the product of all `FilterExpressions`. If only one `FilterExpressions` is supplied,
+/// return that `FilterExpressions`. All `FilterExpressions` must resolve to the same type (integer
+/// or float). Requires server version 5.6.0+.
 /// ```
 /// use aerospike::expressions::{lt, num_mul, int_val, int_bin};
 /// // a * b * c < 100

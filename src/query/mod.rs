@@ -16,11 +16,13 @@
 //! Types and methods used for database queries and scans.
 #![allow(clippy::missing_errors_doc)]
 
-pub use self::filter::Filter;
-pub use self::index_types::{CollectionIndexType, IndexType};
-pub use self::recordset::Recordset;
-pub use self::statement::Statement;
-pub use self::udf::UDFLang;
+pub use self::{
+    filter::Filter,
+    index_types::{CollectionIndexType, IndexType},
+    recordset::Recordset,
+    statement::Statement,
+    udf::UDFLang,
+};
 
 mod filter;
 mod index_types;

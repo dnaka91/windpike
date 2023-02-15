@@ -13,14 +13,11 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::thread;
-use std::time::Duration;
+use std::{thread, time::Duration};
+
+use aerospike::{Task, *};
 
 use crate::common;
-
-
-use aerospike::Task;
-use aerospike::*;
 
 const EXPECTED: usize = 100;
 

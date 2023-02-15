@@ -12,12 +12,11 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-use crate::common;
-
-use aerospike::expressions::*;
-use aerospike::ParticleType;
-use aerospike::*;
 use std::sync::Arc;
+
+use aerospike::{expressions::*, ParticleType, *};
+
+use crate::common;
 
 const EXPECTED: usize = 100;
 

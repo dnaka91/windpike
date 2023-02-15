@@ -31,11 +31,15 @@
 //! If an index is out of bounds, a parameter error will be returned. If a range is partially out of
 //! bounds, the valid part of the range will be returned.
 
-use crate::msgpack::encoder::pack_cdt_op;
-use crate::operations::cdt::{CdtArgument, CdtOperation};
-use crate::operations::cdt_context::{CdtContext, DEFAULT_CTX};
-use crate::operations::{Operation, OperationBin, OperationData, OperationType};
-use crate::Value;
+use crate::{
+    msgpack::encoder::pack_cdt_op,
+    operations::{
+        cdt::{CdtArgument, CdtOperation},
+        cdt_context::{CdtContext, DEFAULT_CTX},
+        Operation, OperationBin, OperationData, OperationType,
+    },
+    Value,
+};
 
 #[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
@@ -113,9 +117,10 @@ pub enum ListReturnType {
     /// Return value for single key read and value list for range read.
     Values = 7,
     /// Invert meaning of list command and return values.
-    /// With the INVERTED flag enabled, the items outside of the specified index range will be returned.
-    /// The meaning of the list command can also be inverted.
-    /// With the INVERTED flag enabled, the items outside of the specified index range will be removed and returned.
+    /// With the INVERTED flag enabled, the items outside of the specified index range will be
+    /// returned. The meaning of the list command can also be inverted.
+    /// With the INVERTED flag enabled, the items outside of the specified index range will be
+    /// removed and returned.
     Inverted = 0x10000,
 }
 
@@ -133,12 +138,13 @@ pub enum ListSortFlags {
 /// `CdtListWriteFlags` determines write flags for CDT lists
 #[derive(Debug, Clone, Copy)]
 pub enum ListWriteFlags {
-    /// Default is the default behavior. It means:  Allow duplicate values and insertions at any index.
+    /// Default is the default behavior. It means:  Allow duplicate values and insertions at any
+    /// index.
     Default = 0,
     /// AddUnique means: Only add unique values.
     AddUnique = 1,
-    /// InsertBounded means: Enforce list boundaries when inserting.  Do not allow values to be inserted
-    /// at index outside current list boundaries.
+    /// InsertBounded means: Enforce list boundaries when inserting.  Do not allow values to be
+    /// inserted at index outside current list boundaries.
     InsertBounded = 2,
     /// NoFail means: do not raise error if a list item fails due to write flag constraints.
     NoFail = 4,
@@ -611,7 +617,8 @@ pub fn remove_by_index_range(bin: &str, index: i64, return_type: ListReturnType)
 }
 
 /// Creates a list remove operation.
-/// Server removes "count" list items starting at specified index and returns removed data specified by returnType.
+/// Server removes "count" list items starting at specified index and returns removed data specified
+/// by returnType.
 pub fn remove_by_index_range_count(
     bin: &str,
     index: i64,
@@ -669,7 +676,8 @@ pub fn remove_by_rank_range(bin: &str, rank: i64, return_type: ListReturnType) -
 }
 
 /// Creates a list remove operation.
-/// Server removes "count" list items starting at specified rank and returns removed data specified by returnType.
+/// Server removes "count" list items starting at specified rank and returns removed data specified
+/// by returnType.
 pub fn remove_by_rank_range_count(
     bin: &str,
     rank: i64,
@@ -854,7 +862,8 @@ pub fn get_by_value<'a>(
 }
 
 /// Creates list get by value list operation.
-/// Server selects list items identified by values and returns selected data specified by returnType.
+/// Server selects list items identified by values and returns selected data specified by
+/// returnType.
 pub fn get_by_value_list<'a>(
     bin: &'a str,
     values: &'a [Value],
@@ -946,8 +955,8 @@ pub fn get_by_index_range(bin: &str, index: i64, return_type: ListReturnType) ->
 }
 
 /// Creates list get by index range operation.
-/// Server selects "count" list items starting at specified index and returns selected data specified
-/// by returnType.
+/// Server selects "count" list items starting at specified index and returns selected data
+/// specified by returnType.
 pub fn get_by_index_range_count(
     bin: &str,
     index: i64,
@@ -989,8 +998,8 @@ pub fn get_by_rank(bin: &str, rank: i64, return_type: ListReturnType) -> Operati
 }
 
 /// Creates a list get by rank range operation.
-/// Server selects list items starting at specified rank to the last ranked item and returns selected
-/// data specified by returnType.
+/// Server selects list items starting at specified rank to the last ranked item and returns
+/// selected data specified by returnType.
 pub fn get_by_rank_range(bin: &str, rank: i64, return_type: ListReturnType) -> Operation {
     let cdt_op = CdtOperation {
         op: CdtListOpType::GetByRankRange as u8,
@@ -1006,7 +1015,8 @@ pub fn get_by_rank_range(bin: &str, rank: i64, return_type: ListReturnType) -> O
 }
 
 /// Creates a list get by rank range operation.
-/// Server selects "count" list items starting at specified rank and returns selected data specified by returnType.
+/// Server selects "count" list items starting at specified rank and returns selected data specified
+/// by returnType.
 pub fn get_by_rank_range_count(
     bin: &str,
     rank: i64,

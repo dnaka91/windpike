@@ -13,12 +13,16 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+use aerospike::{
+    as_key,
+    operations::{
+        bitwise,
+        bitwise::{BitPolicy, BitwiseOverflowActions},
+    },
+    Value, WritePolicy,
+};
+
 use crate::common;
-
-
-use aerospike::operations::bitwise;
-use aerospike::operations::bitwise::{BitPolicy, BitwiseOverflowActions};
-use aerospike::{as_key, Value, WritePolicy};
 
 #[tokio::test]
 async fn cdt_bitwise() {

@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::str;
-use std::time::Duration;
+use std::{str, time::Duration};
 
 use byteorder::{ByteOrder, LittleEndian, NetworkEndian};
 
-use crate::commands::field_type::FieldType;
-use crate::errors::Result;
-use crate::expressions::FilterExpression;
-use crate::msgpack::encoder;
-use crate::operations::{Operation, OperationBin, OperationData, OperationType};
-use crate::policy::{
-    BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy, QueryPolicy, ReadPolicy,
-    RecordExistsAction, ScanPolicy, WritePolicy,
+use crate::{
+    commands::field_type::FieldType,
+    errors::Result,
+    expressions::FilterExpression,
+    msgpack::encoder,
+    operations::{Operation, OperationBin, OperationData, OperationType},
+    policy::{
+        BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy, QueryPolicy, ReadPolicy,
+        RecordExistsAction, ScanPolicy, WritePolicy,
+    },
+    BatchRead, Bin, Bins, CollectionIndexType, Key, Statement, Value,
 };
-use crate::{BatchRead, Bin, Bins, CollectionIndexType, Key, Statement, Value};
 
 // Contains a read operation.
 const INFO1_READ: u8 = 1;

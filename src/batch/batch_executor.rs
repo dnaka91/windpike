@@ -15,18 +15,18 @@
 
 #![allow(clippy::mutable_key_type)]
 
-use std::cmp;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{cmp, collections::HashMap, sync::Arc};
 
-use crate::batch::BatchRead;
-use crate::cluster::partition::Partition;
-use crate::cluster::{Cluster, Node};
-use crate::commands::BatchReadCommand;
-use crate::errors::{Error, Result};
-use crate::policy::{BatchPolicy, Concurrency};
-use crate::Key;
 use futures::lock::Mutex;
+
+use crate::{
+    batch::BatchRead,
+    cluster::{partition::Partition, Cluster, Node},
+    commands::BatchReadCommand,
+    errors::{Error, Result},
+    policy::{BatchPolicy, Concurrency},
+    Key,
+};
 
 pub struct BatchExecutor {
     cluster: Arc<Cluster>,

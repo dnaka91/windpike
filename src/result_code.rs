@@ -13,8 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::fmt;
-use std::result::Result as StdResult;
+use std::{fmt, result::Result as StdResult};
 
 /// Database operation error codes. The error codes are defined in the server-side file proto.h.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

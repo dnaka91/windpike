@@ -13,10 +13,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::expressions::FilterExpression;
-use crate::policy::BasePolicy;
-use crate::{ConsistencyLevel, Priority};
 use std::time::Duration;
+
+use crate::{expressions::FilterExpression, policy::BasePolicy, ConsistencyLevel, Priority};
 
 /// `ReadPolicy` excapsulates parameters for transaction policy attributes
 /// used in all database operation calls.

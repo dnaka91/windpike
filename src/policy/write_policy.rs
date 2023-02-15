@@ -13,9 +13,11 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::expressions::FilterExpression;
-use crate::policy::{BasePolicy, PolicyLike};
-use crate::{CommitLevel, Expiration, GenerationPolicy, RecordExistsAction};
+use crate::{
+    expressions::FilterExpression,
+    policy::{BasePolicy, PolicyLike},
+    CommitLevel, Expiration, GenerationPolicy, RecordExistsAction,
+};
 
 /// `WritePolicy` encapsulates parameters for all write operations.
 #[derive(Debug, Clone)]

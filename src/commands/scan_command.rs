@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::str;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{str, sync::Arc, time::Duration};
 
-use crate::cluster::Node;
-use crate::commands::{Command, SingleCommand, StreamCommand};
-use crate::errors::Result;
-use crate::net::Connection;
-use crate::policy::ScanPolicy;
-use crate::{Bins, Recordset};
+use crate::{
+    cluster::Node,
+    commands::{Command, SingleCommand, StreamCommand},
+    errors::Result,
+    net::Connection,
+    policy::ScanPolicy,
+    Bins, Recordset,
+};
 
 pub struct ScanCommand<'a> {
     stream_command: StreamCommand,

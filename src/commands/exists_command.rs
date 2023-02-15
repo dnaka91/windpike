@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-use crate::cluster::{Cluster, Node};
-use crate::commands::{buffer, Command, SingleCommand};
-use crate::errors::{ErrorKind, Result};
-use crate::net::Connection;
-use crate::policy::WritePolicy;
-use crate::{Key, ResultCode};
+use crate::{
+    cluster::{Cluster, Node},
+    commands::{buffer, Command, SingleCommand},
+    errors::{ErrorKind, Result},
+    net::Connection,
+    policy::WritePolicy,
+    Key, ResultCode,
+};
 
 pub struct ExistsCommand<'a> {
     single_command: SingleCommand<'a>,

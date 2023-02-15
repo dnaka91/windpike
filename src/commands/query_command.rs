@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-use crate::cluster::Node;
-use crate::commands::{Command, SingleCommand, StreamCommand};
-use crate::errors::Result;
-use crate::net::Connection;
-use crate::policy::QueryPolicy;
-use crate::{Recordset, Statement};
+use crate::{
+    cluster::Node,
+    commands::{Command, SingleCommand, StreamCommand},
+    errors::Result,
+    net::Connection,
+    policy::QueryPolicy,
+    Recordset, Statement,
+};
 
 pub struct QueryCommand<'a> {
     stream_command: StreamCommand,

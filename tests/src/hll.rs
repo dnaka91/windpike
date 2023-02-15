@@ -1,9 +1,10 @@
+use aerospike::{
+    as_key, as_list, as_val,
+    operations::{hll, hll::HLLPolicy},
+    Bins, FloatValue, ReadPolicy, Value, WritePolicy,
+};
+
 use crate::common;
-
-
-use aerospike::operations::hll;
-use aerospike::operations::hll::HLLPolicy;
-use aerospike::{as_key, as_list, as_val, Bins, FloatValue, ReadPolicy, Value, WritePolicy};
 
 #[tokio::test]
 async fn hll() {

@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
+use std::{collections::HashMap, sync::Arc, thread, time::Duration};
 
-use crate::cluster::Node;
-use crate::commands::buffer;
-use crate::commands::field_type::FieldType;
-use crate::commands::Command;
-use crate::errors::{ErrorKind, Result};
-use crate::net::Connection;
-use crate::query::Recordset;
-use crate::value::bytes_to_particle;
-use crate::{Key, Record, ResultCode, Value};
+use crate::{
+    cluster::Node,
+    commands::{buffer, field_type::FieldType, Command},
+    errors::{ErrorKind, Result},
+    net::Connection,
+    query::Recordset,
+    value::bytes_to_particle,
+    Key, Record, ResultCode, Value,
+};
 
 pub struct StreamCommand {
     node: Arc<Node>,

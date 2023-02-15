@@ -15,10 +15,11 @@
 
 use std::collections::HashMap;
 
-use crate::commands::buffer::Buffer;
-use crate::commands::ParticleType;
-use crate::operations::cdt_context::CdtContext;
-use crate::Value;
+use crate::{
+    commands::{buffer::Buffer, ParticleType},
+    operations::cdt_context::CdtContext,
+    Value,
+};
 
 #[doc(hidden)]
 pub enum CdtArgument<'a> {

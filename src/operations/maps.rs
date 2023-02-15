@@ -40,12 +40,17 @@
 //! * Rank 1 Count 2: Second and third lowest ranked items in map.
 //! * Rank -3 Count 3: Top three ranked items in map.
 
-use crate::msgpack::encoder::pack_cdt_op;
-use crate::operations::cdt::{CdtArgument, CdtOperation};
-use crate::operations::cdt_context::DEFAULT_CTX;
-use crate::operations::{Operation, OperationBin, OperationData, OperationType};
-use crate::Value;
 use std::collections::HashMap;
+
+use crate::{
+    msgpack::encoder::pack_cdt_op,
+    operations::{
+        cdt::{CdtArgument, CdtOperation},
+        cdt_context::DEFAULT_CTX,
+        Operation, OperationBin, OperationData, OperationType,
+    },
+    Value,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[doc(hidden)]
@@ -148,7 +153,8 @@ pub enum MapReturnType {
     KeyValue = 8,
 
     /// Invert meaning of map command and return values.
-    /// With the INVERTED flag enabled, the keys outside of the specified key range will be removed and returned.
+    /// With the INVERTED flag enabled, the keys outside of the specified key range will be removed
+    /// and returned.
     Inverted = 0x10000,
 }
 

@@ -13,10 +13,12 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::errors::{ErrorKind, Result};
-use crate::Host;
-use std::iter::Peekable;
-use std::str::Chars;
+use std::{iter::Peekable, str::Chars};
+
+use crate::{
+    errors::{ErrorKind, Result},
+    Host,
+};
 
 pub struct Parser<'a> {
     s: Peekable<Chars<'a>>,

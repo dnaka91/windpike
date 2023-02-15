@@ -13,10 +13,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::common;
-
-
 use aerospike::*;
+
+use crate::common;
 
 #[tokio::test]
 async fn execute_udf() {

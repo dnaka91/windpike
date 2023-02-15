@@ -15,10 +15,14 @@
 
 //! List Cdt Aerospike Filter Expressions.
 
-use crate::expressions::{nil, ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY};
-use crate::operations::cdt_context::{CdtContext, CtxType};
-use crate::operations::lists::{CdtListOpType, ListPolicy, ListReturnType, ListSortFlags};
-use crate::Value;
+use crate::{
+    expressions::{nil, ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY},
+    operations::{
+        cdt_context::{CdtContext, CtxType},
+        lists::{CdtListOpType, ListPolicy, ListReturnType, ListSortFlags},
+    },
+    Value,
+};
 
 const MODULE: i64 = 0;
 /// Create expression that appends value to end of list.
@@ -182,9 +186,9 @@ pub fn remove_by_value_list(
     add_write(bin, ctx, args)
 }
 
-/// Create expression that removes list items identified by value range (valueBegin inclusive, valueEnd exclusive).
-/// If valueBegin is null, the range is less than valueEnd. If valueEnd is null, the range is
-/// greater than equal to valueBegin.
+/// Create expression that removes list items identified by value range (valueBegin inclusive,
+/// valueEnd exclusive). If valueBegin is null, the range is less than valueEnd. If valueEnd is
+/// null, the range is greater than equal to valueBegin.
 pub fn remove_by_value_range(
     value_begin: Option<FilterExpression>,
     value_end: Option<FilterExpression>,
@@ -235,7 +239,8 @@ pub fn remove_by_value_relative_rank_range(
     add_write(bin, ctx, args)
 }
 
-/// Create expression that removes list items nearest to value and greater by relative rank with a count limit.
+/// Create expression that removes list items nearest to value and greater by relative rank with a
+/// count limit.
 ///
 /// Examples for ordered list \[0, 4, 5, 9, 11, 15\]:
 /// ```text
@@ -387,7 +392,6 @@ pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
 ///   get_by_value(ListReturnType::Count, string_val("abc".to_string()), list_bin("a".to_string()), &[]),
 ///   int_val(0));
 /// ```
-///
 pub fn get_by_value(
     return_type: ListReturnType,
     value: FilterExpression,
@@ -484,8 +488,8 @@ pub fn get_by_value_relative_rank_range(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects list items nearest to value and greater by relative rank with a count limit
-/// and returns selected data specified by returnType.
+/// Create expression that selects list items nearest to value and greater by relative rank with a
+/// count limit and returns selected data specified by returnType.
 ///
 /// Examples for ordered list \[0, 4, 5, 9, 11, 15\]:
 /// ```text
@@ -528,7 +532,6 @@ pub fn get_by_value_relative_rank_range_count(
 ///   get_by_index(ListReturnType::Values, ExpType::INT, int_val(3), list_bin("a".to_string()), &[]),
 ///   int_val(5));
 /// ```
-///
 pub fn get_by_index(
     return_type: ListReturnType,
     value_type: ExpType,

@@ -17,11 +17,8 @@
 
 use std::env;
 
-
-use rand::distributions::Alphanumeric;
-use rand::Rng;
-
 use aerospike::{Client, ClientPolicy};
+use rand::{distributions::Alphanumeric, Rng};
 
 lazy_static! {
     static ref AEROSPIKE_HOSTS: String =

@@ -13,13 +13,15 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::collections::HashMap;
-use std::io::{Cursor, Write};
-use std::str;
+use std::{
+    collections::HashMap,
+    io::{Cursor, Write},
+    str,
+};
 
-use crate::errors::Result;
-use crate::net::Connection;
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+
+use crate::{errors::Result, net::Connection};
 
 // MAX_BUFFER_SIZE protects against allocating massive memory blocks
 // for buffers.

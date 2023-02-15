@@ -15,9 +15,10 @@
 
 //! String/number bin operations. Create operations used by the client's `operate()` method.
 
-use crate::operations::cdt_context::DEFAULT_CTX;
-use crate::operations::{Operation, OperationBin, OperationData, OperationType};
-use crate::Bin;
+use crate::{
+    operations::{cdt_context::DEFAULT_CTX, Operation, OperationBin, OperationData, OperationType},
+    Bin,
+};
 
 /// Create read all record bins database operation.
 pub const fn get<'a>() -> Operation<'a> {

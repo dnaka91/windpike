@@ -13,16 +13,13 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::fmt;
-use std::result::Result as StdResult;
+use std::{fmt, result::Result as StdResult};
 
-use crate::errors::Result;
-use crate::Value;
-
-use ripemd160::digest::Digest;
-use ripemd160::Ripemd160;
+use ripemd160::{digest::Digest, Ripemd160};
 #[cfg(feature = "serialization")]
 use serde::Serialize;
+
+use crate::{errors::Result, Value};
 
 /// Unique record identifier. Records can be identified using a specified namespace, an optional
 /// set name and a user defined key which must be uique within a set. Records can also be

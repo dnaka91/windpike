@@ -31,24 +31,18 @@ mod record_exists_action;
 mod scan_policy;
 mod write_policy;
 
-pub use self::admin_policy::AdminPolicy;
-pub use self::batch_policy::BatchPolicy;
-pub use self::client_policy::ClientPolicy;
-pub use self::commit_level::CommitLevel;
-pub use self::concurrency::Concurrency;
-pub use self::consistency_level::ConsistencyLevel;
-pub use self::expiration::Expiration;
-pub use self::generation_policy::GenerationPolicy;
-pub use self::priority::Priority;
-pub use self::query_policy::QueryPolicy;
-pub use self::read_policy::ReadPolicy;
-pub use self::record_exists_action::RecordExistsAction;
-pub use self::scan_policy::ScanPolicy;
-pub use self::write_policy::WritePolicy;
-
-use crate::expressions::FilterExpression;
-use tokio::time::{Duration, Instant};
 use std::option::Option;
+
+use tokio::time::{Duration, Instant};
+
+pub use self::{
+    admin_policy::AdminPolicy, batch_policy::BatchPolicy, client_policy::ClientPolicy,
+    commit_level::CommitLevel, concurrency::Concurrency, consistency_level::ConsistencyLevel,
+    expiration::Expiration, generation_policy::GenerationPolicy, priority::Priority,
+    query_policy::QueryPolicy, read_policy::ReadPolicy, record_exists_action::RecordExistsAction,
+    scan_policy::ScanPolicy, write_policy::WritePolicy,
+};
+use crate::expressions::FilterExpression;
 
 /// Trait implemented by most policy types; policies that implement this trait typically encompass
 /// an instance of `BasePolicy`.

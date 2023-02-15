@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-use crate::cluster::{Cluster, Node};
-use crate::commands::{Command, ReadCommand, SingleCommand};
-use crate::errors::Result;
-use crate::net::Connection;
-use crate::operations::Operation;
-use crate::policy::WritePolicy;
-use crate::{Bins, Key};
+use crate::{
+    cluster::{Cluster, Node},
+    commands::{Command, ReadCommand, SingleCommand},
+    errors::Result,
+    net::Connection,
+    operations::Operation,
+    policy::WritePolicy,
+    Bins, Key,
+};
 
 pub struct OperateCommand<'a> {
     pub read_command: ReadCommand<'a>,

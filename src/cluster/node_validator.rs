@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::net::ToSocketAddrs;
-use std::str;
-use std::vec::Vec;
+use std::{net::ToSocketAddrs, str, vec::Vec};
 
-use crate::cluster::Cluster;
-use crate::commands::Message;
-use crate::errors::{ErrorKind, Result, ResultExt};
-use crate::net::{Connection, Host};
-use crate::policy::ClientPolicy;
+use crate::{
+    cluster::Cluster,
+    commands::Message,
+    errors::{ErrorKind, Result, ResultExt},
+    net::{Connection, Host},
+    policy::ClientPolicy,
+};
 
 // Validates a Database server node
 #[allow(clippy::struct_excessive_bools)]

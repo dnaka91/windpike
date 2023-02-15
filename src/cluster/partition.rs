@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fmt;
-use std::io::Cursor;
+use std::{fmt, io::Cursor};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
-use crate::cluster::node;
-use crate::Key;
+use crate::{cluster::node, Key};
 
 // Validates a Database server node
 #[derive(Debug, Clone)]

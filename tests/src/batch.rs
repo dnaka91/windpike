@@ -13,9 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use aerospike::BatchRead;
-use aerospike::Bins;
-use aerospike::{as_bin, as_key, BatchPolicy, Concurrency, WritePolicy};
+use aerospike::{as_bin, as_key, BatchPolicy, BatchRead, Bins, Concurrency, WritePolicy};
 
 use crate::common;
 

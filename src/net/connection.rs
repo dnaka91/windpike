@@ -13,14 +13,19 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::commands::admin_command::AdminCommand;
-use crate::commands::buffer::Buffer;
-use crate::errors::{ErrorKind, Result};
-use crate::policy::ClientPolicy;
 use std::ops::Add;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
-use tokio::time::{Duration, Instant};
+
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+    time::{Duration, Instant},
+};
+
+use crate::{
+    commands::{admin_command::AdminCommand, buffer::Buffer},
+    errors::{ErrorKind, Result},
+    policy::ClientPolicy,
+};
 
 #[derive(Debug)]
 pub struct Connection {

@@ -18,11 +18,12 @@ use std::str;
 
 use pwhash::bcrypt::{self, BcryptSetup, BcryptVariant};
 
-use crate::cluster::Cluster;
-use crate::errors::{ErrorKind, Result};
-use crate::net::Connection;
-use crate::net::PooledConnection;
-use crate::ResultCode;
+use crate::{
+    cluster::Cluster,
+    errors::{ErrorKind, Result},
+    net::{Connection, PooledConnection},
+    ResultCode,
+};
 
 // Commands
 const AUTHENTICATE: u8 = 0;

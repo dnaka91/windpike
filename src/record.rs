@@ -13,15 +13,16 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+use std::{
+    collections::HashMap,
+    fmt,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
 #[cfg(feature = "serialization")]
 use serde::Serialize;
 
-use std::collections::HashMap;
-use std::fmt;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-use crate::Key;
-use crate::Value;
+use crate::{Key, Value};
 
 lazy_static! {
   // Fri Jan  1 00:00:00 UTC 2010
@@ -102,9 +103,12 @@ impl fmt::Display for Record {
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        collections::HashMap,
+        time::{Duration, SystemTime},
+    };
+
     use super::{Record, CITRUSLEAF_EPOCH};
-    use std::collections::HashMap;
-    use std::time::{Duration, SystemTime};
 
     #[test]
     fn ttl_expiration_future() {

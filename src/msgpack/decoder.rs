@@ -13,13 +13,13 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::collections::HashMap;
-use std::vec::Vec;
+use std::{collections::HashMap, vec::Vec};
 
-use crate::commands::buffer::Buffer;
-use crate::commands::ParticleType;
-use crate::errors::{ErrorKind, Result};
-use crate::value::Value;
+use crate::{
+    commands::{buffer::Buffer, ParticleType},
+    errors::{ErrorKind, Result},
+    value::Value,
+};
 
 pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
     if buf.data_buffer.is_empty() {
@@ -213,8 +213,7 @@ fn unpack_value(buf: &mut Buffer) -> Result<Value> {
             Ok(Value::from(value))
         }
         _ => Err(
-            ErrorKind::BadResponse(format!("Error unpacking value of type '{obj_type:x}'"))
-                .into(),
+            ErrorKind::BadResponse(format!("Error unpacking value of type '{obj_type:x}'")).into(),
         ),
     }
 }

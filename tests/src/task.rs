@@ -13,12 +13,15 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+use std::{thread, time::Duration};
+
+use aerospike::{
+    errors::ErrorKind,
+    task::{Status, Task},
+    *,
+};
+
 use crate::common;
-use aerospike::errors::ErrorKind;
-use aerospike::task::{Status, Task};
-use aerospike::*;
-use std::thread;
-use std::time::Duration;
 
 // If registering udf is successful, querying RegisterTask will return Status::Complete
 // If udf does not exist, querying RegisterTask will return error

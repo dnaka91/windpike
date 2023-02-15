@@ -13,20 +13,27 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::collections::HashMap;
-use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::result::Result as StdResult;
-use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    fmt,
+    hash::{Hash, Hasher},
+    result::Result as StdResult,
+    str::FromStr,
+    sync::{
+        atomic::{AtomicBool, AtomicIsize, AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
-use crate::cluster::node_validator::NodeValidator;
-use crate::commands::Message;
-use crate::errors::{ErrorKind, Result, ResultExt};
-use crate::net::{ConnectionPool, Host, PooledConnection};
-use crate::policy::ClientPolicy;
 use tokio::sync::RwLock;
+
+use crate::{
+    cluster::node_validator::NodeValidator,
+    commands::Message,
+    errors::{ErrorKind, Result, ResultExt},
+    net::{ConnectionPool, Host, PooledConnection},
+    policy::ClientPolicy,
+};
 
 pub const PARTITIONS: usize = 4096;
 
@@ -81,6 +88,7 @@ impl Node {
             supports_geo: AtomicBool::new(nv.supports_geo),
         }
     }
+
     // Returns the Node address
     pub fn address(&self) -> &str {
         &self.address
@@ -208,8 +216,7 @@ impl Node {
             if friend_info.clone().count() != 2 {
                 error!(
                     "Node info from asinfo:services is malformed. Expected HOST:PORT, but got \
-                     '{}'",
-                    friend
+                     '{friend}'",
                 );
                 continue;
             }

@@ -13,8 +13,10 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::commands::{buffer::Buffer, ParticleType};
-use crate::{CollectionIndexType, Value};
+use crate::{
+    commands::{buffer::Buffer, ParticleType},
+    CollectionIndexType, Value,
+};
 
 /// Query filter definition. Currently, only one filter is allowed in a Statement, and must be on a
 /// bin which has a secondary index defined.

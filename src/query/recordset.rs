@@ -15,14 +15,15 @@
 
 extern crate rand;
 
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::thread;
+use std::{
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
+    thread,
+};
 
 use crossbeam_queue::SegQueue;
 use rand::Rng;
 
-use crate::errors::Result;
-use crate::Record;
+use crate::{errors::Result, Record};
 
 /// Virtual collection of records retrieved through queries and scans. During a query/scan,
 /// multiple threads will retrieve records from the server nodes and put these records on an

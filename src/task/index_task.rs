@@ -13,10 +13,13 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::cluster::Cluster;
-use crate::errors::{ErrorKind, Result};
-use crate::task::{Status, Task};
 use std::sync::Arc;
+
+use crate::{
+    cluster::Cluster,
+    errors::{ErrorKind, Result},
+    task::{Status, Task},
+};
 
 /// Struct for querying index creation status
 #[derive(Debug, Clone)]

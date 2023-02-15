@@ -13,8 +13,10 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::expressions::FilterExpression;
-use crate::policy::{BasePolicy, PolicyLike};
+use crate::{
+    expressions::FilterExpression,
+    policy::{BasePolicy, PolicyLike},
+};
 
 /// `QueryPolicy` encapsulates parameters for query operations.
 #[derive(Debug, Clone)]

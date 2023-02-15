@@ -13,28 +13,25 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::path::Path;
-use std::str;
-use std::sync::Arc;
-use std::vec::Vec;
+use std::{path::Path, str, sync::Arc, vec::Vec};
 
-use crate::batch::BatchExecutor;
-use crate::cluster::{Cluster, Node};
-use crate::commands::{
-    DeleteCommand, ExecuteUDFCommand, ExistsCommand, OperateCommand, QueryCommand, ReadCommand,
-    ScanCommand, TouchCommand, WriteCommand,
-};
-use crate::errors::{ErrorKind, Result, ResultExt};
-use crate::net::ToHosts;
-use crate::operations::{Operation, OperationType};
-use crate::policy::{BatchPolicy, ClientPolicy, QueryPolicy, ReadPolicy, ScanPolicy, WritePolicy};
-use crate::task::{IndexTask, RegisterTask};
+use tokio::{fs::File, io::AsyncReadExt};
+
 use crate::{
+    batch::BatchExecutor,
+    cluster::{Cluster, Node},
+    commands::{
+        DeleteCommand, ExecuteUDFCommand, ExistsCommand, OperateCommand, QueryCommand, ReadCommand,
+        ScanCommand, TouchCommand, WriteCommand,
+    },
+    errors::{ErrorKind, Result, ResultExt},
+    net::ToHosts,
+    operations::{Operation, OperationType},
+    policy::{BatchPolicy, ClientPolicy, QueryPolicy, ReadPolicy, ScanPolicy, WritePolicy},
+    task::{IndexTask, RegisterTask},
     BatchRead, Bin, Bins, CollectionIndexType, IndexType, Key, Record, Recordset, ResultCode,
     Statement, UDFLang, Value,
 };
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
 
 /// Instantiate a Client instance to access an Aerospike database cluster and perform database
 /// operations.
@@ -894,7 +891,7 @@ impl Client {
         };
         let cmd = format!(
             "sindex-create:ns={namespace};set={set_name};indexname={index_name};numbins=1;\
-            {cit_str}indexdata={bin_name},{index_type};priority=normal",
+             {cit_str}indexdata={bin_name},{index_type};priority=normal",
         );
         self.send_info_cmd(&cmd)
             .await

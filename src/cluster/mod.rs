@@ -18,25 +18,36 @@ pub mod node_validator;
 pub mod partition;
 pub mod partition_tokenizer;
 
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
-use std::sync::Arc;
-use std::vec::Vec;
-use tokio::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicBool, AtomicIsize, Ordering},
+        Arc,
+    },
+    vec::Vec,
+};
+
+use futures::{
+    channel::{
+        mpsc,
+        mpsc::{Receiver, Sender},
+    },
+    lock::Mutex,
+};
+use tokio::{
+    sync::RwLock,
+    time::{Duration, Instant},
+};
 
 pub use self::node::Node;
-
-use self::node_validator::NodeValidator;
-use self::partition::Partition;
-use self::partition_tokenizer::PartitionTokenizer;
-
-use crate::errors::{ErrorKind, Result};
-use crate::net::Host;
-use crate::policy::ClientPolicy;
-use futures::channel::mpsc;
-use futures::channel::mpsc::{Receiver, Sender};
-use futures::lock::Mutex;
-use tokio::sync::RwLock;
+use self::{
+    node_validator::NodeValidator, partition::Partition, partition_tokenizer::PartitionTokenizer,
+};
+use crate::{
+    errors::{ErrorKind, Result},
+    net::Host,
+    policy::ClientPolicy,
+};
 
 // Cluster encapsulates the aerospike cluster nodes and manages
 // them.
@@ -85,9 +96,8 @@ impl Cluster {
         // apply policy rules
         if cluster.client_policy.fail_if_not_connected && !cluster.is_connected().await {
             bail!(ErrorKind::Connection(
-                "Failed to connect to host(s). The network \
-                 connection(s) to cluster nodes may have timed out, or \
-                 the cluster may be in a state of flux."
+                "Failed to connect to host(s). The network connection(s) to cluster nodes may \
+                 have timed out, or the cluster may be in a state of flux."
                     .to_string()
             ));
         }

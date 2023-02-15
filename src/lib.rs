@@ -157,8 +157,7 @@ pub use commands::particle_type::ParticleType;
 pub use errors::{Error, ErrorKind, Result};
 pub use expressions::regex_flag::RegexFlag;
 pub use key::Key;
-pub use net::Host;
-pub use net::ToHosts;
+pub use net::{Host, ToHosts};
 pub use operations::{MapPolicy, MapReturnType, MapWriteMode};
 pub use policy::{
     BatchPolicy, ClientPolicy, CommitLevel, Concurrency, ConsistencyLevel, Expiration,

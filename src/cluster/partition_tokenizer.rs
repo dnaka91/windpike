@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::collections::HashMap;
-use std::str;
-use std::sync::Arc;
-use std::vec::Vec;
+use std::{
+    collections::{
+        hash_map::Entry::{Occupied, Vacant},
+        HashMap,
+    },
+    str,
+    sync::Arc,
+    vec::Vec,
+};
 
-use crate::cluster::node;
-use crate::cluster::Node;
-use crate::commands::Message;
-use crate::errors::{ErrorKind, Result};
-use crate::net::Connection;
 use tokio::sync::RwLock;
+
+use crate::{
+    cluster::{node, Node},
+    commands::Message,
+    errors::{ErrorKind, Result},
+    net::Connection,
+};
 
 const REPLICAS_NAME: &str = "replicas-master";
 

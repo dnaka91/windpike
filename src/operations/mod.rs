@@ -26,14 +26,15 @@ pub mod maps;
 pub mod scalar;
 
 use self::cdt::CdtOperation;
-pub use self::maps::{MapOrder, MapPolicy, MapReturnType, MapWriteMode};
-pub use self::scalar::*;
-
-use crate::commands::buffer::Buffer;
-use crate::commands::ParticleType;
-use crate::operations::cdt_context::CdtContext;
-use crate::operations::exp::ExpOperation;
-use crate::Value;
+pub use self::{
+    maps::{MapOrder, MapPolicy, MapReturnType, MapWriteMode},
+    scalar::*,
+};
+use crate::{
+    commands::{buffer::Buffer, ParticleType},
+    operations::{cdt_context::CdtContext, exp::ExpOperation},
+    Value,
+};
 
 #[derive(Clone, Copy)]
 #[doc(hidden)]

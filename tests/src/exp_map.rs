@@ -1,11 +1,11 @@
+use std::{collections::HashMap, sync::Arc};
+
+use aerospike::{
+    expressions::{maps::*, *},
+    *,
+};
+
 use crate::common;
-
-
-use aerospike::expressions::maps::*;
-use aerospike::expressions::*;
-use aerospike::*;
-use std::collections::HashMap;
-use std::sync::Arc;
 
 const EXPECTED: usize = 100;
 
@@ -661,7 +661,7 @@ async fn expression_map() {
 async fn test_filter(client: &Client, filter: FilterExpression, set_name: &str) -> Arc<Recordset> {
     let namespace = common::namespace();
 
-    let  qpolicy = QueryPolicy {
+    let qpolicy = QueryPolicy {
         filter_expression: Some(filter),
         ..QueryPolicy::default()
     };

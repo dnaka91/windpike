@@ -14,10 +14,14 @@
 // the License.
 
 //! Map Cdt Aerospike Filter Expressions.
-use crate::expressions::{nil, ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY};
-use crate::operations::cdt_context::{CdtContext, CtxType};
-use crate::operations::maps::{map_write_op, CdtMapOpType};
-use crate::{MapPolicy, MapReturnType, Value};
+use crate::{
+    expressions::{nil, ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY},
+    operations::{
+        cdt_context::{CdtContext, CtxType},
+        maps::{map_write_op, CdtMapOpType},
+    },
+    MapPolicy, MapReturnType, Value,
+};
 
 #[doc(hidden)]
 const MODULE: i64 = 0;
@@ -136,8 +140,8 @@ pub fn remove_by_key_list(
     add_write(bin, ctx, args)
 }
 
-/// Create expression that removes map items identified by key range (keyBegin inclusive, keyEnd exclusive).
-/// If keyBegin is null, the range is less than keyEnd.
+/// Create expression that removes map items identified by key range (keyBegin inclusive, keyEnd
+/// exclusive). If keyBegin is null, the range is less than keyEnd.
 /// If keyEnd is null, the range is greater than equal to keyBegin.
 pub fn remove_by_key_range(
     key_begin: Option<FilterExpression>,
@@ -245,8 +249,8 @@ pub fn remove_by_value_list(
     add_write(bin, ctx, args)
 }
 
-/// Create expression that removes map items identified by value range (valueBegin inclusive, valueEnd exclusive).
-/// If valueBegin is null, the range is less than valueEnd.
+/// Create expression that removes map items identified by value range (valueBegin inclusive,
+/// valueEnd exclusive). If valueBegin is null, the range is less than valueEnd.
 /// If valueEnd is null, the range is greater than equal to valueBegin.
 pub fn remove_by_value_range(
     value_begin: Option<FilterExpression>,
@@ -293,7 +297,8 @@ pub fn remove_by_value_relative_rank_range(
     add_write(bin, ctx, args)
 }
 
-/// Create expression that removes map items nearest to value and greater by relative rank with a count limit.
+/// Create expression that removes map items nearest to value and greater by relative rank with a
+/// count limit.
 ///
 /// Examples for map [{4=2},{9=10},{5=15},{0=17}]:
 ///
@@ -420,7 +425,6 @@ pub fn remove_by_rank_range_count(
 /// use aerospike::expressions::maps::size;
 ///
 /// gt(size(map_bin("a".to_string()), &[]), int_val(7));
-///
 /// ```
 pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
     let args = vec![
@@ -441,7 +445,6 @@ pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
 ///
 /// gt(get_by_key(MapReturnType::Count, ExpType::INT, string_val("B".to_string()), map_bin("a".to_string()), &[]), int_val(0));
 /// ```
-///
 pub fn get_by_key(
     return_type: MapReturnType,
     value_type: ExpType,
@@ -458,8 +461,8 @@ pub fn get_by_key(
     add_read(bin, value_type, args)
 }
 
-/// Create expression that selects map items identified by key range (keyBegin inclusive, keyEnd exclusive).
-/// If keyBegin is null, the range is less than keyEnd.
+/// Create expression that selects map items identified by key range (keyBegin inclusive, keyEnd
+/// exclusive). If keyBegin is null, the range is less than keyEnd.
 /// If keyEnd is null, the range is greater than equal to keyBegin.
 /// Expression returns selected data specified by returnType.
 pub fn get_by_key_range(
@@ -485,7 +488,8 @@ pub fn get_by_key_range(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects map items identified by keys and returns selected data specified by returnType
+/// Create expression that selects map items identified by keys and returns selected data specified
+/// by returnType
 pub fn get_by_key_list(
     return_type: MapReturnType,
     keys: FilterExpression,
@@ -585,8 +589,8 @@ pub fn get_by_value(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects map items identified by value range (valueBegin inclusive, valueEnd exclusive)
-/// If valueBegin is null, the range is less than valueEnd.
+/// Create expression that selects map items identified by value range (valueBegin inclusive,
+/// valueEnd exclusive) If valueBegin is null, the range is less than valueEnd.
 /// If valueEnd is null, the range is greater than equal to valueBegin.
 ///
 /// Expression returns selected data specified by returnType.
@@ -613,7 +617,8 @@ pub fn get_by_value_range(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects map items identified by values and returns selected data specified by returnType.
+/// Create expression that selects map items identified by values and returns selected data
+/// specified by returnType.
 pub fn get_by_value_list(
     return_type: MapReturnType,
     values: FilterExpression,
@@ -654,8 +659,8 @@ pub fn get_by_value_relative_rank_range(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects map items nearest to value and greater by relative rank with a count limit.
-/// Expression returns selected data specified by returnType.
+/// Create expression that selects map items nearest to value and greater by relative rank with a
+/// count limit. Expression returns selected data specified by returnType.
 ///
 /// Examples for map [{4=2},{9=10},{5=15},{0=17}]:
 ///
@@ -681,7 +686,8 @@ pub fn get_by_value_relative_rank_range_count(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects map item identified by index and returns selected data specified by returnType.
+/// Create expression that selects map item identified by index and returns selected data specified
+/// by returnType.
 pub fn get_by_index(
     return_type: MapReturnType,
     value_type: ExpType,
@@ -698,8 +704,8 @@ pub fn get_by_index(
     add_read(bin, value_type, args)
 }
 
-/// Create expression that selects map items starting at specified index to the end of map and returns selected
-/// data specified by returnType.
+/// Create expression that selects map items starting at specified index to the end of map and
+/// returns selected data specified by returnType.
 pub fn get_by_index_range(
     return_type: MapReturnType,
     index: FilterExpression,
@@ -715,8 +721,8 @@ pub fn get_by_index_range(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects "count" map items starting at specified index and returns selected data
-/// specified by returnType.
+/// Create expression that selects "count" map items starting at specified index and returns
+/// selected data specified by returnType.
 pub fn get_by_index_range_count(
     return_type: MapReturnType,
     index: FilterExpression,
@@ -734,7 +740,8 @@ pub fn get_by_index_range_count(
     add_read(bin, get_value_type(return_type), args)
 }
 
-/// Create expression that selects map item identified by rank and returns selected data specified by returnType.
+/// Create expression that selects map item identified by rank and returns selected data specified
+/// by returnType.
 pub fn get_by_rank(
     return_type: MapReturnType,
     value_type: ExpType,

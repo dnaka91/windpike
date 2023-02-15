@@ -13,13 +13,16 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+use aerospike::{
+    as_bin, as_key, as_list, as_val, as_values, operations,
+    operations::{
+        lists,
+        lists::{ListPolicy, ListReturnType, ListSortFlags},
+    },
+    Bins, ReadPolicy, Value, WritePolicy,
+};
+
 use crate::common;
-
-
-use aerospike::operations;
-use aerospike::operations::lists;
-use aerospike::operations::lists::{ListPolicy, ListReturnType, ListSortFlags};
-use aerospike::{as_bin, as_key, as_list, as_val, as_values, Bins, ReadPolicy, Value, WritePolicy};
 
 #[tokio::test]
 async fn cdt_list() {

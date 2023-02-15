@@ -14,9 +14,11 @@
 // the License.
 
 //! Bitwise Aerospike Filter Expressions.
-use crate::expressions::{ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY};
-use crate::operations::bitwise::{BitPolicy, BitwiseOverflowActions, BitwiseResizeFlags};
-use crate::Value;
+use crate::{
+    expressions::{ExpOp, ExpType, ExpressionArgument, FilterExpression, MODIFY},
+    operations::bitwise::{BitPolicy, BitwiseOverflowActions, BitwiseResizeFlags},
+    Value,
+};
 
 const MODULE: i64 = 1;
 const INT_FLAGS_SIGNED: i64 = 1;
@@ -110,7 +112,8 @@ pub fn insert(
     add_write(bin, args)
 }
 
-/// Create expression that removes bytes from byte[] bin at byteOffset for byteSize and returns byte[].
+/// Create expression that removes bytes from byte[] bin at byteOffset for byteSize and returns
+/// byte[].
 ///
 /// ```
 /// // Remove bytes from bin "a" and compare bit count
@@ -286,7 +289,8 @@ pub fn not(
     add_write(bin, args)
 }
 
-/// Create expression that shifts left byte[] bin starting at bitOffset for bitSize and returns byte[].
+/// Create expression that shifts left byte[] bin starting at bitOffset for bitSize and returns
+/// byte[].
 ///
 /// ```text
 /// bin = [0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101]
@@ -313,7 +317,8 @@ pub fn lshift(
     add_write(bin, args)
 }
 
-/// Create expression that shifts right byte[] bin starting at bitOffset for bitSize and returns byte[].
+/// Create expression that shifts right byte[] bin starting at bitOffset for bitSize and returns
+/// byte[].
 ///
 /// ```text
 /// bin = [0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101]
@@ -340,8 +345,8 @@ pub fn rshift(
     add_write(bin, args)
 }
 
-/// Create expression that adds value to byte[] bin starting at bitOffset for bitSize and returns byte[].
-/// `BitSize` must be <= 64. Signed indicates if bits should be treated as a signed number.
+/// Create expression that adds value to byte[] bin starting at bitOffset for bitSize and returns
+/// byte[]. `BitSize` must be <= 64. Signed indicates if bits should be treated as a signed number.
 /// If add overflows/underflows, `BitwiseOverflowActions` is used.
 ///
 /// ```text
@@ -377,9 +382,9 @@ pub fn add(
     add_write(bin, args)
 }
 
-/// Create expression that subtracts value from byte[] bin starting at bitOffset for bitSize and returns byte[].
-/// `BitSize` must be <= 64. Signed indicates if bits should be treated as a signed number.
-/// If add overflows/underflows, `BitwiseOverflowActions` is used.
+/// Create expression that subtracts value from byte[] bin starting at bitOffset for bitSize and
+/// returns byte[]. `BitSize` must be <= 64. Signed indicates if bits should be treated as a signed
+/// number. If add overflows/underflows, `BitwiseOverflowActions` is used.
 ///
 /// ```text
 /// bin = [0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101]
@@ -414,8 +419,8 @@ pub fn subtract(
     add_write(bin, args)
 }
 
-/// Create expression that sets value to byte[] bin starting at bitOffset for bitSize and returns byte[].
-/// `BitSize` must be <= 64.
+/// Create expression that sets value to byte[] bin starting at bitOffset for bitSize and returns
+/// byte[]. `BitSize` must be <= 64.
 ///
 /// ```text
 /// bin = [0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101]
@@ -511,7 +516,6 @@ pub fn count(
 /// use aerospike::expressions::bitwise::lscan;
 /// eq(lscan(int_val(24), int_val(8), int_val(1), blob_bin("a".to_string())), int_val(5));
 /// ```
-///
 pub fn lscan(
     bit_offset: FilterExpression,
     bit_size: FilterExpression,
@@ -543,7 +547,6 @@ pub fn lscan(
 /// use aerospike::expressions::bitwise::rscan;
 /// eq(rscan(int_val(32), int_val(8), int_val(1), blob_bin("a".to_string())), int_val(7));
 /// ```
-///
 pub fn rscan(
     bit_offset: FilterExpression,
     bit_size: FilterExpression,

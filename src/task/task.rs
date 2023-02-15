@@ -13,8 +13,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::errors::{ErrorKind, Result};
 use tokio::time::{Duration, Instant};
+
+use crate::errors::{ErrorKind, Result};
 
 /// Status of task
 #[derive(Debug, Clone, Copy)]

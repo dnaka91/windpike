@@ -13,15 +13,16 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::collections::HashMap;
-use std::num::Wrapping;
-use std::{i16, i32, i64, i8};
+use std::{collections::HashMap, i16, i32, i64, i8, num::Wrapping};
 
-use crate::commands::buffer::Buffer;
-use crate::commands::ParticleType;
-use crate::operations::cdt::{CdtArgument, CdtOperation};
-use crate::operations::cdt_context::CdtContext;
-use crate::value::{FloatValue, Value};
+use crate::{
+    commands::{buffer::Buffer, ParticleType},
+    operations::{
+        cdt::{CdtArgument, CdtOperation},
+        cdt_context::CdtContext,
+    },
+    value::{FloatValue, Value},
+};
 
 #[doc(hidden)]
 pub fn pack_value(buf: &mut Option<&mut Buffer>, val: &Value) -> usize {

@@ -16,11 +16,13 @@
 //! Expression Operations.
 //! This functions allow users to run `FilterExpressions` as Operate commands.
 
-use crate::commands::buffer::Buffer;
-use crate::expressions::FilterExpression;
-use crate::msgpack::encoder::{pack_array_begin, pack_integer};
-use crate::operations::{Operation, OperationBin, OperationData, OperationType};
-use crate::ParticleType;
+use crate::{
+    commands::buffer::Buffer,
+    expressions::FilterExpression,
+    msgpack::encoder::{pack_array_begin, pack_integer},
+    operations::{Operation, OperationBin, OperationData, OperationType},
+    ParticleType,
+};
 
 /// Expression write Flags
 pub enum ExpWriteFlags {
@@ -59,11 +61,13 @@ impl<'a> ExpOperation<'a> {
     pub const fn particle_type(&self) -> ParticleType {
         ParticleType::BLOB
     }
+
     #[doc(hidden)]
     pub fn estimate_size(&self) -> usize {
         let size: usize = (self.encoder)(&mut None, self);
         size
     }
+
     #[doc(hidden)]
     pub fn write_to(&self, buffer: &mut Buffer) -> usize {
         let size: usize = (self.encoder)(&mut Some(buffer), self);

@@ -13,15 +13,17 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::thread;
+use std::{
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+    thread,
+};
+
+use aerospike::{Task, *};
 
 use crate::common;
-
-
-use aerospike::Task;
-use aerospike::*;
 
 const EXPECTED: usize = 1000;
 

@@ -15,15 +15,16 @@
 
 use std::collections::HashMap;
 
-use crate::common;
-
-
-use aerospike::operations::cdt_context::{ctx_map_key, ctx_map_key_create};
-use aerospike::operations::{maps, MapOrder};
 use aerospike::{
-    as_bin, as_key, as_list, as_map, as_val, Bins, MapPolicy, MapReturnType, ReadPolicy,
-    WritePolicy,
+    as_bin, as_key, as_list, as_map, as_val,
+    operations::{
+        cdt_context::{ctx_map_key, ctx_map_key_create},
+        maps, MapOrder,
+    },
+    Bins, MapPolicy, MapReturnType, ReadPolicy, WritePolicy,
 };
+
+use crate::common;
 
 #[tokio::test]
 async fn map_operations() {

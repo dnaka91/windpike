@@ -14,14 +14,16 @@
 
 use std::sync::Arc;
 
-use crate::cluster::partition::Partition;
-use crate::cluster::{Cluster, Node};
-use crate::commands::{self};
-use crate::errors::{ErrorKind, Result, ResultExt};
-use crate::net::Connection;
-use crate::policy::Policy;
-use crate::Key;
 use tokio::time::Instant;
+
+use crate::{
+    cluster::{partition::Partition, Cluster, Node},
+    commands::{self},
+    errors::{ErrorKind, Result, ResultExt},
+    net::Connection,
+    policy::Policy,
+    Key,
+};
 
 pub struct SingleCommand<'a> {
     cluster: Arc<Cluster>,
@@ -80,7 +82,8 @@ impl<'a> SingleCommand<'a> {
                 if let Some(sleep_between_retries) = policy.sleep_between_retries() {
                     tokio::time::sleep(sleep_between_retries).await;
                 } else {
-                    // yield to free space for the runtime to execute other futures between runs because the loop would block the thread
+                    // yield to free space for the runtime to execute other futures between runs
+                    // because the loop would block the thread
                     tokio::task::yield_now().await;
                 }
             }

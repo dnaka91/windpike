@@ -13,10 +13,12 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::value::Value;
+use std::convert::From;
+
 #[cfg(feature = "serialization")]
 use serde::Serialize;
-use std::convert::From;
+
+use crate::value::Value;
 
 /// Container object for a record bin, comprising a name and a value.
 #[derive(Clone)]

@@ -15,7 +15,6 @@
 
 use crate::common;
 
-
 #[tokio::test]
 async fn truncate() {
     let _ = env_logger::try_init();

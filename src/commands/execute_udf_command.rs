@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::str;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{str, sync::Arc, time::Duration};
 
-use crate::cluster::{Cluster, Node};
-use crate::commands::{Command, ReadCommand, SingleCommand};
-use crate::errors::Result;
-use crate::net::Connection;
-use crate::policy::WritePolicy;
-use crate::{Bins, Key, Value};
+use crate::{
+    cluster::{Cluster, Node},
+    commands::{Command, ReadCommand, SingleCommand},
+    errors::Result,
+    net::Connection,
+    policy::WritePolicy,
+    Bins, Key, Value,
+};
 
 pub struct ExecuteUDFCommand<'a> {
     pub read_command: ReadCommand<'a>,

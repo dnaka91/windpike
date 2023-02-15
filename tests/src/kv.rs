@@ -12,11 +12,10 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-use aerospike::operations;
 use aerospike::{
-    as_bin, as_blob, as_geo, as_key, as_list, as_map, as_val, Bins, ReadPolicy, Value, WritePolicy,
+    as_bin, as_blob, as_geo, as_key, as_list, as_map, as_val, operations, Bins, ReadPolicy, Value,
+    WritePolicy,
 };
-
 
 use crate::common;
 
