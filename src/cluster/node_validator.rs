@@ -41,9 +41,9 @@ pub struct NodeValidator {
 impl NodeValidator {
     pub fn new(cluster: &Cluster) -> Self {
         NodeValidator {
-            name: "".to_string(),
+            name: String::new(),
             aliases: vec![],
-            address: "".to_string(),
+            address: String::new(),
             client_policy: cluster.client_policy().clone(),
             use_new_info: true,
             supports_float: false,
@@ -67,10 +67,7 @@ impl NodeValidator {
                 }
             }
         }
-        match last_err {
-            Some(err) => Err(err),
-            None => unreachable!(),
-        }
+        last_err.map_or_else(|| unreachable!(), Err)
     }
 
     pub fn aliases(&self) -> Vec<Host> {
@@ -84,7 +81,7 @@ impl NodeValidator {
             .collect();
         debug!("Resolved aliases for host {}: {:?}", host, self.aliases);
         if self.aliases.is_empty() {
-            Err(ErrorKind::Connection(format!("Failed to find addresses for {}", host)).into())
+            Err(ErrorKind::Connection(format!("Failed to find addresses for {host}")).into())
         } else {
             Ok(())
         }
@@ -104,9 +101,7 @@ impl NodeValidator {
                 None => bail!(ErrorKind::InvalidNode(String::from("Missing cluster name"))),
                 Some(info_name) if info_name == cluster_name => {}
                 Some(info_name) => bail!(ErrorKind::InvalidNode(format!(
-                    "Cluster name mismatch: expected={},
-                                                         got={}",
-                    cluster_name, info_name
+                    "Cluster name mismatch: expected={cluster_name}, got={info_name}",
                 ))),
             }
         }

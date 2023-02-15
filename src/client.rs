@@ -549,7 +549,7 @@ impl Client {
 
     /// Remove a user-defined function (UDF) module from the server.
     pub async fn remove_udf(&self, udf_name: &str, language: UDFLang) -> Result<()> {
-        let cmd = format!("udf-remove:filename={}.{};", udf_name, language);
+        let cmd = format!("udf-remove:filename={udf_name}.{language};");
         let node = self.cluster.get_random_node().await?;
         // Sample response: {"udf-remove:filename=file_name.LUA;": "ok"}
         let response = node.info(&[&cmd]).await?;
@@ -661,7 +661,8 @@ impl Client {
                 );
                 command.execute().await.unwrap();
             })
-            .await;
+            .await
+            .unwrap();
         }
         Ok(recordset)
     }
@@ -705,7 +706,8 @@ impl Client {
             );
             command.execute().await.unwrap();
         })
-        .await;
+        .await
+        .unwrap();
 
         Ok(recordset)
     }
@@ -759,7 +761,8 @@ impl Client {
                     QueryCommand::new(&policy, node, statement, t_recordset, partitions);
                 command.execute().await.unwrap();
             })
-            .await;
+            .await
+            .unwrap();
         }
         Ok(recordset)
     }
@@ -791,7 +794,8 @@ impl Client {
             let mut command = QueryCommand::new(&policy, node, statement, t_recordset, partitions);
             command.execute().await.unwrap();
         })
-        .await;
+        .await
+        .unwrap();
 
         Ok(recordset)
     }
@@ -819,8 +823,7 @@ impl Client {
         }
 
         if before_nanos > 0 {
-            cmd.push_str(";lut=");
-            cmd.push_str(&format!("{}", before_nanos));
+            cmd.push_str(&format!(";lut={before_nanos}"));
         }
 
         self.send_info_cmd(&cmd)
@@ -884,15 +887,14 @@ impl Client {
         index_type: IndexType,
         collection_index_type: CollectionIndexType,
     ) -> Result<()> {
-        let cit_str: String = if let CollectionIndexType::Default = collection_index_type {
-            "".to_string()
+        let cit_str: String = if collection_index_type == CollectionIndexType::Default {
+            String::new()
         } else {
-            format!("indextype={};", collection_index_type)
+            format!("indextype={collection_index_type};")
         };
         let cmd = format!(
-            "sindex-create:ns={};set={};indexname={};numbins=1;{}indexdata={},{};\
-             priority=normal",
-            namespace, set_name, index_name, cit_str, bin_name, index_type
+            "sindex-create:ns={namespace};set={set_name};indexname={index_name};numbins=1;\
+            {cit_str}indexdata={bin_name},{index_type};priority=normal",
         );
         self.send_info_cmd(&cmd)
             .await
@@ -906,15 +908,12 @@ impl Client {
         set_name: &str,
         index_name: &str,
     ) -> Result<()> {
-        let set_name: String = if let "" = set_name {
-            "".to_string()
+        let set_name: String = if set_name.is_empty() {
+            String::new()
         } else {
-            format!("set={};", set_name)
+            format!("set={set_name};")
         };
-        let cmd = format!(
-            "sindex-delete:ns={};{}indexname={}",
-            namespace, set_name, index_name
-        );
+        let cmd = format!("sindex-delete:ns={namespace};{set_name}indexname={index_name}");
         self.send_info_cmd(&cmd)
             .await
             .chain_err(|| "Error dropping index")

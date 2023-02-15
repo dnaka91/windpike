@@ -42,7 +42,7 @@ impl IndexTask {
     }
 
     fn build_command(namespace: String, index_name: String) -> String {
-        return format!("sindex/{}/{}", namespace, index_name);
+        format!("sindex/{namespace}/{index_name}")
     }
 
     fn parse_response(response: &str) -> Result<Status> {
@@ -52,8 +52,7 @@ impl IndexTask {
                     Ok(Status::NotFound)
                 } else {
                     bail!(ErrorKind::BadResponse(format!(
-                        "Code 201 and 203 missing. Response: {}",
-                        response
+                        "Code 201 and 203 missing. Response: {response}"
                     )));
                 }
             }
@@ -62,8 +61,7 @@ impl IndexTask {
 
                 let percent_end = match response[percent_begin..].find(DELMITER) {
                     None => bail!(ErrorKind::BadResponse(format!(
-                        "delimiter missing in response. Response: {}",
-                        response
+                        "delimiter missing in response. Response: {response}"
                     ))),
                     Some(percent_end) => percent_end,
                 };

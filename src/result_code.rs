@@ -17,7 +17,7 @@ use std::fmt;
 use std::result::Result as StdResult;
 
 /// Database operation error codes. The error codes are defined in the server-side file proto.h.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ResultCode {
     /// OperationType was successful.
     Ok,
@@ -352,7 +352,7 @@ impl ResultCode {
             ResultCode::QueryGeneric => String::from("Query error"),
             ResultCode::QueryNetioErr => String::from("Query NetIo error on server"),
             ResultCode::QueryDuplicate => String::from("Duplicate TaskId sent for the statement"),
-            ResultCode::Unknown(code) => format!("Unknown server error code: {}", code),
+            ResultCode::Unknown(code) => format!("Unknown server error code: {code}"),
         }
     }
 }

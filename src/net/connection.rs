@@ -17,14 +17,14 @@ use crate::commands::admin_command::AdminCommand;
 use crate::commands::buffer::Buffer;
 use crate::errors::{ErrorKind, Result};
 use crate::policy::ClientPolicy;
+use std::ops::Add;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::{Duration, Instant};
-use std::ops::Add;
 
 #[derive(Debug)]
 pub struct Connection {
-    timeout: Option<Duration>,
+    _timeout: Option<Duration>,
 
     // duration after which connection is considered idle
     idle_timeout: Option<Duration>,
@@ -49,7 +49,7 @@ impl Connection {
         let mut conn = Connection {
             buffer: Buffer::new(policy.buffer_reclaim_threshold),
             bytes_read: 0,
-            timeout: policy.timeout,
+            _timeout: policy.timeout,
             conn: stream.unwrap()?,
             idle_timeout: policy.idle_timeout,
             idle_deadline: policy.idle_timeout.map(|timeout| Instant::now() + timeout),
@@ -60,9 +60,6 @@ impl Connection {
     }
 
     pub async fn close(&mut self) {
-        #[cfg(all(any(feature = "rt-async-std"), not(feature = "rt-tokio")))]
-        let _s = self.conn.shutdown(Shutdown::Both);
-        #[cfg(all(any(feature = "rt-tokio"), not(feature = "rt-async-std")))]
         let _s = self.conn.shutdown().await;
     }
 

@@ -39,7 +39,8 @@
     clippy::unseparated_literal_suffix,
     clippy::unused_self,
     clippy::use_self,
-    clippy::missing_errors_doc
+    clippy::missing_errors_doc,
+    clippy::manual_let_else
 )]
 
 //! A pure-rust client for the Aerospike NoSQL database.

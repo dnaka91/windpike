@@ -141,7 +141,7 @@ pub fn resize<'a>(
 ) -> Operation<'a> {
     let mut args = vec![
         CdtArgument::Int(byte_size),
-        CdtArgument::Byte(policy.flags as u8),
+        CdtArgument::Byte(policy.flags),
     ];
     if let Some(resize_flags) = resize_flags {
         args.push(CdtArgument::Byte(resize_flags as u8));
@@ -182,7 +182,7 @@ pub fn insert<'a>(
         args: vec![
             CdtArgument::Int(byte_offset),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -217,7 +217,7 @@ pub fn remove<'a>(
         args: vec![
             CdtArgument::Int(byte_offset),
             CdtArgument::Int(byte_size),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -255,7 +255,7 @@ pub fn set<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -293,7 +293,7 @@ pub fn or<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -331,7 +331,7 @@ pub fn xor<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -369,7 +369,7 @@ pub fn and<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -404,7 +404,7 @@ pub fn not<'a>(
         args: vec![
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -442,7 +442,7 @@ pub fn lshift<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(shift),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -480,7 +480,7 @@ pub fn rshift<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(shift),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 
@@ -528,7 +528,7 @@ pub fn add<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
             CdtArgument::Byte(action_flags),
         ],
     };
@@ -577,7 +577,7 @@ pub fn subtract<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
             CdtArgument::Byte(action_flags),
         ],
     };
@@ -616,7 +616,7 @@ pub fn set_int<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags),
         ],
     };
 

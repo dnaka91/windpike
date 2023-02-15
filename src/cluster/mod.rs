@@ -202,7 +202,7 @@ impl Cluster {
 
         return handle
             .await
-            .map_err(|err| format!("Error during initial cluster tend: {:?}", err).into());
+            .map_err(|err| format!("Error during initial cluster tend: {err:?}").into());
     }
 
     pub const fn cluster_name(&self) -> &Option<String> {

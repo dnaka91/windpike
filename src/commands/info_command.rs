@@ -95,7 +95,7 @@ impl Message {
 
             match (key, val) {
                 (Some(key), Some(val)) => result.insert(key.to_string(), val.to_string()),
-                (Some(key), None) => result.insert(key.to_string(), "".to_string()),
+                (Some(key), None) => result.insert(key.to_string(), String::new()),
                 _ => bail!("Parsing Info command failed"),
             };
         }

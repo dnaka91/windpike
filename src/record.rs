@@ -70,12 +70,12 @@ impl Record {
             0 => None,
             secs_since_epoch => {
                 let expiration = *CITRUSLEAF_EPOCH + Duration::new(u64::from(secs_since_epoch), 0);
-                match expiration.duration_since(SystemTime::now()) {
-                    Ok(d) => Some(d),
-                    // Record was not expired at server but it looks expired at client
-                    // because of delay or clock difference, present it as not-expired.
-                    Err(_) => Some(Duration::new(1u64, 0)),
-                }
+                Some(
+                    expiration
+                        .duration_since(SystemTime::now())
+                        .ok()
+                        .unwrap_or(Duration::new(1, 0)),
+                )
             }
         }
     }
@@ -89,7 +89,7 @@ impl fmt::Display for Record {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "{}: {}", k, v)?;
+            write!(f, "{k}: {v}")?;
         }
         write!(f, "}}, generation: {}", self.generation)?;
         write!(f, ", ttl: ")?;

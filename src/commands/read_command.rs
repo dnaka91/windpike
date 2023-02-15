@@ -163,7 +163,7 @@ impl<'a> Command for ReadCommand<'a> {
                 let reason = record
                     .bins
                     .get("FAILURE")
-                    .map_or(String::from("UDF Error"), ToString::to_string);
+                    .map_or_else(|| "UDF Error".to_owned(), ToString::to_string);
                 Err(ErrorKind::UdfBadResponse(reason).into())
             }
             rc => Err(ErrorKind::ServerError(rc).into()),

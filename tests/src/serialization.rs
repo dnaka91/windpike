@@ -15,7 +15,6 @@
 use aerospike::{
     as_bin, as_blob, as_geo, as_key, as_list, as_map, as_val, Bins, ReadPolicy, WritePolicy,
 };
-use env_logger;
 
 use crate::common;
 
@@ -53,9 +52,11 @@ async fn serialize() {
     let record = client.get(&policy, &key, Bins::All).await.unwrap();
 
     let json = serde_json::to_string(&record);
-    if json.is_err() {
-        assert!(false, "JSON Parsing of the Record was not successful")
-    }
+    assert!(
+        json.is_ok(),
+        "JSON Parsing of the Record was not successful"
+    );
+
     let json = serde_json::to_string(&record.bins.get("bin999"));
     assert_eq!(
         json.unwrap(),

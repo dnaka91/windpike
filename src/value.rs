@@ -131,11 +131,11 @@ impl fmt::Display for FloatValue {
         match *self {
             FloatValue::F32(val) => {
                 let val: f32 = f32::from_bits(val);
-                write!(f, "{}", val)
+                write!(f, "{val}")
             }
             FloatValue::F64(val) => {
                 let val: f64 = f64::from_bits(val);
-                write!(f, "{}", val)
+                write!(f, "{val}")
             }
         }
     }
@@ -252,10 +252,10 @@ impl Value {
             Value::Bool(ref val) => val.to_string(),
             Value::Float(ref val) => val.to_string(),
             Value::String(ref val) | Value::GeoJSON(ref val) => val.to_string(),
-            Value::Blob(ref val) | Value::HLL(ref val) => format!("{:?}", val),
-            Value::List(ref val) => format!("{:?}", val),
-            Value::HashMap(ref val) => format!("{:?}", val),
-            Value::OrderedMap(ref val) => format!("{:?}", val),
+            Value::Blob(ref val) | Value::HLL(ref val) => format!("{val:?}"),
+            Value::List(ref val) => format!("{val:?}"),
+            Value::HashMap(ref val) => format!("{val:?}"),
+            Value::OrderedMap(ref val) => format!("{val:?}"),
         }
     }
 
@@ -308,7 +308,7 @@ impl Value {
             Value::Int(ref val) => {
                 let mut buf = [0; 8];
                 NetworkEndian::write_i64(&mut buf, *val);
-                h.input(&buf);
+                h.input(buf);
                 Ok(())
             }
             Value::String(ref val) => {

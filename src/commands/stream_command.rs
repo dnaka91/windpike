@@ -136,10 +136,10 @@ impl StreamCommand {
     }
 
     pub async fn parse_key(conn: &mut Connection, field_count: usize) -> Result<Key> {
-        let mut digest: [u8; 20] = [0; 20];
-        let mut namespace: String = "".to_string();
-        let mut set_name: String = "".to_string();
-        let mut orig_key: Option<Value> = None;
+        let mut digest = [0; 20];
+        let mut namespace = String::new();
+        let mut set_name = String::new();
+        let mut orig_key = None;
 
         for _ in 0..field_count {
             conn.read_buffer(4).await?;
@@ -214,7 +214,7 @@ impl Command for StreamCommand {
 
             status = false;
             if size > 0 {
-                status = self.parse_stream(conn, size as usize).await?;
+                status = self.parse_stream(conn, size).await?;
             }
         }
 

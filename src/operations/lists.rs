@@ -176,13 +176,13 @@ impl Default for ListPolicy {
 
 #[doc(hidden)]
 pub const fn list_order_flag(order: ListOrderType, pad: bool) -> u8 {
-    if let ListOrderType::Ordered = order {
-        return 0xc0;
+    if matches!(order, ListOrderType::Ordered) {
+        0xc0
+    } else if pad {
+        0x80
+    } else {
+        0x40
     }
-    if pad {
-        return 0x80;
-    }
-    0x40
 }
 
 /// Creates list create operation.

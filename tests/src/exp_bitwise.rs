@@ -13,7 +13,6 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 use crate::common;
-use env_logger;
 
 use aerospike::expressions::bitwise::*;
 use aerospike::expressions::*;
@@ -408,8 +407,10 @@ async fn expression_bitwise() {
 async fn test_filter(client: &Client, filter: FilterExpression, set_name: &str) -> Arc<Recordset> {
     let namespace = common::namespace();
 
-    let mut qpolicy = QueryPolicy::default();
-    qpolicy.filter_expression = Some(filter);
+    let  qpolicy = QueryPolicy {
+        filter_expression: Some(filter),
+        ..QueryPolicy::default()
+    };
 
     let statement = Statement::new(namespace, set_name, Bins::All);
     client.query(&qpolicy, statement).await.unwrap()

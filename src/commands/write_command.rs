@@ -53,7 +53,7 @@ impl<'a, 'b> WriteCommand<'a> {
 }
 
 #[async_trait::async_trait]
-impl<'a, 'b> Command for WriteCommand<'a> {
+impl<'a> Command for WriteCommand<'a> {
     async fn write_timeout(
         &mut self,
         conn: &mut Connection,

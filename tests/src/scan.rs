@@ -18,7 +18,6 @@ use std::sync::Arc;
 use std::thread;
 
 use crate::common;
-use env_logger;
 
 use aerospike::*;
 
@@ -68,8 +67,10 @@ async fn scan_multi_consumer() {
     let namespace = common::namespace();
     let set_name = create_test_set(&client, EXPECTED).await;
 
-    let mut spolicy = ScanPolicy::default();
-    spolicy.record_queue_size = 4096;
+    let spolicy = ScanPolicy {
+        record_queue_size: 4096,
+        ..ScanPolicy::default()
+    };
     let rs = client
         .scan(&spolicy, namespace, &set_name, Bins::All)
         .await
@@ -123,7 +124,7 @@ async fn scan_node() {
     }
 
     for t in threads {
-        t.await;
+        t.await.unwrap();
     }
 
     assert_eq!(count.load(Ordering::Relaxed), EXPECTED);

@@ -105,17 +105,14 @@ impl Statement {
         let agg = Aggregation {
             package_name: package_name.to_owned(),
             function_name: function_name.to_owned(),
-            function_args: function_args.map(|args| args.to_vec()),
+            function_args: function_args.map(<[Value]>::to_vec),
         };
         self.aggregation = Some(agg);
     }
 
     #[doc(hidden)]
     pub fn is_scan(&self) -> bool {
-        match self.filters {
-            Some(ref filters) => filters.is_empty(),
-            None => true,
-        }
+        self.filters.as_ref().map_or(true, Vec::is_empty)
     }
 
     #[doc(hidden)]

@@ -80,7 +80,7 @@ impl ToHosts for String {
         let mut parser = Parser::new(self, 3000);
         parser
             .read_hosts()
-            .chain_err(|| ErrorKind::InvalidArgument(format!("Invalid hosts list: '{}'", self)))
+            .chain_err(|| ErrorKind::InvalidArgument(format!("Invalid hosts list: '{self}'")))
     }
 }
 

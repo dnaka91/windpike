@@ -14,7 +14,6 @@
 // the License.
 
 use crate::common;
-use env_logger;
 
 use aerospike::expressions::hll::*;
 use aerospike::expressions::lists::*;
@@ -187,8 +186,10 @@ async fn expression_hll() {
 async fn test_filter(client: &Client, filter: FilterExpression, set_name: &str) -> Arc<Recordset> {
     let namespace = common::namespace();
 
-    let mut qpolicy = QueryPolicy::default();
-    qpolicy.filter_expression = Some(filter);
+    let  qpolicy = QueryPolicy {
+        filter_expression: Some(filter),
+        ..QueryPolicy::default()
+    };
 
     let statement = Statement::new(namespace, set_name, Bins::All);
     client.query(&qpolicy, statement).await.unwrap()

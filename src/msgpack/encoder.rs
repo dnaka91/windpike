@@ -343,7 +343,7 @@ pub fn pack_integer(buf: &mut Option<&mut Buffer>, val: i64) -> usize {
         val if val >= i64::from(i32::max_value()) => pack_i64(buf, MSGPACK_MARKER_I32, val),
 
         // Negative values
-        val if val >= -32 && val < 0 => {
+        val if (-32..0).contains(&val) => {
             pack_half_byte(buf, 0xe0 | ((Wrapping(val as u8) + Wrapping(32)).0))
         }
         val if val >= i64::from(i8::min_value()) && val < -32 => {

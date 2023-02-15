@@ -266,8 +266,8 @@ impl AdminCommand {
                 cost: Some(10),
                 variant: Some(BcryptVariant::V2a),
             },
-            &password,
+            password,
         )
-        .map_err(|e| e.into())
+        .map_err(Into::into)
     }
 }

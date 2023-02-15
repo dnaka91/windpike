@@ -14,7 +14,7 @@
 // the License.
 
 use crate::common;
-use env_logger;
+
 
 #[tokio::test]
 async fn truncate() {

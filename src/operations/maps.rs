@@ -47,7 +47,7 @@ use crate::operations::{Operation, OperationBin, OperationData, OperationType};
 use crate::Value;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[doc(hidden)]
 pub enum CdtMapOpType {
     SetType = 64,

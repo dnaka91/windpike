@@ -13,6 +13,8 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+#![allow(clippy::mutable_key_type)]
+
 use std::cmp;
 use std::collections::HashMap;
 use std::sync::Arc;

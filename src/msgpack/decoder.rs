@@ -213,7 +213,7 @@ fn unpack_value(buf: &mut Buffer) -> Result<Value> {
             Ok(Value::from(value))
         }
         _ => Err(
-            ErrorKind::BadResponse(format!("Error unpacking value of type '{:x}'", obj_type))
+            ErrorKind::BadResponse(format!("Error unpacking value of type '{obj_type:x}'"))
                 .into(),
         ),
     }

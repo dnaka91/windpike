@@ -149,7 +149,7 @@ impl<'a> Operation<'a> {
 
     #[doc(hidden)]
     fn write_op_header_to(&self, buffer: &mut Buffer, particle_type: u8) -> usize {
-        let mut size = buffer.write_u8(particle_type as u8);
+        let mut size = buffer.write_u8(particle_type);
         size += buffer.write_u8(0);
         match self.bin {
             OperationBin::Name(bin) => {
@@ -164,6 +164,7 @@ impl<'a> Operation<'a> {
     }
 
     /// Set the context of the operation. Required for nested structures
+    #[must_use]
     pub const fn set_context(mut self, ctx: &'a [CdtContext]) -> Operation<'a> {
         self.ctx = ctx;
         self

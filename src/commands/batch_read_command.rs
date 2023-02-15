@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use tokio::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::time::{Duration, Instant};
 
 use crate::cluster::Node;
 use crate::commands::{self, Command};
@@ -59,8 +59,7 @@ impl BatchReadCommand {
             if let Some(max_retries) = base_policy.max_retries() {
                 if iterations > max_retries + 1 {
                     bail!(ErrorKind::Connection(format!(
-                        "Timeout after {} tries",
-                        iterations
+                        "Timeout after {iterations} tries",
                     )));
                 }
             }
@@ -226,7 +225,7 @@ impl commands::Command for BatchReadCommand {
             conn.read_buffer(8).await?;
             let size = conn.buffer.read_msg_size(None);
             conn.bookmark();
-            if size > 0 && !self.parse_group(conn, size as usize).await? {
+            if size > 0 && !self.parse_group(conn, size).await? {
                 break;
             }
         }

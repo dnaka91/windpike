@@ -31,24 +31,23 @@ pub fn put(
     bin: FilterExpression,
     ctx: &[CdtContext],
 ) -> FilterExpression {
-    let args: Vec<ExpressionArgument>;
     let op = map_write_op(policy, false);
-    if op as u8 == CdtMapOpType::Replace as u8 {
-        args = vec![
+    let args = if op == CdtMapOpType::Replace {
+        vec![
             ExpressionArgument::Context(ctx.to_vec()),
             ExpressionArgument::Value(Value::from(op as u8)),
             ExpressionArgument::FilterExpression(key),
             ExpressionArgument::FilterExpression(value),
-        ];
+        ]
     } else {
-        args = vec![
+        vec![
             ExpressionArgument::Context(ctx.to_vec()),
             ExpressionArgument::Value(Value::from(op as u8)),
             ExpressionArgument::FilterExpression(key),
             ExpressionArgument::FilterExpression(value),
             ExpressionArgument::Value(Value::from(policy.order as u8)),
-        ];
-    }
+        ]
+    };
     add_write(bin, ctx, args)
 }
 
@@ -60,22 +59,21 @@ pub fn put_items(
     bin: FilterExpression,
     ctx: &[CdtContext],
 ) -> FilterExpression {
-    let args: Vec<ExpressionArgument>;
     let op = map_write_op(policy, true);
-    if op as u8 == CdtMapOpType::Replace as u8 {
-        args = vec![
+    let args = if op == CdtMapOpType::Replace {
+        vec![
             ExpressionArgument::Context(ctx.to_vec()),
             ExpressionArgument::Value(Value::from(op as u8)),
             ExpressionArgument::FilterExpression(map),
-        ];
+        ]
     } else {
-        args = vec![
+        vec![
             ExpressionArgument::Context(ctx.to_vec()),
             ExpressionArgument::Value(Value::from(op as u8)),
             ExpressionArgument::FilterExpression(map),
             ExpressionArgument::Value(Value::from(policy.order as u8)),
-        ];
-    }
+        ]
+    };
     add_write(bin, ctx, args)
 }
 
@@ -831,6 +829,7 @@ fn add_write(
 
 #[doc(hidden)]
 const fn get_value_type(return_type: MapReturnType) -> ExpType {
+    #[allow(clippy::cast_enum_truncation)]
     let t = return_type as u8 & !(MapReturnType::Inverted as u8);
     if t == MapReturnType::Key as u8 || t == MapReturnType::Value as u8 {
         ExpType::LIST

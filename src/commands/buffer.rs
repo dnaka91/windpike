@@ -144,7 +144,7 @@ impl Buffer {
 
     pub fn end(&mut self) {
         let size = ((self.data_offset - 8) as i64)
-            | ((i64::from(CL_MSG_VERSION) << 56) as i64)
+            | (i64::from(CL_MSG_VERSION) << 56)
             | (i64::from(AS_MSG_TYPE) << 48);
 
         // reset data offset
@@ -172,13 +172,7 @@ impl Buffer {
         }
 
         self.size_buffer()?;
-        self.write_header_with_policy(
-            policy,
-            0,
-            INFO2_WRITE,
-            field_count as u16,
-            bins.len() as u16,
-        );
+        self.write_header_with_policy(policy, 0, INFO2_WRITE, field_count, bins.len() as u16);
         self.write_key(key, policy.send_key);
 
         if let Some(filter) = policy.filter_expression() {
@@ -202,7 +196,7 @@ impl Buffer {
         }
 
         self.size_buffer()?;
-        self.write_header_with_policy(policy, 0, INFO2_WRITE | INFO2_DELETE, field_count as u16, 0);
+        self.write_header_with_policy(policy, 0, INFO2_WRITE | INFO2_DELETE, field_count, 0);
         self.write_key(key, false);
 
         if let Some(filter) = policy.filter_expression() {
@@ -223,7 +217,7 @@ impl Buffer {
         }
         self.estimate_operation_size();
         self.size_buffer()?;
-        self.write_header_with_policy(policy, 0, INFO2_WRITE, field_count as u16, 1);
+        self.write_header_with_policy(policy, 0, INFO2_WRITE, field_count, 1);
         self.write_key(key, policy.send_key);
 
         if let Some(filter) = policy.filter_expression() {
@@ -401,7 +395,7 @@ impl Buffer {
         };
         self.write_field_header(0, field_type);
         self.write_u32(batch_reads.len() as u32);
-        self.write_u8(if policy.allow_inline { 1 } else { 0 });
+        self.write_u8(u8::from(policy.allow_inline));
 
         prev = None;
         for (idx, batch_read) in batch_reads.iter().enumerate() {
@@ -993,8 +987,8 @@ impl Buffer {
         }
 
         self.data_offset = 26;
-        self.write_u16(field_count as u16);
-        self.write_u16(operation_count as u16);
+        self.write_u16(field_count);
+        self.write_u16(operation_count);
 
         self.data_offset = MSG_TOTAL_HEADER_SIZE as usize;
     }
@@ -1366,8 +1360,7 @@ impl Buffer {
     }
 
     pub fn write_bool(&mut self, val: bool) -> usize {
-        let val = if val { 1 } else { 0 };
-        self.write_i64(val)
+        self.write_i64(i64::from(val))
     }
 
     pub fn write_f32(&mut self, val: f32) -> usize {

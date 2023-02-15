@@ -47,12 +47,12 @@ pub struct Node {
     refresh_count: AtomicUsize,
     reference_count: AtomicUsize,
     responded: AtomicBool,
-    use_new_info: bool,
+    _use_new_info: bool,
     active: AtomicBool,
 
     supports_float: AtomicBool,
-    supports_batch_index: AtomicBool,
-    supports_replicas_all: AtomicBool,
+    _supports_batch_index: AtomicBool,
+    _supports_replicas_all: AtomicBool,
     supports_geo: AtomicBool,
 }
 
@@ -64,7 +64,7 @@ impl Node {
             name: nv.name.clone(),
             aliases: RwLock::new(nv.aliases.clone()),
             address: nv.address.clone(),
-            use_new_info: nv.use_new_info,
+            _use_new_info: nv.use_new_info,
 
             host: nv.aliases[0].clone(),
             connection_pool: ConnectionPool::new(nv.aliases[0].clone(), client_policy),
@@ -76,8 +76,8 @@ impl Node {
             active: AtomicBool::new(true),
 
             supports_float: AtomicBool::new(nv.supports_float),
-            supports_batch_index: AtomicBool::new(nv.supports_batch_index),
-            supports_replicas_all: AtomicBool::new(nv.supports_replicas_all),
+            _supports_batch_index: AtomicBool::new(nv.supports_batch_index),
+            _supports_replicas_all: AtomicBool::new(nv.supports_replicas_all),
             supports_geo: AtomicBool::new(nv.supports_geo),
         }
     }
@@ -173,22 +173,20 @@ impl Node {
     }
 
     fn verify_cluster_name(&self, info_map: &HashMap<String, String>) -> Result<()> {
-        match self.client_policy.cluster_name {
-            None => Ok(()),
-            Some(ref expected) => match info_map.get("cluster-name") {
+        self.client_policy.cluster_name.as_ref().map_or_else(
+            || Ok(()),
+            |expected| match info_map.get("cluster-name") {
                 None => Err(ErrorKind::InvalidNode("Missing cluster name".to_string()).into()),
                 Some(info_name) if info_name == expected => Ok(()),
                 Some(info_name) => {
                     self.inactivate();
                     Err(ErrorKind::InvalidNode(format!(
-                        "Cluster name mismatch: expected={},
-                                                           got={}",
-                        expected, info_name
+                        "Cluster name mismatch: expected={expected}, got={info_name}",
                     ))
                     .into())
                 }
             },
-        }
+        )
     }
 
     fn add_friends(
