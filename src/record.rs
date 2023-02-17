@@ -19,15 +19,15 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+use once_cell::sync::Lazy;
 #[cfg(feature = "serialization")]
 use serde::Serialize;
 
 use crate::{Key, Value};
 
-lazy_static! {
-  // Fri Jan  1 00:00:00 UTC 2010
-  pub static ref CITRUSLEAF_EPOCH: SystemTime = UNIX_EPOCH + Duration::new(1_262_304_000, 0);
-}
+// Fri Jan  1 00:00:00 UTC 2010
+pub static CITRUSLEAF_EPOCH: Lazy<SystemTime> =
+    Lazy::new(|| UNIX_EPOCH + Duration::new(1_262_304_000, 0));
 
 /// Container object for a database record.
 #[derive(Debug, Clone)]
