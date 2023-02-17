@@ -14,6 +14,8 @@
 
 use std::{sync::Arc, time::Duration};
 
+use tracing::warn;
+
 use crate::{
     cluster::{Cluster, Node},
     commands::{buffer, Command, SingleCommand},
@@ -70,7 +72,7 @@ impl<'a> Command for TouchCommand<'a> {
             .read_buffer(buffer::MSG_TOTAL_HEADER_SIZE as usize)
             .await
         {
-            warn!("Parse result error: {}", err);
+            warn!(%err, "Parse result error");
             return Err(err);
         }
 

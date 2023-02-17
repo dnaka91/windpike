@@ -21,6 +21,8 @@ use std::{
     time::Duration,
 };
 
+use tracing::warn;
+
 use crate::{
     cluster::{Cluster, Node},
     commands::{buffer, Command, SingleCommand},
@@ -129,7 +131,7 @@ impl<'a> Command for ReadCommand<'a> {
             .read_buffer(buffer::MSG_TOTAL_HEADER_SIZE as usize)
             .await
         {
-            warn!("Parse result error: {}", err);
+            warn!(%err, "Parse result error");
             bail!(err);
         }
 
@@ -146,7 +148,7 @@ impl<'a> Command for ReadCommand<'a> {
         // Read remaining message bytes
         if receive_size > 0 {
             if let Err(err) = conn.read_buffer(receive_size).await {
-                warn!("Parse result error: {}", err);
+                warn!(%err, "Parse result error");
                 bail!(err);
             }
         }

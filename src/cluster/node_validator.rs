@@ -14,6 +14,8 @@
 
 use std::{net::ToSocketAddrs, str, vec::Vec};
 
+use tracing::debug;
+
 use crate::{
     cluster::Cluster,
     commands::Message,
@@ -62,7 +64,7 @@ impl NodeValidator {
             match self.validate_alias(cluster, alias).await {
                 Ok(_) => return Ok(()),
                 Err(err) => {
-                    debug!("Alias {} failed: {:?}", alias, err);
+                    debug!(%alias, ?err, "Alias failed");
                     last_err = Some(err);
                 }
             }
@@ -79,7 +81,7 @@ impl NodeValidator {
             .to_socket_addrs()?
             .map(|addr| Host::new(&addr.ip().to_string(), addr.port()))
             .collect();
-        debug!("Resolved aliases for host {}: {:?}", host, self.aliases);
+        debug!(%host, aliases = ?self.aliases, "Resolved aliases for host");
         if self.aliases.is_empty() {
             Err(ErrorKind::Connection(format!("Failed to find addresses for {host}")).into())
         } else {

@@ -57,7 +57,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 
 #[tokio::test]
 async fn query_single_consumer() {
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let client = common::client().await;
     let namespace = common::namespace();
@@ -103,7 +103,7 @@ async fn query_single_consumer() {
 
 #[tokio::test]
 async fn query_nobins() {
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let client = common::client().await;
     let namespace = common::namespace();
@@ -131,7 +131,7 @@ async fn query_nobins() {
 
 #[tokio::test]
 async fn query_multi_consumer() {
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let client = common::client().await;
     let namespace = common::namespace();
@@ -176,7 +176,7 @@ async fn query_multi_consumer() {
 
 #[tokio::test]
 async fn query_node() {
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let client = Arc::new(common::client().await);
     let namespace = common::namespace();

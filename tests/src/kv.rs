@@ -21,7 +21,7 @@ use crate::common;
 
 #[tokio::test]
 async fn connect() {
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let client = common::client().await;
     let namespace: &str = common::namespace();

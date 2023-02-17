@@ -31,6 +31,7 @@ use tokio::{
     sync::{mpsc, Mutex, RwLock},
     time::{Duration, Instant},
 };
+use tracing::{debug, info, warn};
 
 pub use self::node::Node;
 use self::{
@@ -155,7 +156,7 @@ impl Cluster {
                     }
                     Err(err) => {
                         node.increase_failures();
-                        warn!("Node `{}` refresh failed: {}", node, err);
+                        warn!(%node, %err, "Node refresh failed");
                     }
                 }
             }
@@ -272,7 +273,7 @@ impl Cluster {
     pub async fn seed_nodes(&self) -> bool {
         let seed_array = self.seeds.read().await;
 
-        info!("Seeding the cluster. Seeds count: {}", seed_array.len());
+        info!(seeds_count = seed_array.len(), "Seeding the cluster");
 
         let mut list: Vec<Arc<Node>> = vec![];
         for seed in &*seed_array {

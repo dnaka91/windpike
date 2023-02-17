@@ -141,8 +141,6 @@ extern crate byteorder;
 extern crate crossbeam_queue;
 #[macro_use]
 extern crate error_chain;
-#[macro_use]
-extern crate log;
 extern crate pwhash;
 extern crate rand;
 

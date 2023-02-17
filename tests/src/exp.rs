@@ -44,7 +44,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 #[tokio::test]
 async fn expression_compare() {
     let client = common::client().await;
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let set_name = create_test_set(&client, EXPECTED).await;
 
@@ -113,7 +113,7 @@ async fn expression_compare() {
 
 #[tokio::test]
 async fn expression_condition() {
-    let _ = env_logger::try_init();
+    common::init_logger();
     let client = common::client().await;
 
     let set_name = create_test_set(&client, EXPECTED).await;
@@ -160,7 +160,7 @@ async fn expression_condition() {
 #[tokio::test]
 async fn expression_data_types() {
     let client = common::client().await;
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let set_name = create_test_set(&client, EXPECTED).await;
 
@@ -222,7 +222,7 @@ async fn expression_data_types() {
 #[tokio::test]
 async fn expression_aero_5_6() {
     let client = common::client().await;
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let set_name = create_test_set(&client, EXPECTED).await;
 
@@ -518,7 +518,7 @@ async fn expression_aero_5_6() {
 #[tokio::test]
 async fn expression_rec_ops() {
     let client = common::client().await;
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let set_name = create_test_set(&client, EXPECTED).await;
 
@@ -601,7 +601,7 @@ async fn expression_rec_ops() {
 
 #[tokio::test]
 async fn expression_commands() {
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let client = common::client().await;
     let namespace = common::namespace();

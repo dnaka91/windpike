@@ -14,6 +14,8 @@
 
 use std::{collections::HashMap, sync::Arc, thread, time::Duration};
 
+use tracing::warn;
+
 use crate::{
     cluster::Node,
     commands::{buffer, field_type::FieldType, Command},
@@ -105,7 +107,7 @@ impl StreamCommand {
                 .read_buffer(buffer::MSG_REMAINING_HEADER_SIZE as usize)
                 .await
             {
-                warn!("Parse result error: {}", err);
+                warn!(%err, "Parse result error");
                 return Err(err);
             }
 

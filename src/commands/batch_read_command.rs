@@ -15,6 +15,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use tokio::time::{Duration, Instant};
+use tracing::warn;
 
 use crate::{
     cluster::Node,
@@ -89,7 +90,7 @@ impl BatchReadCommand {
             let mut conn = match node.get_connection().await {
                 Ok(conn) => conn,
                 Err(err) => {
-                    warn!("Node {}: {}", node, err);
+                    warn!(%node, %err, "Node {node}");
                     continue;
                 }
             };
@@ -105,7 +106,7 @@ impl BatchReadCommand {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
                 conn.invalidate().await;
-                warn!("Node {}: {}", node, err);
+                warn!(%node, %err, "Node {node}");
                 continue;
             }
 

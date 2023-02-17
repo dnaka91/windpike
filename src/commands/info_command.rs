@@ -20,6 +20,7 @@ use std::{
 };
 
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use tracing::debug;
 
 use crate::{errors::Result, net::Connection};
 
@@ -87,7 +88,7 @@ impl Message {
         let response = str::from_utf8(&self.buf)?;
         let response = response.trim_matches('\n');
 
-        debug!("response from server for info command: {:?}", response);
+        debug!(?response, "response from server for info command");
         let mut result: HashMap<String, String> = HashMap::new();
 
         for tuple in response.split('\n') {

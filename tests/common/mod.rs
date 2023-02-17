@@ -20,6 +20,7 @@ use std::env;
 use aerospike::{Client, ClientPolicy};
 use once_cell::sync::Lazy;
 use rand::{distributions::Alphanumeric, Rng};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 pub fn hosts() -> &'static str {
     static AEROSPIKE_HOSTS: Lazy<String> =
@@ -56,4 +57,11 @@ pub async fn client() -> Client {
 pub fn rand_str(sz: usize) -> String {
     let mut rng = rand::thread_rng();
     (0..sz).map(|_| rng.sample(Alphanumeric) as char).collect()
+}
+
+pub fn init_logger() {
+    let _ = tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .try_init();
 }

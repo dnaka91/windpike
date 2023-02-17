@@ -15,6 +15,8 @@
 
 use std::{collections::HashMap, vec::Vec};
 
+use tracing::warn;
+
 use crate::{
     commands::{buffer::Buffer, ParticleType},
     errors::{ErrorKind, Result},

@@ -26,6 +26,7 @@ use std::{
 };
 
 use tokio::sync::RwLock;
+use tracing::error;
 
 use crate::{
     cluster::node_validator::NodeValidator,

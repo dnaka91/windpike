@@ -15,6 +15,7 @@
 use std::sync::Arc;
 
 use tokio::time::Instant;
+use tracing::warn;
 
 use crate::{
     cluster::{partition::Partition, Cluster, Node},
@@ -105,7 +106,7 @@ impl<'a> SingleCommand<'a> {
             let mut conn = match node.get_connection().await {
                 Ok(conn) => conn,
                 Err(err) => {
-                    warn!("Node {}: {}", node, err);
+                    warn!(%node, %err, "Node {node}");
                     continue;
                 }
             };
@@ -121,7 +122,7 @@ impl<'a> SingleCommand<'a> {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
                 conn.invalidate().await;
-                warn!("Node {}: {}", node, err);
+                warn!(%node, %err, "Node {node}");
                 continue;
             }
 

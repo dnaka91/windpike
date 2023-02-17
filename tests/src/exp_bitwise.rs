@@ -42,7 +42,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 #[tokio::test]
 async fn expression_bitwise() {
     let client = common::client().await;
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let set_name = create_test_set(&client, EXPECTED).await;
 

@@ -131,13 +131,13 @@ error_chain! {
 
 macro_rules! log_error_chain {
     ($err:expr, $($arg:tt)*) => {
-        error!($($arg)*);
-        error!("Error: {}", $err);
+        tracing::error!($($arg)*);
+        tracing::error!("Error: {}", $err);
         for e in $err.iter().skip(1) {
-            error!("caused by: {}", e);
+            tracing::error!("caused by: {e}");
         }
         if let Some(backtrace) = $err.backtrace() {
-            error!("backtrace: {:?}", backtrace);
+            tracing::error!("backtrace: {backtrace:?}");
         }
     };
 }

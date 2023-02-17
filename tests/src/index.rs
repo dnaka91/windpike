@@ -40,7 +40,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 #[tokio::test]
 #[should_panic(expected = "IndexFound")]
 async fn recreate_index() {
-    let _ = env_logger::try_init();
+    common::init_logger();
 
     let client = common::client().await;
     let ns = common::namespace();
