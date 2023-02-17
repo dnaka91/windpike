@@ -18,7 +18,7 @@ crossbeam-queue = "0.3.8"
 rand = "0.8.5"
 lazy_static = "1.4"
 error-chain = "0.12"
-pwhash = "0.3"
+pwhash = "1.0.0"
 serde = { version = "1.0", features = ["derive"], optional = true }
 futures = { version = "0.3.16" }
 async-trait = "0.1.51"
