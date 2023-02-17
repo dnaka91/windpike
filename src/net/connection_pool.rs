@@ -23,7 +23,7 @@ use std::{
     time::Duration,
 };
 
-use futures::{executor::block_on, lock::Mutex};
+use tokio::sync::Mutex;
 
 use crate::{
     errors::{Error, ErrorKind, Result},
@@ -221,16 +221,17 @@ pub struct PooledConnection {
 }
 
 impl PooledConnection {
-    pub fn invalidate(mut self) {
+    pub async fn invalidate(mut self) {
         let conn = self.conn.take().unwrap();
-        block_on(self.queue.drop_conn(conn));
+        self.queue.drop_conn(conn).await;
     }
 }
 
 impl Drop for PooledConnection {
     fn drop(&mut self) {
         if let Some(conn) = self.conn.take() {
-            block_on(self.queue.put_back(conn));
+            // TODO: This probably doesn't do well with the tokio runtime.
+            futures_executor::block_on(self.queue.put_back(conn));
         }
     }
 }

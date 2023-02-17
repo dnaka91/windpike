@@ -17,7 +17,7 @@
 
 use std::{cmp, collections::HashMap, sync::Arc};
 
-use futures::lock::Mutex;
+use tokio::sync::Mutex;
 
 use crate::{
     batch::BatchRead,
@@ -92,7 +92,11 @@ impl BatchExecutor {
             });
             handles.push(handle);
         }
-        futures::future::join_all(handles).await;
+
+        for handle in handles {
+            handle.await.ok();
+        }
+
         match Arc::try_unwrap(last_err).unwrap().into_inner() {
             None => Ok(res.lock().await.to_vec()),
             Some(err) => Err(err),

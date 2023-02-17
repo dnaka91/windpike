@@ -27,15 +27,8 @@ use std::{
     vec::Vec,
 };
 
-use futures::{
-    channel::{
-        mpsc,
-        mpsc::{Receiver, Sender},
-    },
-    lock::Mutex,
-};
 use tokio::{
-    sync::RwLock,
+    sync::{mpsc, Mutex, RwLock},
     time::{Duration, Instant},
 };
 
@@ -70,7 +63,7 @@ pub struct Cluster {
 
     client_policy: ClientPolicy,
 
-    tend_channel: Mutex<Sender<()>>,
+    tend_channel: Mutex<mpsc::Sender<()>>,
     closed: AtomicBool,
 }
 
@@ -108,11 +101,11 @@ impl Cluster {
         Ok(cluster)
     }
 
-    async fn tend_thread(cluster: Arc<Cluster>, mut rx: Receiver<()>) {
+    async fn tend_thread(cluster: Arc<Cluster>, mut rx: mpsc::Receiver<()>) {
         let tend_interval = cluster.client_policy.tend_interval;
 
         loop {
-            if rx.try_next().is_ok() {
+            if rx.try_recv().is_ok() {
                 unreachable!();
             } else if let Err(err) = cluster.tend().await {
                 log_error_chain!(err, "Error tending cluster");
@@ -262,10 +255,13 @@ impl Cluster {
 
     pub async fn update_partitions(&self, node: Arc<Node>) -> Result<()> {
         let mut conn = node.get_connection().await?;
-        let tokens = PartitionTokenizer::new(&mut conn).await.map_err(|e| {
-            conn.invalidate();
-            e
-        })?;
+        let tokens = match PartitionTokenizer::new(&mut conn).await {
+            Ok(tokens) => tokens,
+            Err(e) => {
+                conn.invalidate().await;
+                return Err(e);
+            }
+        };
 
         let nmap = tokens.update_partition(self.partitions(), node).await?;
         self.set_partitions(nmap).await;

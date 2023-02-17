@@ -69,13 +69,13 @@ impl AdminCommand {
 
         // Send command.
         if let Err(err) = conn.flush().await {
-            conn.invalidate();
+            conn.invalidate().await;
             return Err(err);
         }
 
         // read header
         if let Err(err) = conn.read_buffer(HEADER_SIZE).await {
-            conn.invalidate();
+            conn.invalidate().await;
             return Err(err);
         }
 

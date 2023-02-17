@@ -104,7 +104,7 @@ impl BatchReadCommand {
             if let Err(err) = self.write_buffer(&mut conn).await {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
-                conn.invalidate();
+                conn.invalidate().await;
                 warn!("Node {}: {}", node, err);
                 continue;
             }
@@ -116,7 +116,7 @@ impl BatchReadCommand {
                 // close the connection to throw away its data and signal the server about the
                 // situation. We will not put back the connection in the buffer.
                 if !commands::keep_connection(&err) {
-                    conn.invalidate();
+                    conn.invalidate().await;
                 }
                 return Err(err);
             }
