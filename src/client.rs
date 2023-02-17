@@ -15,6 +15,7 @@
 
 use std::{path::Path, str, sync::Arc, vec::Vec};
 
+use base64::engine::{general_purpose, Engine};
 use tokio::{fs::File, io::AsyncReadExt};
 
 use crate::{
@@ -494,7 +495,7 @@ impl Client {
         udf_name: &str,
         language: UDFLang,
     ) -> Result<RegisterTask> {
-        let udf_body = base64::encode(udf_body);
+        let udf_body = general_purpose::STANDARD.encode(udf_body);
 
         let cmd = format!(
             "udf-put:filename={};content={};content-len={};udf-type={};",
@@ -507,7 +508,7 @@ impl Client {
         let response = node.info(&[&cmd]).await?;
 
         if let Some(msg) = response.get("error") {
-            let msg = base64::decode(msg)?;
+            let msg = general_purpose::STANDARD.decode(msg)?;
             let msg = str::from_utf8(&msg)?;
             bail!(
                 "UDF Registration failed: {}, file: {}, line: {}, message: {}",

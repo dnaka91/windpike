@@ -22,6 +22,7 @@ use std::{
     vec::Vec,
 };
 
+use base64::engine::{general_purpose, Engine};
 use tokio::sync::RwLock;
 
 use crate::{
@@ -67,7 +68,7 @@ impl PartitionTokenizer {
         loop {
             match (parts.next(), parts.next()) {
                 (Some(ns), Some(part)) => {
-                    let restore_buffer = base64::decode(part)?;
+                    let restore_buffer = general_purpose::STANDARD.decode(part)?;
                     match amap.entry(ns.to_string()) {
                         Vacant(entry) => {
                             entry.insert(vec![node.clone(); node::PARTITIONS]);
