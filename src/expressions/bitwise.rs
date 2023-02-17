@@ -54,13 +54,26 @@ pub enum BitExpOp {
 /// // byteSize = 4
 /// // resizeFlags = 0
 /// // returns [0b00000001, 0b01000010, 0b00000000, 0b00000000]
-/// use aerospike::operations::bitwise::{BitPolicy, BitwiseResizeFlags};
-/// use aerospike::expressions::{eq, int_val, blob_bin};
-/// use aerospike::expressions::bitwise::{count, resize};
+/// use aerospike::{
+///     expressions::{
+///         bitwise::{count, resize},
+///         blob_bin, eq, int_val,
+///     },
+///     operations::bitwise::{BitPolicy, BitwiseResizeFlags},
+/// };
 /// eq(
-///   count(int_val(0), int_val(3),
-///     resize(&BitPolicy::default(), int_val(4), BitwiseResizeFlags::Default, blob_bin("a".to_string()))),
-///   int_val(2));
+///     count(
+///         int_val(0),
+///         int_val(3),
+///         resize(
+///             &BitPolicy::default(),
+///             int_val(4),
+///             BitwiseResizeFlags::Default,
+///             blob_bin("a".to_string()),
+///         ),
+///     ),
+///     int_val(2),
+/// );
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn resize(
@@ -121,13 +134,26 @@ pub fn insert(
 /// // byteOffset = 2
 /// // byteSize = 3
 /// // bin result = [0b00000001, 0b01000010]
-/// use aerospike::expressions::{eq, int_val, blob_bin};
-/// use aerospike::operations::bitwise::BitPolicy;
-/// use aerospike::expressions::bitwise::{count, remove};
+/// use aerospike::{
+///     expressions::{
+///         bitwise::{count, remove},
+///         blob_bin, eq, int_val,
+///     },
+///     operations::bitwise::BitPolicy,
+/// };
 /// eq(
-///   count(int_val(0), int_val(3),
-///     remove(&BitPolicy::default(), int_val(2), int_val(3), blob_bin("a".to_string()))),
-///   int_val(2));
+///     count(
+///         int_val(0),
+///         int_val(3),
+///         remove(
+///             &BitPolicy::default(),
+///             int_val(2),
+///             int_val(3),
+///             blob_bin("a".to_string()),
+///         ),
+///     ),
+///     int_val(2),
+/// );
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn remove(
@@ -154,14 +180,28 @@ pub fn remove(
 /// // bitSize = 3
 /// // value = [0b11100000]
 /// // bin result = [0b00000001, 0b01000111, 0b00000011, 0b00000100, 0b00000101]
-/// use aerospike::operations::bitwise::BitPolicy;
-/// use aerospike::expressions::{eq, int_val, blob_val, blob_bin};
-/// use aerospike::expressions::bitwise::{count, set};
+/// use aerospike::{
+///     expressions::{
+///         bitwise::{count, set},
+///         blob_bin, blob_val, eq, int_val,
+///     },
+///     operations::bitwise::BitPolicy,
+/// };
 /// let bytes: Vec<u8> = vec![];
 /// eq(
-///   count(int_val(0), int_val(3),
-///     set(&BitPolicy::default(), int_val(13), int_val(3), blob_val(bytes), blob_bin("a".to_string()))),
-///   int_val(2));
+///     count(
+///         int_val(0),
+///         int_val(3),
+///         set(
+///             &BitPolicy::default(),
+///             int_val(13),
+///             int_val(3),
+///             blob_val(bytes),
+///             blob_bin("a".to_string()),
+///         ),
+///     ),
+///     int_val(2),
+/// );
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn set(
@@ -456,11 +496,11 @@ pub fn set_int(
 /// // bitSize = 5
 /// // returns [0b10000000]
 ///
-/// use aerospike::expressions::{eq, int_val, blob_bin, blob_val};
-/// use aerospike::expressions::bitwise::get;
+/// use aerospike::expressions::{bitwise::get, blob_bin, blob_val, eq, int_val};
 /// eq(
-///   get(int_val(9), int_val(5), blob_bin("a".to_string())),
-///   blob_val(vec![0b10000000]));
+///     get(int_val(9), int_val(5), blob_bin("a".to_string())),
+///     blob_val(vec![0b10000000]),
+/// );
 /// ```
 pub fn get(
     bit_offset: FilterExpression,
@@ -485,9 +525,11 @@ pub fn get(
 /// // bitSize = 4
 /// // returns 2
 ///
-/// use aerospike::expressions::{le, int_val, blob_bin};
-/// use aerospike::expressions::bitwise::count;
-/// le(count(int_val(0), int_val(5), blob_bin("a".to_string())), int_val(2));
+/// use aerospike::expressions::{bitwise::count, blob_bin, int_val, le};
+/// le(
+///     count(int_val(0), int_val(5), blob_bin("a".to_string())),
+///     int_val(2),
+/// );
 /// ```
 pub fn count(
     bit_offset: FilterExpression,
@@ -512,9 +554,16 @@ pub fn count(
 /// // bitSize = 8
 /// // value = true
 /// // returns 5
-/// use aerospike::expressions::{eq, int_val, blob_bin};
-/// use aerospike::expressions::bitwise::lscan;
-/// eq(lscan(int_val(24), int_val(8), int_val(1), blob_bin("a".to_string())), int_val(5));
+/// use aerospike::expressions::{bitwise::lscan, blob_bin, eq, int_val};
+/// eq(
+///     lscan(
+///         int_val(24),
+///         int_val(8),
+///         int_val(1),
+///         blob_bin("a".to_string()),
+///     ),
+///     int_val(5),
+/// );
 /// ```
 pub fn lscan(
     bit_offset: FilterExpression,
@@ -543,9 +592,16 @@ pub fn lscan(
 /// // value = true
 /// // returns 7
 ///
-/// use aerospike::expressions::{eq, int_val, blob_bin};
-/// use aerospike::expressions::bitwise::rscan;
-/// eq(rscan(int_val(32), int_val(8), int_val(1), blob_bin("a".to_string())), int_val(7));
+/// use aerospike::expressions::{bitwise::rscan, blob_bin, eq, int_val};
+/// eq(
+///     rscan(
+///         int_val(32),
+///         int_val(8),
+///         int_val(1),
+///         blob_bin("a".to_string()),
+///     ),
+///     int_val(7),
+/// );
 /// ```
 pub fn rscan(
     bit_offset: FilterExpression,
@@ -572,9 +628,11 @@ pub fn rscan(
 /// // bitSize = 16
 /// // signed = false
 /// // returns 16899
-/// use aerospike::expressions::{eq, int_val, blob_bin};
-/// use aerospike::expressions::bitwise::get_int;
-/// eq(get_int(int_val(8), int_val(16), false, blob_bin("a".to_string())), int_val(16899));
+/// use aerospike::expressions::{bitwise::get_int, blob_bin, eq, int_val};
+/// eq(
+///     get_int(int_val(8), int_val(16), false, blob_bin("a".to_string())),
+///     int_val(16899),
+/// );
 /// ```
 pub fn get_int(
     bit_offset: FilterExpression,

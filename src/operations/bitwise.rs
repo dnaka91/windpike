@@ -20,10 +20,15 @@
 //! Nested CDT operations are supported by optional CTX context arguments. Example:
 //!
 //! ```
-//! use aerospike::operations::bitwise::{resize, BitwiseResizeFlags, BitPolicy};
+//! use aerospike::operations::bitwise::{resize, BitPolicy, BitwiseResizeFlags};
 //! // bin = [[0b00000001, 0b01000010], [0b01011010]]
 //! // Resize first bitmap (in a list of bitmaps) to 3 bytes.
-//! resize("bin", 3, Some(BitwiseResizeFlags::Default), &BitPolicy::default());
+//! resize(
+//!     "bin",
+//!     3,
+//!     Some(BitwiseResizeFlags::Default),
+//!     &BitPolicy::default(),
+//! );
 //! // bin result = [[0b00000001, 0b01000010, 0b00000000], [0b01011010]]
 //! ```
 

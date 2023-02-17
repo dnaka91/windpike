@@ -323,7 +323,7 @@ impl FilterExpression {
 
 /// Create a record key expression of specified type.
 /// ```
-/// use aerospike::expressions::{ExpType, ge, int_val, key};
+/// use aerospike::expressions::{ge, int_val, key, ExpType};
 /// // Integer record key >= 100000
 /// ge(key(ExpType::INT), int_val(10000));
 /// ```
@@ -352,7 +352,7 @@ pub fn key_exists() -> FilterExpression {
 /// Create 64 bit int bin expression.
 /// ```
 /// // Integer bin "a" == 500
-/// use aerospike::expressions::{int_bin, int_val, eq};
+/// use aerospike::expressions::{eq, int_bin, int_val};
 /// eq(int_bin("a".to_string()), int_val(500));
 /// ```
 pub fn int_bin(name: String) -> FilterExpression {
@@ -386,8 +386,8 @@ pub fn string_bin(name: String) -> FilterExpression {
 /// Create blob bin expression.
 /// ```
 /// // String bin "a" == [1,2,3]
-/// use aerospike::expressions::{eq, blob_bin, blob_val};
-/// let blob: Vec<u8> = vec![1,2,3];
+/// use aerospike::expressions::{blob_bin, blob_val, eq};
+/// let blob: Vec<u8> = vec![1, 2, 3];
 /// eq(blob_bin("a".to_string()), blob_val(blob));
 /// ```
 pub fn blob_bin(name: String) -> FilterExpression {
@@ -403,7 +403,7 @@ pub fn blob_bin(name: String) -> FilterExpression {
 
 /// Create 64 bit float bin expression.
 /// ```
-/// use aerospike::expressions::{float_val, float_bin, eq};
+/// use aerospike::expressions::{eq, float_bin, float_val};
 /// // Integer bin "a" == 500.5
 /// eq(float_bin("a".to_string()), float_val(500.5));
 /// ```
@@ -438,11 +438,21 @@ pub fn geo_bin(name: String) -> FilterExpression {
 
 /// Create list bin expression.
 /// ```
-/// use aerospike::expressions::{ExpType, eq, int_val, list_bin};
-/// use aerospike::operations::lists::ListReturnType;
-/// use aerospike::expressions::lists::get_by_index;
+/// use aerospike::{
+///     expressions::{eq, int_val, list_bin, lists::get_by_index, ExpType},
+///     operations::lists::ListReturnType,
+/// };
 /// // String bin a[2] == 3
-/// eq(get_by_index(ListReturnType::Values, ExpType::INT, int_val(2), list_bin("a".to_string()), &[]), int_val(3));
+/// eq(
+///     get_by_index(
+///         ListReturnType::Values,
+///         ExpType::INT,
+///         int_val(2),
+///         list_bin("a".to_string()),
+///         &[],
+///     ),
+///     int_val(3),
+/// );
 /// ```
 pub fn list_bin(name: String) -> FilterExpression {
     FilterExpression::new(
@@ -459,13 +469,21 @@ pub fn list_bin(name: String) -> FilterExpression {
 ///
 /// ```
 /// // Bin a["key"] == "value"
-/// use aerospike::expressions::{ExpType, string_val, map_bin, eq};
-/// use aerospike::MapReturnType;
-/// use aerospike::expressions::maps::get_by_key;
+/// use aerospike::{
+///     expressions::{eq, map_bin, maps::get_by_key, string_val, ExpType},
+///     MapReturnType,
+/// };
 ///
 /// eq(
-///     get_by_key(MapReturnType::Value, ExpType::STRING, string_val("key".to_string()), map_bin("a".to_string()), &[]),
-///     string_val("value".to_string()));
+///     get_by_key(
+///         MapReturnType::Value,
+///         ExpType::STRING,
+///         string_val("key".to_string()),
+///         map_bin("a".to_string()),
+///         &[],
+///     ),
+///     string_val("value".to_string()),
+/// );
 /// ```
 pub fn map_bin(name: String) -> FilterExpression {
     FilterExpression::new(
@@ -481,14 +499,22 @@ pub fn map_bin(name: String) -> FilterExpression {
 /// Create a HLL bin expression
 ///
 /// ```
-/// use aerospike::expressions::{gt, list_val, hll_bin, int_val};
-/// use aerospike::operations::hll::HLLPolicy;
-/// use aerospike::Value;
-/// use aerospike::expressions::hll::add;
+/// use aerospike::{
+///     expressions::{gt, hll::add, hll_bin, int_val, list_val},
+///     operations::hll::HLLPolicy,
+///     Value,
+/// };
 ///
 /// // Add values to HLL bin "a" and check count > 7
 /// let list = vec![Value::from(1)];
-/// gt(add(HLLPolicy::default(), list_val(list), hll_bin("a".to_string())), int_val(7));
+/// gt(
+///     add(
+///         HLLPolicy::default(),
+///         list_val(list),
+///         hll_bin("a".to_string()),
+///     ),
+///     int_val(7),
+/// );
 /// ```
 pub fn hll_bin(name: String) -> FilterExpression {
     FilterExpression::new(
@@ -513,10 +539,15 @@ pub fn bin_exists(name: String) -> FilterExpression {
 
 /// Create function that returns bin's integer particle type.
 /// ```
-/// use aerospike::ParticleType;
-/// use aerospike::expressions::{eq, bin_type, int_val};
+/// use aerospike::{
+///     expressions::{bin_type, eq, int_val},
+///     ParticleType,
+/// };
 /// // Bin "a" particle type is a list
-/// eq(bin_type("a".to_string()), int_val(ParticleType::LIST as i64));
+/// eq(
+///     bin_type("a".to_string()),
+///     int_val(ParticleType::LIST as i64),
+/// );
 /// ```
 pub fn bin_type(name: String) -> FilterExpression {
     FilterExpression::new(
@@ -542,9 +573,9 @@ pub fn set_name() -> FilterExpression {
 /// Create function that returns record size on disk.
 /// If server storage-engine is memory, then zero is returned.
 /// ```
-/// use aerospike::expressions::{ge, device_size, int_val};
+/// use aerospike::expressions::{device_size, ge, int_val};
 /// // Record device size >= 100 KB
-/// ge(device_size(), int_val(100*1024));
+/// ge(device_size(), int_val(100 * 1024));
 /// ```
 pub fn device_size() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::DeviceSize), None, None, None, None, None)
@@ -554,7 +585,7 @@ pub fn device_size() -> FilterExpression {
 /// nanoseconds since 1970-01-01 epoch.
 /// ```
 /// // Record last update time >=2020-08-01
-/// use aerospike::expressions::{ge, last_update, float_val};
+/// use aerospike::expressions::{float_val, ge, last_update};
 /// ge(last_update(), float_val(1.5962E+18));
 /// ```
 pub fn last_update() -> FilterExpression {
@@ -577,8 +608,11 @@ pub fn since_update() -> FilterExpression {
 /// nanoseconds since 1970-01-01 epoch.
 /// ```
 /// // Expires on 2020-08-01
-/// use aerospike::expressions::{and, ge, last_update, float_val, lt};
-/// and(vec![ge(last_update(), float_val(1.5962E+18)), lt(last_update(), float_val(1.5963E+18))]);
+/// use aerospike::expressions::{and, float_val, ge, last_update, lt};
+/// and(vec![
+///     ge(last_update(), float_val(1.5962E+18)),
+///     lt(last_update(), float_val(1.5963E+18)),
+/// ]);
 /// ```
 pub fn void_time() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::VoidTime), None, None, None, None, None)
@@ -587,8 +621,8 @@ pub fn void_time() -> FilterExpression {
 /// Create function that returns record expiration time (time to live) in integer seconds.
 /// ```
 /// // Record expires in less than 1 hour
-/// use aerospike::expressions::{lt, ttl, int_val};
-/// lt(ttl(), int_val(60*60));
+/// use aerospike::expressions::{int_val, lt, ttl};
+/// lt(ttl(), int_val(60 * 60));
 /// ```
 pub fn ttl() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::TTL), None, None, None, None, None)
@@ -599,7 +633,7 @@ pub fn ttl() -> FilterExpression {
 ///
 /// ```
 /// // Deleted records that are in tombstone state.
-/// use aerospike::expressions::{is_tombstone};
+/// use aerospike::expressions::is_tombstone;
 /// is_tombstone();
 /// ```
 pub fn is_tombstone() -> FilterExpression {
@@ -608,7 +642,7 @@ pub fn is_tombstone() -> FilterExpression {
 /// Create function that returns record digest modulo as integer.
 /// ```
 /// // Records that have digest(key) % 3 == 1
-/// use aerospike::expressions::{int_val, eq, digest_modulo};
+/// use aerospike::expressions::{digest_modulo, eq, int_val};
 /// eq(digest_modulo(3), int_val(1));
 /// ```
 pub fn digest_modulo(modulo: i64) -> FilterExpression {
@@ -624,11 +658,17 @@ pub fn digest_modulo(modulo: i64) -> FilterExpression {
 
 /// Create function like regular expression string operation.
 /// ```
-/// use aerospike::RegexFlag;
-/// use aerospike::expressions::{regex_compare, string_bin};
+/// use aerospike::{
+///     expressions::{regex_compare, string_bin},
+///     RegexFlag,
+/// };
 /// // Select string bin "a" that starts with "prefix" and ends with "suffix".
 /// // Ignore case and do not match newline.
-/// regex_compare("prefix.*suffix".to_string(), RegexFlag::ICASE as i64 | RegexFlag::NEWLINE as i64, string_bin("a".to_string()));
+/// regex_compare(
+///     "prefix.*suffix".to_string(),
+///     RegexFlag::ICASE as i64 | RegexFlag::NEWLINE as i64,
+///     string_bin("a".to_string()),
+/// );
 /// ```
 pub fn regex_compare(regex: String, flags: i64, bin: FilterExpression) -> FilterExpression {
     FilterExpression::new(
@@ -643,9 +683,11 @@ pub fn regex_compare(regex: String, flags: i64, bin: FilterExpression) -> Filter
 
 /// Create compare geospatial operation.
 /// ```
-/// use aerospike::expressions::{geo_compare, geo_bin, geo_val};
+/// use aerospike::expressions::{geo_bin, geo_compare, geo_val};
 /// // Query region within coordinates.
-/// let region = "{\"type\": \"Polygon\", \"coordinates\": [ [[-122.500000, 37.000000],[-121.000000, 37.000000], [-121.000000, 38.080000],[-122.500000, 38.080000], [-122.500000, 37.000000]] ] }";
+/// let region = "{\"type\": \"Polygon\", \"coordinates\": [ [[-122.500000, \
+///               37.000000],[-121.000000, 37.000000], [-121.000000, 38.080000],[-122.500000, \
+///               38.080000], [-122.500000, 37.000000]] ] }";
 /// geo_compare(geo_bin("a".to_string()), geo_val(region.to_string()));
 /// ```
 pub fn geo_compare(left: FilterExpression, right: FilterExpression) -> FilterExpression {
@@ -714,8 +756,11 @@ pub fn nil() -> FilterExpression {
 /// Create "not" operator expression.
 /// ```
 /// // ! (a == 0 || a == 10)
-/// use aerospike::expressions::{not, or, eq, int_bin, int_val};
-/// not(or(vec![eq(int_bin("a".to_string()), int_val(0)), eq(int_bin("a".to_string()), int_val(10))]));
+/// use aerospike::expressions::{eq, int_bin, int_val, not, or};
+/// not(or(vec![
+///     eq(int_bin("a".to_string()), int_val(0)),
+///     eq(int_bin("a".to_string()), int_val(10)),
+/// ]));
 /// ```
 pub fn not(exp: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -732,8 +777,14 @@ pub fn not(exp: FilterExpression) -> FilterExpression {
 /// Create "and" (&&) operator that applies to a variable number of expressions.
 /// ```
 /// // (a > 5 || a == 0) && b < 3
-/// use aerospike::expressions::{and, or, gt, int_bin, int_val, eq, lt};
-/// and(vec![or(vec![gt(int_bin("a".to_string()), int_val(5)), eq(int_bin("a".to_string()), int_val(0))]), lt(int_bin("b".to_string()), int_val(3))]);
+/// use aerospike::expressions::{and, eq, gt, int_bin, int_val, lt, or};
+/// and(vec![
+///     or(vec![
+///         gt(int_bin("a".to_string()), int_val(5)),
+///         eq(int_bin("a".to_string()), int_val(0)),
+///     ]),
+///     lt(int_bin("b".to_string()), int_val(3)),
+/// ]);
 /// ```
 pub const fn and(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -750,8 +801,11 @@ pub const fn and(exps: Vec<FilterExpression>) -> FilterExpression {
 /// Create "or" (||) operator that applies to a variable number of expressions.
 /// ```
 /// // a == 0 || b == 0
-/// use aerospike::expressions::{or, eq, int_bin, int_val};
-/// or(vec![eq(int_bin("a".to_string()), int_val(0)), eq(int_bin("b".to_string()), int_val(0))]);
+/// use aerospike::expressions::{eq, int_bin, int_val, or};
+/// or(vec![
+///     eq(int_bin("a".to_string()), int_val(0)),
+///     eq(int_bin("b".to_string()), int_val(0)),
+/// ]);
 /// ```
 pub const fn or(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -786,7 +840,7 @@ pub fn eq(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// Create not equal (!=) expression
 /// ```
 /// // a != 13
-/// use aerospike::expressions::{ne, int_bin, int_val};
+/// use aerospike::expressions::{int_bin, int_val, ne};
 /// ne(int_bin("a".to_string()), int_val(13));
 /// ```
 pub fn ne(left: FilterExpression, right: FilterExpression) -> FilterExpression {
@@ -840,7 +894,7 @@ pub fn ge(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// Create less than (<) operation.
 /// ```
 /// // a < 1000
-/// use aerospike::expressions::{lt, int_bin, int_val};
+/// use aerospike::expressions::{int_bin, int_val, lt};
 /// lt(int_bin("a".to_string()), int_val(1000));
 /// ```
 pub fn lt(left: FilterExpression, right: FilterExpression) -> FilterExpression {
@@ -857,7 +911,7 @@ pub fn lt(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 
 /// Create less than or equals (<=) operation.
 /// ```
-/// use aerospike::expressions::{le, int_bin, int_val};
+/// use aerospike::expressions::{int_bin, int_val, le};
 /// // a <= 1
 /// le(int_bin("a".to_string()), int_val(1));
 /// ```
@@ -877,9 +931,16 @@ pub fn le(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// Return sum of all `FilterExpressions` given. All arguments must resolve to the same type
 /// (integer or float). Requires server version 5.6.0+.
 /// ```
-/// use aerospike::expressions::{eq, num_add, int_bin, int_val};
+/// use aerospike::expressions::{eq, int_bin, int_val, num_add};
 /// // a + b + c == 10
-/// eq(num_add(vec![int_bin("a".to_string()), int_bin("b".to_string()), int_bin("c".to_string())]), int_val(10));
+/// eq(
+///     num_add(vec![
+///         int_bin("a".to_string()),
+///         int_bin("b".to_string()),
+///         int_bin("c".to_string()),
+///     ]),
+///     int_val(10),
+/// );
 /// ```
 pub const fn num_add(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -899,9 +960,16 @@ pub const fn num_add(exps: Vec<FilterExpression>) -> FilterExpression {
 /// `FilterExpressions`. All `FilterExpressions` must resolve to the same type (integer or float).
 /// Requires server version 5.6.0+.
 /// ```
-/// use aerospike::expressions::{gt, num_sub, int_bin, int_val};
+/// use aerospike::expressions::{gt, int_bin, int_val, num_sub};
 /// // a - b - c > 10
-/// gt(num_sub(vec![int_bin("a".to_string()), int_bin("b".to_string()), int_bin("c".to_string())]), int_val(10));
+/// gt(
+///     num_sub(vec![
+///         int_bin("a".to_string()),
+///         int_bin("b".to_string()),
+///         int_bin("c".to_string()),
+///     ]),
+///     int_val(10),
+/// );
 /// ```
 pub const fn num_sub(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -920,9 +988,16 @@ pub const fn num_sub(exps: Vec<FilterExpression>) -> FilterExpression {
 /// return that `FilterExpressions`. All `FilterExpressions` must resolve to the same type (integer
 /// or float). Requires server version 5.6.0+.
 /// ```
-/// use aerospike::expressions::{lt, num_mul, int_val, int_bin};
+/// use aerospike::expressions::{int_bin, int_val, lt, num_mul};
 /// // a * b * c < 100
-/// lt(num_mul(vec![int_bin("a".to_string()), int_bin("b".to_string()), int_bin("c".to_string())]), int_val(100));
+/// lt(
+///     num_mul(vec![
+///         int_bin("a".to_string()),
+///         int_bin("b".to_string()),
+///         int_bin("c".to_string()),
+///     ]),
+///     int_val(100),
+/// );
 /// ```
 pub const fn num_mul(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -942,9 +1017,16 @@ pub const fn num_mul(exps: Vec<FilterExpression>) -> FilterExpression {
 /// All `FilterExpressions` must resolve to the same type (integer or float).
 /// Requires server version 5.6.0+.
 /// ```
-/// use aerospike::expressions::{lt, int_val, int_bin, num_div};
+/// use aerospike::expressions::{int_bin, int_val, lt, num_div};
 /// // a / b / c > 1
-/// lt(num_div(vec![int_bin("a".to_string()), int_bin("b".to_string()), int_bin("c".to_string())]), int_val(1));
+/// lt(
+///     num_div(vec![
+///         int_bin("a".to_string()),
+///         int_bin("b".to_string()),
+///         int_bin("c".to_string()),
+///     ]),
+///     int_val(1),
+/// );
 /// ```
 pub const fn num_div(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -963,8 +1045,11 @@ pub const fn num_div(exps: Vec<FilterExpression>) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // pow(a, 2.0) == 4.0
-/// use aerospike::expressions::{eq, num_pow, float_bin, float_val};
-/// eq(num_pow(float_bin("a".to_string()), float_val(2.0)), float_val(4.0));
+/// use aerospike::expressions::{eq, float_bin, float_val, num_pow};
+/// eq(
+///     num_pow(float_bin("a".to_string()), float_val(2.0)),
+///     float_val(4.0),
+/// );
 /// ```
 pub fn num_pow(base: FilterExpression, exponent: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -984,7 +1069,10 @@ pub fn num_pow(base: FilterExpression, exponent: FilterExpression) -> FilterExpr
 /// ```
 /// // log(a, 2.0) == 4.0
 /// use aerospike::expressions::{eq, float_bin, float_val, num_log};
-/// eq(num_log(float_bin("a".to_string()), float_val(2.0)), float_val(4.0));
+/// eq(
+///     num_log(float_bin("a".to_string()), float_val(2.0)),
+///     float_val(4.0),
+/// );
 /// ```
 pub fn num_log(num: FilterExpression, base: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -1003,7 +1091,7 @@ pub fn num_log(num: FilterExpression, base: FilterExpression) -> FilterExpressio
 /// Requires server version 5.6.0+.
 /// ```
 /// // a % 10 == 0
-/// use aerospike::expressions::{eq, num_mod, int_val, int_bin};
+/// use aerospike::expressions::{eq, int_bin, int_val, num_mod};
 /// eq(num_mod(int_bin("a".to_string()), int_val(10)), int_val(0));
 /// ```
 pub fn num_mod(numerator: FilterExpression, denominator: FilterExpression) -> FilterExpression {
@@ -1023,7 +1111,7 @@ pub fn num_mod(numerator: FilterExpression, denominator: FilterExpression) -> Fi
 /// Requires server version 5.6.0+.
 /// ```
 /// // abs(a) == 1
-/// use aerospike::expressions::{eq, int_val, int_bin, num_abs};
+/// use aerospike::expressions::{eq, int_bin, int_val, num_abs};
 /// eq(num_abs(int_bin("a".to_string())), int_val(1));
 /// ```
 pub fn num_abs(value: FilterExpression) -> FilterExpression {
@@ -1043,7 +1131,7 @@ pub fn num_abs(value: FilterExpression) -> FilterExpression {
 // Requires server version 5.6.0+.
 /// ```
 /// // floor(2.95) == 2.0
-/// use aerospike::expressions::{eq, num_floor, float_val};
+/// use aerospike::expressions::{eq, float_val, num_floor};
 /// eq(num_floor(float_val(2.95)), float_val(2.0));
 /// ```
 pub fn num_floor(num: FilterExpression) -> FilterExpression {
@@ -1063,7 +1151,7 @@ pub fn num_floor(num: FilterExpression) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // ceil(2.15) == 3.0
-/// use aerospike::expressions::{float_val, num_ceil, ge};
+/// use aerospike::expressions::{float_val, ge, num_ceil};
 /// ge(num_ceil(float_val(2.15)), float_val(3.0));
 /// ```
 pub fn num_ceil(num: FilterExpression) -> FilterExpression {
@@ -1082,7 +1170,7 @@ pub fn num_ceil(num: FilterExpression) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // int(2.5) == 2
-/// use aerospike::expressions::{float_val, eq, to_int, int_val};
+/// use aerospike::expressions::{eq, float_val, int_val, to_int};
 /// eq(to_int(float_val(2.5)), int_val(2));
 /// ```
 pub fn to_int(num: FilterExpression) -> FilterExpression {
@@ -1101,7 +1189,7 @@ pub fn to_int(num: FilterExpression) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // float(2) == 2.0
-/// use aerospike::expressions::{float_val, eq, to_float, int_val};
+/// use aerospike::expressions::{eq, float_val, int_val, to_float};
 /// eq(to_float(int_val(2)), float_val(2.0));
 /// ```
 pub fn to_float(num: FilterExpression) -> FilterExpression {
@@ -1121,8 +1209,11 @@ pub fn to_float(num: FilterExpression) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // a & 0xff == 0x11
-/// use aerospike::expressions::{eq, int_val, int_and, int_bin};
-/// eq(int_and(vec![int_bin("a".to_string()), int_val(0xff)]), int_val(0x11));
+/// use aerospike::expressions::{eq, int_and, int_bin, int_val};
+/// eq(
+///     int_and(vec![int_bin("a".to_string()), int_val(0xff)]),
+///     int_val(0x11),
+/// );
 /// ```
 pub const fn int_and(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -1141,8 +1232,11 @@ pub const fn int_and(exps: Vec<FilterExpression>) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // a ^ b == 16
-/// use aerospike::expressions::{eq, int_val, int_xor, int_bin};
-/// eq(int_xor(vec![int_bin("a".to_string()), int_bin("b".to_string())]), int_val(16));
+/// use aerospike::expressions::{eq, int_bin, int_val, int_xor};
+/// eq(
+///     int_xor(vec![int_bin("a".to_string()), int_bin("b".to_string())]),
+///     int_val(16),
+/// );
 /// ```
 pub const fn int_xor(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -1160,7 +1254,7 @@ pub const fn int_xor(exps: Vec<FilterExpression>) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // ~a == 7
-/// use aerospike::expressions::{eq, int_val, int_not, int_bin};
+/// use aerospike::expressions::{eq, int_bin, int_not, int_val};
 /// eq(int_not(int_bin("a".to_string())), int_val(7));
 /// ```
 pub fn int_not(exp: FilterExpression) -> FilterExpression {
@@ -1179,8 +1273,11 @@ pub fn int_not(exp: FilterExpression) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // a << 8 > 0xff
-/// use aerospike::expressions::{int_val, int_bin, gt, int_lshift};
-/// gt(int_lshift(int_bin("a".to_string()), int_val(8)), int_val(0xff));
+/// use aerospike::expressions::{gt, int_bin, int_lshift, int_val};
+/// gt(
+///     int_lshift(int_bin("a".to_string()), int_val(8)),
+///     int_val(0xff),
+/// );
 /// ```
 pub fn int_lshift(value: FilterExpression, shift: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -1198,8 +1295,11 @@ pub fn int_lshift(value: FilterExpression, shift: FilterExpression) -> FilterExp
 /// Requires server version 5.6.0+.
 /// ```
 /// // a >> 8 > 0xff
-/// use aerospike::expressions::{int_val, int_bin, gt, int_rshift};
-/// gt(int_rshift(int_bin("a".to_string()), int_val(8)), int_val(0xff));
+/// use aerospike::expressions::{gt, int_bin, int_rshift, int_val};
+/// gt(
+///     int_rshift(int_bin("a".to_string()), int_val(8)),
+///     int_val(0xff),
+/// );
 /// ```
 pub fn int_rshift(value: FilterExpression, shift: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -1218,8 +1318,11 @@ pub fn int_rshift(value: FilterExpression, shift: FilterExpression) -> FilterExp
 /// Requires server version 5.6.0+.
 /// ```
 /// // a >>> 8 > 0xff
-/// use aerospike::expressions::{int_val, int_bin, gt, int_arshift};
-/// gt(int_arshift(int_bin("a".to_string()), int_val(8)), int_val(0xff));
+/// use aerospike::expressions::{gt, int_arshift, int_bin, int_val};
+/// gt(
+///     int_arshift(int_bin("a".to_string()), int_val(8)),
+///     int_val(0xff),
+/// );
 /// ```
 pub fn int_arshift(value: FilterExpression, shift: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -1237,7 +1340,7 @@ pub fn int_arshift(value: FilterExpression, shift: FilterExpression) -> FilterEx
 /// Requires server version 5.6.0+.
 /// ```
 /// // count(a) == 4
-/// use aerospike::expressions::{int_val, int_bin, int_count, eq};
+/// use aerospike::expressions::{eq, int_bin, int_count, int_val};
 /// eq(int_count(int_bin("a".to_string())), int_val(4));
 /// ```
 pub fn int_count(exp: FilterExpression) -> FilterExpression {
@@ -1260,8 +1363,11 @@ pub fn int_count(exp: FilterExpression) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // lscan(a, true) == 4
-/// use aerospike::expressions::{int_val, int_bin, eq, int_lscan, bool_val};
-/// eq(int_lscan(int_bin("a".to_string()), bool_val(true)), int_val(4));
+/// use aerospike::expressions::{bool_val, eq, int_bin, int_lscan, int_val};
+/// eq(
+///     int_lscan(int_bin("a".to_string()), bool_val(true)),
+///     int_val(4),
+/// );
 /// ```
 pub fn int_lscan(value: FilterExpression, search: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -1283,8 +1389,11 @@ pub fn int_lscan(value: FilterExpression, search: FilterExpression) -> FilterExp
 /// Requires server version 5.6.0+.
 /// ```
 /// // rscan(a, true) == 4
-/// use aerospike::expressions::{int_val, int_bin, eq, int_rscan, bool_val};
-/// eq(int_rscan(int_bin("a".to_string()), bool_val(true)), int_val(4));
+/// use aerospike::expressions::{bool_val, eq, int_bin, int_rscan, int_val};
+/// eq(
+///     int_rscan(int_bin("a".to_string()), bool_val(true)),
+///     int_val(4),
+/// );
 /// ```
 pub fn int_rscan(value: FilterExpression, search: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -1303,8 +1412,15 @@ pub fn int_rscan(value: FilterExpression, search: FilterExpression) -> FilterExp
 /// Requires server version 5.6.0+.
 /// ```
 /// // min(a, b, c) > 0
-/// use aerospike::expressions::{int_val, int_bin, gt, min};
-/// gt(min(vec![int_bin("a".to_string()),int_bin("b".to_string()),int_bin("c".to_string())]), int_val(0));
+/// use aerospike::expressions::{gt, int_bin, int_val, min};
+/// gt(
+///     min(vec![
+///         int_bin("a".to_string()),
+///         int_bin("b".to_string()),
+///         int_bin("c".to_string()),
+///     ]),
+///     int_val(0),
+/// );
 /// ```
 pub const fn min(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -1323,8 +1439,15 @@ pub const fn min(exps: Vec<FilterExpression>) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // max(a, b, c) > 100
-/// use aerospike::expressions::{int_val, int_bin, gt, max};
-/// gt(max(vec![int_bin("a".to_string()),int_bin("b".to_string()),int_bin("c".to_string())]), int_val(100));
+/// use aerospike::expressions::{gt, int_bin, int_val, max};
+/// gt(
+///     max(vec![
+///         int_bin("a".to_string()),
+///         int_bin("b".to_string()),
+///         int_bin("c".to_string()),
+///     ]),
+///     int_val(100),
+/// );
 /// ```
 pub const fn max(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -1349,15 +1472,25 @@ pub const fn max(exps: Vec<FilterExpression>) -> FilterExpression {
 /// // Args Format: bool exp1, action exp1, bool exp2, action exp2, ..., action-default
 /// // Apply operator based on type.
 ///
-/// use aerospike::expressions::{cond, int_bin, eq, int_val, num_add, num_sub, num_mul};
-/// cond(
-///   vec![
-///     eq(int_bin("type".to_string()), int_val(0)), num_add(vec![int_bin("val1".to_string()), int_bin("val2".to_string())]),
-///     eq(int_bin("type".to_string()), int_val(1)), num_sub(vec![int_bin("val1".to_string()), int_bin("val2".to_string())]),
-///     eq(int_bin("type".to_string()), int_val(2)), num_mul(vec![int_bin("val1".to_string()), int_bin("val2".to_string())]),
-///     int_val(-1)
-///   ]
-/// );
+/// use aerospike::expressions::{cond, eq, int_bin, int_val, num_add, num_mul, num_sub};
+/// cond(vec![
+///     eq(int_bin("type".to_string()), int_val(0)),
+///     num_add(vec![
+///         int_bin("val1".to_string()),
+///         int_bin("val2".to_string()),
+///     ]),
+///     eq(int_bin("type".to_string()), int_val(1)),
+///     num_sub(vec![
+///         int_bin("val1".to_string()),
+///         int_bin("val2".to_string()),
+///     ]),
+///     eq(int_bin("type".to_string()), int_val(2)),
+///     num_mul(vec![
+///         int_bin("val1".to_string()),
+///         int_bin("val2".to_string()),
+///     ]),
+///     int_val(-1),
+/// ]);
 /// ```
 pub const fn cond(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -1375,16 +1508,14 @@ pub const fn cond(exps: Vec<FilterExpression>) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // 5 < a < 10
-/// use aerospike::expressions::{exp_let, def, int_bin, and, lt, int_val, var};
-/// exp_let(
-///   vec![
+/// use aerospike::expressions::{and, def, exp_let, int_bin, int_val, lt, var};
+/// exp_let(vec![
 ///     def("x".to_string(), int_bin("a".to_string())),
 ///     and(vec![
-///       lt(int_val(5), var("x".to_string()),),
-///       lt(var("x".to_string()), int_val(10))
-///     ])
-///   ]
-/// );
+///         lt(int_val(5), var("x".to_string())),
+///         lt(var("x".to_string()), int_val(10)),
+///     ]),
+/// ]);
 /// ```
 pub const fn exp_let(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
@@ -1402,16 +1533,14 @@ pub const fn exp_let(exps: Vec<FilterExpression>) -> FilterExpression {
 /// Requires server version 5.6.0+.
 /// ```
 /// // 5 < a < 10
-/// use aerospike::expressions::{exp_let, def, int_bin, and, lt, int_val, var};
-/// exp_let(
-///   vec![
+/// use aerospike::expressions::{and, def, exp_let, int_bin, int_val, lt, var};
+/// exp_let(vec![
 ///     def("x".to_string(), int_bin("a".to_string())),
 ///     and(vec![
-///       lt(int_val(5), var("x".to_string()),),
-///       lt(var("x".to_string()), int_val(10))
-///     ])
-///   ]
-/// );
+///         lt(int_val(5), var("x".to_string())),
+///         lt(var("x".to_string()), int_val(10)),
+///     ]),
+/// ]);
 /// ```
 pub fn def(name: String, value: FilterExpression) -> FilterExpression {
     FilterExpression {
@@ -1447,14 +1576,20 @@ pub fn var(name: String) -> FilterExpression {
 /// ```
 /// // double v = balance - 100.0;
 /// // return (v > 0.0)? v : unknown;
-/// use aerospike::expressions::{exp_let, def, num_sub, float_bin, float_val, cond, ge, var, unknown};
-/// exp_let(
-///     vec![
-///         def("v".to_string(), num_sub(vec![float_bin("balance".to_string()), float_val(100.0)])),
-///         cond(vec![ge(var("v".to_string()), float_val(0.0)), var("v".to_string())]),
-///         unknown()
-///     ]
-/// );
+/// use aerospike::expressions::{
+///     cond, def, exp_let, float_bin, float_val, ge, num_sub, unknown, var,
+/// };
+/// exp_let(vec![
+///     def(
+///         "v".to_string(),
+///         num_sub(vec![float_bin("balance".to_string()), float_val(100.0)]),
+///     ),
+///     cond(vec![
+///         ge(var("v".to_string()), float_val(0.0)),
+///         var("v".to_string()),
+///     ]),
+///     unknown(),
+/// ]);
 /// ```
 pub const fn unknown() -> FilterExpression {
     FilterExpression {

@@ -623,17 +623,23 @@ macro_rules! as_blob {
 ///
 /// Write a list value to a record bin.
 ///
-/// ```rust,edition2018
-/// # use aerospike::*;
-/// # use std::vec::Vec;
-/// # async fn main() {
-/// # let hosts = std::env::var("AEROSPIKE_HOSTS").unwrap();
-/// # let client = Client::new(&ClientPolicy::default(), &hosts).await.unwrap();
-/// # let key = as_key!("test", "test", "mykey");
-/// let list = as_list!("a", "b", "c");
-/// let bin = as_bin!("list", list);
-/// client.put(&WritePolicy::default(), &key, &vec![bin]).await.unwrap();
-/// # }
+/// ```rust
+/// use aerospike::{as_bin, as_key, as_list, as_val, Client, ClientPolicy, WritePolicy};
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+///         .await
+///         .unwrap();
+///
+///     let key = as_key!("test", "test", "mykey");
+///     let list = as_list!("a", "b", "c");
+///     let bin = as_bin!("list", list);
+///     client
+///         .put(&WritePolicy::default(), &key, &vec![bin])
+///         .await
+///         .unwrap();
+/// }
 /// ```
 #[macro_export]
 macro_rules! as_list {
@@ -654,19 +660,24 @@ macro_rules! as_list {
 ///
 /// Execute a user-defined function (UDF) with some arguments.
 ///
-/// ```rust,should_panic,edition2018
-/// # use aerospike::*;
-/// # use std::vec::Vec;
-/// # async fn main() {
-/// # let hosts = std::env::var("AEROSPIKE_HOSTS").unwrap();
-/// # let client = Client::new(&ClientPolicy::default(), &hosts).await.unwrap();
-/// # let key = as_key!("test", "test", "mykey");
-/// let module = "myUDF";
-/// let func = "myFunction";
-/// let args = as_values!("a", "b", "c");
-/// client.execute_udf(&WritePolicy::default(), &key,
-///     &module, &func, Some(&args)).await.unwrap();
-/// # }
+/// ```rust,should_panic
+/// use aerospike::{as_key, as_val, as_values, Client, ClientPolicy, WritePolicy};
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+///         .await
+///         .unwrap();
+///
+///     let key = as_key!("test", "test", "mykey");
+///     let module = "myUDF";
+///     let func = "myFunction";
+///     let args = as_values!("a", "b", "c");
+///     client
+///         .execute_udf(&WritePolicy::default(), &key, &module, &func, Some(&args))
+///         .await
+///         .unwrap();
+/// }
 /// ```
 #[macro_export]
 macro_rules! as_values {
@@ -687,16 +698,23 @@ macro_rules! as_values {
 ///
 /// Write a map value to a record bin.
 ///
-/// ```rust,edition2018
-/// # use aerospike::*;
-/// # async fn main() {
-/// # let hosts = std::env::var("AEROSPIKE_HOSTS").unwrap();
-/// # let client = Client::new(&ClientPolicy::default(), &hosts).await.unwrap();
-/// # let key = as_key!("test", "test", "mykey");
-/// let map = as_map!("a" => 1, "b" => 2);
-/// let bin = as_bin!("map", map);
-/// client.put(&WritePolicy::default(), &key, &vec![bin]).await.unwrap();
-/// # }
+/// ```rust
+/// use aerospike::{as_bin, as_key, as_map, as_val, Client, ClientPolicy, WritePolicy};
+
+/// #[tokio::main]
+/// async fn main() {
+///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+///         .await
+///         .unwrap();
+///
+///     let key = as_key!("test", "test", "mykey");
+///     let map = as_map!("a" => 1, "b" => 2);
+///     let bin = as_bin!("map", map);
+///     client
+///         .put(&WritePolicy::default(), &key, &vec![bin])
+///         .await
+///         .unwrap();
+/// }
 /// ```
 #[macro_export]
 macro_rules! as_map {

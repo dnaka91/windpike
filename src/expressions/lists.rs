@@ -368,8 +368,7 @@ pub fn remove_by_rank_range_count(
 ///
 /// ```
 /// // List bin "a" size > 7
-/// use aerospike::expressions::{gt, list_bin, int_val};
-/// use aerospike::expressions::lists::size;
+/// use aerospike::expressions::{gt, int_val, list_bin, lists::size};
 /// gt(size(list_bin("a".to_string()), &[]), int_val(7));
 /// ```
 pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
@@ -385,12 +384,19 @@ pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
 ///
 /// ```
 /// // List bin "a" contains at least one item == "abc"
-/// use aerospike::expressions::{gt, string_val, list_bin, int_val};
-/// use aerospike::operations::lists::ListReturnType;
-/// use aerospike::expressions::lists::get_by_value;
+/// use aerospike::{
+///     expressions::{gt, int_val, list_bin, lists::get_by_value, string_val},
+///     operations::lists::ListReturnType,
+/// };
 /// gt(
-///   get_by_value(ListReturnType::Count, string_val("abc".to_string()), list_bin("a".to_string()), &[]),
-///   int_val(0));
+///     get_by_value(
+///         ListReturnType::Count,
+///         string_val("abc".to_string()),
+///         list_bin("a".to_string()),
+///         &[],
+///     ),
+///     int_val(0),
+/// );
 /// ```
 pub fn get_by_value(
     return_type: ListReturnType,
@@ -412,11 +418,18 @@ pub fn get_by_value(
 ///
 /// ```
 /// // List bin "a" items >= 10 && items < 20
-/// use aerospike::operations::lists::ListReturnType;
-/// use aerospike::expressions::lists::get_by_value_range;
-/// use aerospike::expressions::{int_val, list_bin};
+/// use aerospike::{
+///     expressions::{int_val, list_bin, lists::get_by_value_range},
+///     operations::lists::ListReturnType,
+/// };
 ///
-/// get_by_value_range(ListReturnType::Values, Some(int_val(10)), Some(int_val(20)), list_bin("a".to_string()), &[]);
+/// get_by_value_range(
+///     ListReturnType::Values,
+///     Some(int_val(10)),
+///     Some(int_val(20)),
+///     list_bin("a".to_string()),
+///     &[],
+/// );
 /// ```
 pub fn get_by_value_range(
     return_type: ListReturnType,
@@ -525,12 +538,20 @@ pub fn get_by_value_relative_rank_range_count(
 ///
 /// ```
 /// // a[3] == 5
-/// use aerospike::expressions::{ExpType, eq, int_val, list_bin};
-/// use aerospike::operations::lists::ListReturnType;
-/// use aerospike::expressions::lists::get_by_index;
+/// use aerospike::{
+///     expressions::{eq, int_val, list_bin, lists::get_by_index, ExpType},
+///     operations::lists::ListReturnType,
+/// };
 /// eq(
-///   get_by_index(ListReturnType::Values, ExpType::INT, int_val(3), list_bin("a".to_string()), &[]),
-///   int_val(5));
+///     get_by_index(
+///         ListReturnType::Values,
+///         ExpType::INT,
+///         int_val(3),
+///         list_bin("a".to_string()),
+///         &[],
+///     ),
+///     int_val(5),
+/// );
 /// ```
 pub fn get_by_index(
     return_type: ListReturnType,
@@ -589,10 +610,17 @@ pub fn get_by_index_range_count(
 ///
 /// ```
 /// // Player with lowest score.
-/// use aerospike::operations::lists::ListReturnType;
-/// use aerospike::expressions::{ExpType, int_val, list_bin};
-/// use aerospike::expressions::lists::get_by_rank;
-/// get_by_rank(ListReturnType::Values, ExpType::STRING, int_val(0), list_bin("a".to_string()), &[]);
+/// use aerospike::{
+///     expressions::{int_val, list_bin, lists::get_by_rank, ExpType},
+///     operations::lists::ListReturnType,
+/// };
+/// get_by_rank(
+///     ListReturnType::Values,
+///     ExpType::STRING,
+///     int_val(0),
+///     list_bin("a".to_string()),
+///     &[],
+/// );
 /// ```
 pub fn get_by_rank(
     return_type: ListReturnType,

@@ -421,8 +421,7 @@ pub fn remove_by_rank_range_count(
 ///
 /// ```
 /// // Map bin "a" size > 7
-/// use aerospike::expressions::{gt, map_bin, int_val};
-/// use aerospike::expressions::maps::size;
+/// use aerospike::expressions::{gt, int_val, map_bin, maps::size};
 ///
 /// gt(size(map_bin("a".to_string()), &[]), int_val(7));
 /// ```
@@ -439,11 +438,21 @@ pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
 ///
 /// ```
 /// // Map bin "a" contains key "B"
-/// use aerospike::expressions::{ExpType, gt, string_val, map_bin, int_val};
-/// use aerospike::MapReturnType;
-/// use aerospike::expressions::maps::get_by_key;
+/// use aerospike::{
+///     expressions::{gt, int_val, map_bin, maps::get_by_key, string_val, ExpType},
+///     MapReturnType,
+/// };
 ///
-/// gt(get_by_key(MapReturnType::Count, ExpType::INT, string_val("B".to_string()), map_bin("a".to_string()), &[]), int_val(0));
+/// gt(
+///     get_by_key(
+///         MapReturnType::Count,
+///         ExpType::INT,
+///         string_val("B".to_string()),
+///         map_bin("a".to_string()),
+///         &[],
+///     ),
+///     int_val(0),
+/// );
 /// ```
 pub fn get_by_key(
     return_type: MapReturnType,
@@ -568,11 +577,20 @@ pub fn get_by_key_relative_index_range_count(
 ///
 /// ```
 /// // Map bin "a" contains value "BBB"
-/// use aerospike::expressions::{gt, string_val, map_bin, int_val};
-/// use aerospike::MapReturnType;
-/// use aerospike::expressions::maps::get_by_value;
+/// use aerospike::{
+///     expressions::{gt, int_val, map_bin, maps::get_by_value, string_val},
+///     MapReturnType,
+/// };
 ///
-/// gt(get_by_value(MapReturnType::Count, string_val("BBB".to_string()), map_bin("a".to_string()), &[]), int_val(0));
+/// gt(
+///     get_by_value(
+///         MapReturnType::Count,
+///         string_val("BBB".to_string()),
+///         map_bin("a".to_string()),
+///         &[],
+///     ),
+///     int_val(0),
+/// );
 /// ```
 pub fn get_by_value(
     return_type: MapReturnType,

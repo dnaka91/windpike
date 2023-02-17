@@ -64,69 +64,60 @@
 //! The following is a very simple example of CRUD operations in an Aerospike database.
 //!
 //! ```rust
-//! #[macro_use]
-//! extern crate aerospike;
+//! use std::{sync::Arc, time::Instant};
 //!
-//! use std::env;
-//! use std::sync::Arc;
-//! use std::time::Instant;
-//! use std::thread;
+//! use aerospike::{
+//!     as_bin, as_key, operations, Bins, Client, ClientPolicy, ReadPolicy, WritePolicy,
+//! };
 //!
-//! use aerospike::{Bins, Client, ClientPolicy, ReadPolicy, WritePolicy};
-//! use aerospike::operations;
-//!
-//! fn main() {
-//!     let cpolicy = ClientPolicy::default();
-//!     let hosts = env::var("AEROSPIKE_HOSTS")
-//!         .unwrap_or(String::from("127.0.0.1:3000"));
-//!     let client = Client::new(&cpolicy, &hosts)
+//! #[tokio::main]
+//! async fn main() {
+//!     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+//!         .await
 //!         .expect("Failed to connect to cluster");
 //!     let client = Arc::new(client);
 //!
-//!     let mut threads = vec![];
+//!     let mut tasks = vec![];
 //!     let now = Instant::now();
 //!     for i in 0..2 {
 //!         let client = client.clone();
-//!         let t = thread::spawn(move || {
+//!         let t = tokio::spawn(async move {
 //!             let rpolicy = ReadPolicy::default();
 //!             let wpolicy = WritePolicy::default();
 //!             let key = as_key!("test", "test", i);
-//!             let bins = [
-//!                 as_bin!("int", 123),
-//!                 as_bin!("str", "Hello, World!"),
-//!             ];
+//!             let bins = [as_bin!("int", 123), as_bin!("str", "Hello, World!")];
 //!
-//!             client.put(&wpolicy, &key, &bins).unwrap();
-//!             let rec = client.get(&rpolicy, &key, Bins::All);
-//!             println!("Record: {}", rec.unwrap());
+//!             client.put(&wpolicy, &key, &bins).await.unwrap();
+//!             let rec = client.get(&rpolicy, &key, Bins::All).await.unwrap();
+//!             println!("Record: {rec}");
 //!
-//!             client.touch(&wpolicy, &key).unwrap();
-//!             let rec = client.get(&rpolicy, &key, Bins::All);
-//!             println!("Record: {}", rec.unwrap());
+//!             client.touch(&wpolicy, &key).await.unwrap();
+//!             let rec = client.get(&rpolicy, &key, Bins::All).await.unwrap();
+//!             println!("Record: {rec}");
 //!
-//!             let rec = client.get(&rpolicy, &key, Bins::None);
-//!             println!("Record Header: {}", rec.unwrap());
+//!             let rec = client.get(&rpolicy, &key, Bins::None).await.unwrap();
+//!             println!("Record Header: {rec}");
 //!
-//!             let exists = client.exists(&wpolicy, &key).unwrap();
-//!             println!("exists: {}", exists);
+//!             let exists = client.exists(&wpolicy, &key).await.unwrap();
+//!             println!("exists: {exists}");
 //!
 //!             let bin = as_bin!("int", 999);
 //!             let ops = &vec![operations::put(&bin), operations::get()];
-//!             let op_rec = client.operate(&wpolicy, &key, ops);
-//!             println!("operate: {}", op_rec.unwrap());
+//!             let op_rec = client.operate(&wpolicy, &key, ops).await.unwrap();
+//!             println!("operate: {op_rec}");
 //!
-//!             let existed = client.delete(&wpolicy, &key).unwrap();
-//!             println!("existed (sould be true): {}", existed);
+//!             let existed = client.delete(&wpolicy, &key).await.unwrap();
+//!             println!("existed (sould be true): {existed}");
 //!
-//!             let existed = client.delete(&wpolicy, &key).unwrap();
-//!             println!("existed (should be false): {}", existed);
+//!             let existed = client.delete(&wpolicy, &key).await.unwrap();
+//!             println!("existed (should be false): {existed}");
 //!         });
 //!
-//!         threads.push(t);
+//!         tasks.push(t);
 //!     }
 //!
-//!     for t in threads {
-//!         t.join().unwrap();
+//!     for t in tasks {
+//!         t.await.unwrap();
 //!     }
 //!
 //!     println!("total time: {:?}", now.elapsed());

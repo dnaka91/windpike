@@ -60,8 +60,9 @@ pub fn rand_str(sz: usize) -> String {
 }
 
 pub fn init_logger() {
-    let _ = tracing_subscriber::registry()
+    tracing_subscriber::registry()
         .with(fmt::layer())
         .with(EnvFilter::from_default_env())
-        .try_init();
+        .try_init()
+        .ok();
 }

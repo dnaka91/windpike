@@ -19,32 +19,34 @@
 //!
 //! Handling an error returned by the client.
 //!
-//! ```rust,edition2018
-//! use aerospike::*;
+//! ```rust
+//! use aerospike::{as_key, Bins, Client, ClientPolicy, Error, ErrorKind, ReadPolicy, ResultCode};
 //!
-//! let hosts = std::env::var("AEROSPIKE_HOSTS").unwrap();
-//! let policy = ClientPolicy::default();
-//! let client = Client::new(&policy, &hosts).expect("Failed to connect to cluster").await;
-//! let key = as_key!("test", "test", "someKey");
-//! match client.get(&ReadPolicy::default(), &key, Bins::None).await {
-//!     Ok(record) => {
-//!         match record.time_to_live() {
+//! #[tokio::main]
+//! async fn main() {
+//!     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+//!         .await
+//!         .expect("Failed to connect to cluster");
+//!
+//!     let key = as_key!("test", "test", "someKey");
+//!     match client.get(&ReadPolicy::default(), &key, Bins::None).await {
+//!         Ok(record) => match record.time_to_live() {
 //!             None => println!("record never expires"),
 //!             Some(duration) => println!("ttl: {} secs", duration.as_secs()),
+//!         },
+//!         Err(Error(ErrorKind::ServerError(ResultCode::KeyNotFoundError), _)) => {
+//!             println!("No such record: {}", key);
 //!         }
-//!     },
-//!     Err(Error(ErrorKind::ServerError(ResultCode::KeyNotFoundError), _)) => {
-//!         println!("No such record: {}", key);
-//!     },
-//!     Err(err) => {
-//!         println!("Error fetching record: {}", err);
-//!         for err in err.iter().skip(1) {
-//!             println!("Caused by: {}", err);
-//!         }
-//!         // The backtrace is not always generated. Try to run this example
-//!         // with `RUST_BACKTRACE=1`.
-//!         if let Some(backtrace) = err.backtrace() {
-//!             println!("Backtrace: {:?}", backtrace);
+//!         Err(err) => {
+//!             println!("Error fetching record: {}", err);
+//!             for err in err.iter().skip(1) {
+//!                 println!("Caused by: {}", err);
+//!             }
+//!             // The backtrace is not always generated. Try to run this example
+//!             // with `RUST_BACKTRACE=1`.
+//!             if let Some(backtrace) = err.backtrace() {
+//!                 println!("Backtrace: {:?}", backtrace);
+//!             }
 //!         }
 //!     }
 //! }
