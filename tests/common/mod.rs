@@ -56,6 +56,6 @@ pub async fn client() -> Client {
 }
 
 pub fn rand_str(sz: usize) -> String {
-    let rng = rand::thread_rng();
-    rng.sample_iter(&Alphanumeric).take(sz).collect()
+    let mut rng = rand::thread_rng();
+    (0..sz).map(|_| rng.sample(Alphanumeric) as char).collect()
 }

@@ -33,7 +33,6 @@ serialization = ["dep:serde"]
 env_logger = "0.7"
 hex = "0.4"
 serde_json = "1.0"
-rand = "0.7"
 lazy_static = "1.4"
 futures = { version = "0.3.16" }
 tokio = { version = "1.10.0", features = ["full"] }
