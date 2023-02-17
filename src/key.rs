@@ -15,7 +15,7 @@
 
 use std::{fmt, result::Result as StdResult};
 
-use ripemd160::{digest::Digest, Ripemd160};
+use ripemd::{Digest, Ripemd160};
 #[cfg(feature = "serialization")]
 use serde::Serialize;
 
@@ -64,14 +64,14 @@ impl Key {
 
     fn compute_digest(&mut self) -> Result<()> {
         let mut hash = Ripemd160::new();
-        hash.input(self.set_name.as_bytes());
+        hash.update(self.set_name.as_bytes());
         if let Some(ref user_key) = self.user_key {
-            hash.input([user_key.particle_type() as u8]);
+            hash.update([user_key.particle_type() as u8]);
             user_key.write_key_bytes(&mut hash)?;
         } else {
             unreachable!();
         }
-        self.digest = hash.result().into();
+        self.digest = hash.finalize().into();
 
         Ok(())
     }
