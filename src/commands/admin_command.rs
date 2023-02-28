@@ -16,7 +16,6 @@
 
 use std::str;
 
-use pwhash::bcrypt::{self, BcryptSetup, BcryptVariant};
 use super::{CommandError, Result};
 use crate::{
     cluster::Cluster,
@@ -278,14 +277,13 @@ impl AdminCommand {
     }
 
     pub fn hash_password(password: &str) -> Result<String> {
-        bcrypt::hash_with(
-            BcryptSetup {
-                salt: Some("7EqJtq98hPqEX7fNZaFWoO"),
-                cost: Some(10),
-                variant: Some(BcryptVariant::V2a),
-            },
-            password,
-        )
-        .map_err(Into::into)
+        const COST: u32 = 10;
+        const SALT: [u8; 16] = [
+            0xf4, 0x6b, 0x0b, 0xbe, 0xcf, 0xfe, 0x8d, 0x1b, 0x06, 0x67, 0xd8, 0x4f, 0x6d, 0xc1,
+            0xd8, 0xa9,
+        ];
+        const VERSION: bcrypt::Version = bcrypt::Version::TwoA;
+
+        Ok(bcrypt::hash_with_salt(password, COST, SALT)?.format_for_version(VERSION))
     }
 }

@@ -66,8 +66,6 @@ pub enum Error {
     ParseAddr(#[from] std::net::AddrParseError),
     #[error("Error parsing an integer")]
     ParseInt(#[from] std::num::ParseIntError),
-    #[error("Error returned while hashing a password for user authentication")]
-    Pwhash(#[from] pwhash::error::Error),
     /// The client received a server response that it was not able to process.
     #[error("Bad server response: {0}")]
     BadResponse(String),

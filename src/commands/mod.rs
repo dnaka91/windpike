@@ -61,7 +61,7 @@ pub enum CommandError {
     #[error("I/O related error")]
     Io(#[from] std::io::Error),
     #[error("Failed hashing password")]
-    Hashing(#[from] pwhash::error::Error),
+    Hashing(#[from] bcrypt::BcryptError),
     #[error("Network error")]
     Network(#[from] crate::net::NetError),
     #[error("Buffer error")]
