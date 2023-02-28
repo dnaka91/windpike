@@ -17,10 +17,9 @@ use std::sync::Arc;
 use tokio::time::Instant;
 use tracing::warn;
 
+use super::{Command, CommandError, Result};
 use crate::{
     cluster::{partition::Partition, Cluster, Node},
-    commands::{self},
-    errors::{ErrorKind, Result, ResultExt},
     net::Connection,
     policy::Policy,
     Key,
@@ -42,7 +41,7 @@ impl<'a> SingleCommand<'a> {
         }
     }
 
-    pub async fn get_node(&self) -> Result<Arc<Node>> {
+    pub async fn get_node(&self) -> Option<Arc<Node>> {
         self.cluster.get_node(&self.partition).await
     }
 
@@ -67,7 +66,7 @@ impl<'a> SingleCommand<'a> {
 
     pub async fn execute(
         policy: &(dyn Policy + Send + Sync),
-        cmd: &'a mut (dyn commands::Command + Send),
+        cmd: &'a mut (dyn Command + Send),
     ) -> Result<()> {
         let mut iterations = 0;
 
@@ -99,8 +98,8 @@ impl<'a> SingleCommand<'a> {
             // set command node, so when you return a record it has the node
             let node_future = cmd.get_node();
             let node = match node_future.await {
-                Ok(node) => node,
-                Err(_) => continue, // Node is currently inactive. Retry.
+                Some(node) => node,
+                None => continue, // Node is currently inactive. Retry.
             };
 
             let mut conn = match node.get_connection().await {
@@ -112,10 +111,10 @@ impl<'a> SingleCommand<'a> {
             };
 
             cmd.prepare_buffer(&mut conn)
-                .chain_err(|| "Failed to prepare send buffer")?;
+                .map_err(|e| CommandError::PrepareBuffer(Box::new(e)))?;
             cmd.write_timeout(&mut conn, policy.timeout())
                 .await
-                .chain_err(|| "Failed to set timeout for send buffer")?;
+                .map_err(|e| CommandError::SetTimeout(Box::new(e)))?;
 
             // Send command.
             if let Err(err) = cmd.write_buffer(&mut conn).await {
@@ -132,7 +131,7 @@ impl<'a> SingleCommand<'a> {
                 // cancelling/closing the batch/multi commands will return an error, which will
                 // close the connection to throw away its data and signal the server about the
                 // situation. We will not put back the connection in the buffer.
-                if !commands::keep_connection(&err) {
+                if !super::keep_connection(&err) {
                     conn.invalidate().await;
                 }
                 return Err(err);
@@ -142,6 +141,6 @@ impl<'a> SingleCommand<'a> {
             return Ok(());
         }
 
-        bail!(ErrorKind::Connection("Timeout".to_string()))
+        Err(CommandError::Timeout)
     }
 }

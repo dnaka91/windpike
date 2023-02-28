@@ -16,10 +16,9 @@ use std::{sync::Arc, time::Duration};
 
 use tracing::warn;
 
+use super::{buffer, Command, CommandError, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
-    commands::{buffer, Command, SingleCommand},
-    errors::{ErrorKind, Result},
     net::Connection,
     operations::OperationType,
     policy::WritePolicy,
@@ -49,7 +48,7 @@ impl<'a, 'b> WriteCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<()> {
+    pub async fn execute(&mut self) -> Result<(), CommandError> {
         SingleCommand::execute(self.policy, self).await
     }
 }
@@ -66,19 +65,21 @@ impl<'a> Command for WriteCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer.set_write(
-            self.policy,
-            self.operation,
-            self.single_command.key,
-            self.bins,
-        )
+        conn.buffer
+            .set_write(
+                self.policy,
+                self.operation,
+                self.single_command.key,
+                self.bins,
+            )
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.single_command.get_node().await
     }
 
@@ -89,13 +90,13 @@ impl<'a> Command for WriteCommand<'a> {
             .await
         {
             warn!(%err, "Parse result error");
-            return Err(err);
+            return Err(err.into());
         }
 
         conn.buffer.reset_offset();
         let result_code = ResultCode::from(conn.buffer.read_u8(Some(13)));
         if result_code != ResultCode::Ok {
-            bail!(ErrorKind::ServerError(result_code));
+            return Err(CommandError::ServerError(result_code));
         }
         let res = SingleCommand::empty_socket(conn).await;
         res

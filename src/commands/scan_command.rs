@@ -14,14 +14,8 @@
 
 use std::{str, sync::Arc, time::Duration};
 
-use crate::{
-    cluster::Node,
-    commands::{Command, SingleCommand, StreamCommand},
-    errors::Result,
-    net::Connection,
-    policy::ScanPolicy,
-    Bins, Recordset,
-};
+use super::{Command, CommandError, Result, SingleCommand, StreamCommand};
+use crate::{cluster::Node, net::Connection, policy::ScanPolicy, Bins, Recordset};
 
 pub struct ScanCommand<'a> {
     stream_command: StreamCommand,
@@ -52,7 +46,7 @@ impl<'a> ScanCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<()> {
+    pub async fn execute(&mut self) -> Result<(), CommandError> {
         SingleCommand::execute(self.policy, self).await
     }
 }
@@ -69,21 +63,23 @@ impl<'a> Command for ScanCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer.set_scan(
-            self.policy,
-            self.namespace,
-            self.set_name,
-            &self.bins,
-            self.stream_command.recordset.task_id(),
-            &self.partitions,
-        )
+        conn.buffer
+            .set_scan(
+                self.policy,
+                self.namespace,
+                self.set_name,
+                &self.bins,
+                self.stream_command.recordset.task_id(),
+                &self.partitions,
+            )
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.stream_command.get_node().await
     }
 

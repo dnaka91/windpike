@@ -13,16 +13,12 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{
-    collections::HashMap,
-    io::{Cursor, Write},
-    str,
-};
+use std::{collections::HashMap, io::Write, str};
 
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use tracing::debug;
 
-use crate::{errors::Result, net::Connection};
+use super::{CommandError, Result};
+use crate::net::Connection;
 
 // MAX_BUFFER_SIZE protects against allocating massive memory blocks
 // for buffers.
@@ -43,10 +39,8 @@ impl Message {
     }
 
     fn new(data: &[u8]) -> Result<Self> {
-        let mut len = Vec::with_capacity(8);
-        len.write_u64::<NetworkEndian>(data.len() as u64).unwrap();
-
-        let mut buf: Vec<u8> = Vec::with_capacity(1024);
+        let len = data.len().to_be_bytes();
+        let mut buf = Vec::with_capacity(1024);
         buf.push(2); // version
         buf.push(1); // msg_type
         buf.write_all(&len[2..8])?;
@@ -56,10 +50,9 @@ impl Message {
     }
 
     fn data_len(&self) -> u64 {
-        let mut lbuf: Vec<u8> = vec![0; 8];
+        let mut lbuf = [0; 8];
         lbuf[2..8].clone_from_slice(&self.buf[2..8]);
-        let mut rdr = Cursor::new(lbuf);
-        rdr.read_u64::<NetworkEndian>().unwrap()
+        u64::from_be_bytes(lbuf)
     }
 
     async fn send(&mut self, conn: &mut Connection) -> Result<()> {
@@ -74,7 +67,10 @@ impl Message {
         // Corrupted data streams can result in a huge length.
         // Do a sanity check here.
         if data_len > MAX_BUFFER_SIZE {
-            bail!("Invalid size for info command buffer: {}", data_len);
+            return Err(CommandError::BufferSize {
+                size: data_len,
+                max: MAX_BUFFER_SIZE,
+            });
         }
         self.buf.resize(data_len, 0);
 
@@ -99,7 +95,7 @@ impl Message {
             match (key, val) {
                 (Some(key), Some(val)) => result.insert(key.to_string(), val.to_string()),
                 (Some(key), None) => result.insert(key.to_string(), String::new()),
-                _ => bail!("Parsing Info command failed"),
+                _ => return Err(CommandError::Parse("Parsing Info command failed")),
             };
         }
 

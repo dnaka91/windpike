@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use crate::{
     cluster::Cluster,
-    errors::{ErrorKind, Result},
+    errors::{Error, Result},
     task::{Status, Task},
 };
 
@@ -54,26 +54,28 @@ impl IndexTask {
                 if response.contains(FAIL_PATTERN_201) || response.contains(FAIL_PATTERN_203) {
                     Ok(Status::NotFound)
                 } else {
-                    bail!(ErrorKind::BadResponse(format!(
+                    Err(Error::BadResponse(format!(
                         "Code 201 and 203 missing. Response: {response}"
-                    )));
+                    )))
                 }
             }
             Some(pattern_index) => {
                 let percent_begin = pattern_index + SUCCESS_PATTERN.len();
 
                 let percent_end = match response[percent_begin..].find(DELMITER) {
-                    None => bail!(ErrorKind::BadResponse(format!(
-                        "delimiter missing in response. Response: {response}"
-                    ))),
+                    None => {
+                        return Err(Error::BadResponse(format!(
+                            "delimiter missing in response. Response: {response}"
+                        )))
+                    }
                     Some(percent_end) => percent_end,
                 };
                 let percent_str = &response[percent_begin..percent_begin + percent_end];
                 match percent_str.parse::<isize>() {
                     Ok(100) => Ok(Status::Complete),
                     Ok(_) => Ok(Status::InProgress),
-                    Err(_) => bail!(ErrorKind::BadResponse(
-                        "Unexpected load_pct value from server".to_string()
+                    Err(_) => Err(Error::BadResponse(
+                        "Unexpected load_pct value from server".to_string(),
                     )),
                 }
             }
@@ -88,7 +90,7 @@ impl Task for IndexTask {
         let nodes = self.cluster.nodes().await;
 
         if nodes.is_empty() {
-            bail!(ErrorKind::Connection("No connected node".to_string()))
+            return Err(Error::Connection("No connected node".to_string()));
         }
 
         for node in &nodes {

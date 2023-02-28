@@ -16,9 +16,10 @@
 use std::{thread, time::Duration};
 
 use aerospike::{
-    errors::ErrorKind,
+    as_bin, as_key,
+    errors::Error,
     task::{Status, Task},
-    *,
+    IndexType, UDFLang, WritePolicy,
 };
 
 use crate::common;
@@ -60,7 +61,7 @@ async fn register_task_test() {
     let timeout = Duration::from_millis(100);
     assert!(matches!(
         register_task.wait_till_complete(Some(timeout)).await,
-        Err(Error(ErrorKind::Timeout(_), _))
+        Err(Error::Timeout(_))
     ));
 
     client.close().await.unwrap();

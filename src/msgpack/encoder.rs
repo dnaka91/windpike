@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{collections::HashMap, i16, i32, i64, i8, num::Wrapping};
+use std::{collections::HashMap, num::Wrapping};
 
 use crate::{
     commands::{buffer::Buffer, ParticleType},

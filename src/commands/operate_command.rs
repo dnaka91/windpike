@@ -14,10 +14,9 @@
 
 use std::{sync::Arc, time::Duration};
 
+use super::{Command, CommandError, ReadCommand, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
-    commands::{Command, ReadCommand, SingleCommand},
-    errors::Result,
     net::Connection,
     operations::Operation,
     policy::WritePolicy,
@@ -44,7 +43,7 @@ impl<'a> OperateCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<()> {
+    pub async fn execute(&mut self) -> Result<(), CommandError> {
         SingleCommand::execute(self.policy, self).await
     }
 }
@@ -61,18 +60,20 @@ impl<'a> Command for OperateCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer.set_operate(
-            self.policy,
-            self.read_command.single_command.key,
-            self.operations,
-        )
+        conn.buffer
+            .set_operate(
+                self.policy,
+                self.read_command.single_command.key,
+                self.operations,
+            )
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.read_command.get_node().await
     }
 

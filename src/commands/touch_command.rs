@@ -16,10 +16,9 @@ use std::{sync::Arc, time::Duration};
 
 use tracing::warn;
 
+use super::{buffer, Command, CommandError, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
-    commands::{buffer, Command, SingleCommand},
-    errors::{ErrorKind, Result},
     net::Connection,
     policy::WritePolicy,
     Key, ResultCode,
@@ -55,14 +54,16 @@ impl<'a> Command for TouchCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer.set_touch(self.policy, self.single_command.key)
+        conn.buffer
+            .set_touch(self.policy, self.single_command.key)
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.single_command.get_node().await
     }
 
@@ -73,14 +74,14 @@ impl<'a> Command for TouchCommand<'a> {
             .await
         {
             warn!(%err, "Parse result error");
-            return Err(err);
+            return Err(err.into());
         }
 
         conn.buffer.reset_offset();
 
         let result_code = ResultCode::from(conn.buffer.read_u8(Some(13)));
         if result_code != ResultCode::Ok {
-            bail!(ErrorKind::ServerError(result_code));
+            return Err(CommandError::ServerError(result_code));
         }
 
         SingleCommand::empty_socket(conn).await

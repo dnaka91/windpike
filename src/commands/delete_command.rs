@@ -16,10 +16,9 @@ use std::{sync::Arc, time::Duration};
 
 use tracing::warn;
 
+use super::{buffer, Command, CommandError, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
-    commands::{buffer, Command, SingleCommand},
-    errors::{ErrorKind, Result},
     net::Connection,
     policy::WritePolicy,
     Key, ResultCode,
@@ -40,7 +39,7 @@ impl<'a> DeleteCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<()> {
+    pub async fn execute(&mut self) -> Result<(), CommandError> {
         SingleCommand::execute(self.policy, self).await
     }
 }
@@ -57,14 +56,16 @@ impl<'a> Command for DeleteCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
-    fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer.set_delete(self.policy, self.single_command.key)
+    fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<(), CommandError> {
+        conn.buffer
+            .set_delete(self.policy, self.single_command.key)
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.single_command.get_node().await
     }
 
@@ -75,7 +76,7 @@ impl<'a> Command for DeleteCommand<'a> {
             .await
         {
             warn!(%err, "Parse result error");
-            return Err(err);
+            return Err(err.into());
         }
 
         conn.buffer.reset_offset();
@@ -85,7 +86,7 @@ impl<'a> Command for DeleteCommand<'a> {
         let result_code = ResultCode::from(conn.buffer.read_u8(Some(13)));
 
         if result_code != ResultCode::Ok && result_code != ResultCode::KeyNotFoundError {
-            bail!(ErrorKind::ServerError(result_code));
+            return Err(CommandError::ServerError(result_code));
         }
 
         self.existed = result_code == ResultCode::Ok;

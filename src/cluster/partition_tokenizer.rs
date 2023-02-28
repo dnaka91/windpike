@@ -25,12 +25,8 @@ use std::{
 use base64::engine::{general_purpose, Engine};
 use tokio::sync::RwLock;
 
-use crate::{
-    cluster::{node, Node},
-    commands::Message,
-    errors::{ErrorKind, Result},
-    net::Connection,
-};
+use super::{node, ClusterError, Node, Result};
+use crate::{commands::Message, net::Connection};
 
 const REPLICAS_NAME: &str = "replicas-master";
 
@@ -52,7 +48,7 @@ impl PartitionTokenizer {
                 _offset: 0,
             });
         }
-        bail!(ErrorKind::BadResponse("Missing replicas info".to_string()))
+        Err(ClusterError::MissingReplicas)
     }
 
     pub async fn update_partition(
@@ -83,9 +79,7 @@ impl PartitionTokenizer {
                     }
                 }
                 (None, None) => break,
-                _ => bail!(ErrorKind::BadResponse(
-                    "Error parsing partition info".to_string()
-                )),
+                _ => return Err(ClusterError::InvalidPartitionInfo),
             }
         }
 

@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use aerospike::*;
+use aerospike::{as_bin, as_key, as_val, errors::Error, Task, UDFLang, Value, WritePolicy, commands::CommandError};
 
 use crate::common;
 
@@ -85,10 +85,10 @@ end
     let res = client
         .execute_udf(&wpolicy, &key, "test_udf1", "no_such_function", None)
         .await;
-    if let Err(Error(ErrorKind::UdfBadResponse(response), _)) = res {
+    if let Err(Error::Command(CommandError::UdfBadResponse(response))) = res {
         assert_eq!(response, "function not found".to_string());
     } else {
-        panic!("UDF function did not return the expected error");
+        panic!("UDF function did not return the expected error, but: {res:?}");
     }
 
     client.close().await.unwrap();

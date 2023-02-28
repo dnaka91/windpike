@@ -85,7 +85,7 @@ impl BatchExecutor {
                 //let next_job = async { jobs.lock().await.next().await};
                 for mut cmd in slice {
                     if let Err(err) = cmd.execute().await {
-                        *last_err.lock().await = Some(err);
+                        *last_err.lock().await = Some(err.into());
                     };
                     res.lock().await.push(cmd);
                 }
@@ -109,17 +109,17 @@ impl BatchExecutor {
     ) -> Result<HashMap<Arc<Node>, Vec<BatchRead>>> {
         let mut map = HashMap::new();
         for (_, batch_read) in batch_reads.iter().enumerate() {
-            let node = self.node_for_key(&batch_read.key).await?;
-            map.entry(node)
-                .or_insert_with(Vec::new)
-                .push(batch_read.clone());
+            if let Some(node) = self.node_for_key(&batch_read.key).await {
+                map.entry(node)
+                    .or_insert_with(Vec::new)
+                    .push(batch_read.clone());
+            }
         }
         Ok(map)
     }
 
-    async fn node_for_key(&self, key: &Key) -> Result<Arc<Node>> {
+    async fn node_for_key(&self, key: &Key) -> Option<Arc<Node>> {
         let partition = Partition::new_by_key(key);
-        let node = self.cluster.get_node(&partition).await?;
-        Ok(node)
+        self.cluster.get_node(&partition).await
     }
 }

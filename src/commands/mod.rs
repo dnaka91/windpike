@@ -40,12 +40,44 @@ pub use self::{
     read_command::ReadCommand, scan_command::ScanCommand, single_command::SingleCommand,
     stream_command::StreamCommand, touch_command::TouchCommand, write_command::WriteCommand,
 };
-use crate::{
-    cluster::Node,
-    errors::{Error, ErrorKind, Result},
-    net::Connection,
-    ResultCode,
-};
+use crate::{cluster::Node, net::Connection, ResultCode};
+
+pub type Result<T, E = CommandError> = crate::errors::Result<T, E>;
+
+#[derive(Debug, thiserror::Error)]
+pub enum CommandError {
+    #[error("Failed to prepare send buffer")]
+    PrepareBuffer(#[source] Box<Self>),
+    #[error("Failed to set timeout for send buffer")]
+    SetTimeout(#[source] Box<Self>),
+    #[error("Invalid size for buffer: {size} (max {max})")]
+    BufferSize { size: usize, max: usize },
+    #[error("Timeout")]
+    Timeout,
+    #[error("Server error: {0}")]
+    ServerError(ResultCode),
+    #[error("Invalid UTF-8 content ecountered")]
+    InvalidUtf8(#[from] std::str::Utf8Error),
+    #[error("I/O related error")]
+    Io(#[from] std::io::Error),
+    #[error("Failed hashing password")]
+    Hashing(#[from] pwhash::error::Error),
+    #[error("Network error")]
+    Network(#[from] crate::net::NetError),
+    #[error("Buffer error")]
+    Buffer(#[from] self::buffer::BufferError),
+    #[error("Particle error")]
+    Particle(#[from] crate::value::ParticleError),
+    #[error("No connections available")]
+    NoConnection,
+    /// Error returned when executing a User-Defined Function (UDF) resulted in an error.
+    #[error("Bad UDF response: {0}")]
+    UdfBadResponse(String),
+    #[error("Parsing failed: {0}")]
+    Parse(&'static str),
+    #[error("Other error")]
+    Other(#[source] Box<crate::Error>),
+}
 
 // Command interface describes all commands available
 #[async_trait::async_trait]
@@ -56,14 +88,11 @@ pub trait Command {
         timeout: Option<Duration>,
     ) -> Result<()>;
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()>;
-    async fn get_node(&self) -> Result<Arc<Node>>;
+    async fn get_node(&self) -> Option<Arc<Node>>;
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()>;
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()>;
 }
 
-pub const fn keep_connection(err: &Error) -> bool {
-    matches!(
-        err,
-        Error(ErrorKind::ServerError(ResultCode::KeyNotFoundError), _)
-    )
+pub const fn keep_connection(err: &CommandError) -> bool {
+    matches!(err, CommandError::ServerError(ResultCode::KeyNotFoundError))
 }

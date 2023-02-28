@@ -22,10 +22,10 @@ use crate::{
     batch::BatchExecutor,
     cluster::{Cluster, Node},
     commands::{
-        DeleteCommand, ExecuteUDFCommand, ExistsCommand, OperateCommand, QueryCommand, ReadCommand,
-        ScanCommand, TouchCommand, WriteCommand,
+        CommandError, DeleteCommand, ExecuteUDFCommand, ExistsCommand, OperateCommand,
+        QueryCommand, ReadCommand, ScanCommand, TouchCommand, WriteCommand,
     },
-    errors::{ErrorKind, Result, ResultExt},
+    errors::{Error, Result, UdfError},
     net::ToHosts,
     operations::{Operation, OperationType},
     policy::{BatchPolicy, ClientPolicy, QueryPolicy, ReadPolicy, ScanPolicy, WritePolicy},
@@ -47,6 +47,7 @@ use crate::{
 /// Each record may have multiple bins, unless the Aerospike server nodes are configured as
 /// "single-bin". In "multi-bin" mode, partial records may be written or read by specifying the
 /// relevant subset of bins.
+#[derive(Debug)]
 pub struct Client {
     cluster: Arc<Cluster>,
 }
@@ -121,7 +122,7 @@ impl Client {
     }
 
     /// Return node given its name.
-    pub async fn get_node(&self, name: &str) -> Result<Arc<Node>> {
+    pub async fn get_node(&self, name: &str) -> Option<Arc<Node>> {
         self.cluster.get_node_by_name(name).await
     }
 
@@ -139,7 +140,7 @@ impl Client {
     /// Fetch specified bins for a record with the given key.
     ///
     /// ```rust
-    /// use aerospike::{as_key, Client, ClientPolicy, Error, ErrorKind, ReadPolicy, ResultCode};
+    /// use aerospike::{as_key, Client, ClientPolicy, commands::CommandError, ReadPolicy, ResultCode};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -150,7 +151,7 @@ impl Client {
     ///     let key = as_key!("test", "test", "mykey");
     ///     match client.get(&ReadPolicy::default(), &key, ["a", "b"]).await {
     ///         Ok(record) => println!("a={:?}", record.bins.get("a")),
-    ///         Err(Error(ErrorKind::ServerError(ResultCode::KeyNotFoundError), _)) => {
+    ///         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
     ///             println!("No such record: {}", key)
     ///         }
     ///         Err(err) => println!("Error fetching record: {}", err),
@@ -161,7 +162,7 @@ impl Client {
     /// Determine the remaining time-to-live of a record.
     ///
     /// ```rust
-    /// use aerospike::{as_key, Bins, Client, ClientPolicy, Error, ErrorKind, ReadPolicy, ResultCode};
+    /// use aerospike::{as_key, Bins, Client, ClientPolicy, commands::CommandError, ReadPolicy, ResultCode};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -175,7 +176,7 @@ impl Client {
     ///             None => println!("record never expires"),
     ///             Some(duration) => println!("ttl: {} secs", duration.as_secs()),
     ///         },
-    ///         Err(Error(ErrorKind::ServerError(ResultCode::KeyNotFoundError), _)) => {
+    ///         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
     ///             println!("No such record: {}", key)
     ///         }
     ///         Err(err) => println!("Error fetching record: {}", err),
@@ -185,7 +186,12 @@ impl Client {
     ///
     /// # Panics
     /// Panics if the return is invalid
-    pub async fn get<T>(&self, policy: &ReadPolicy, key: &Key, bins: T) -> Result<Record>
+    pub async fn get<T>(
+        &self,
+        policy: &ReadPolicy,
+        key: &Key,
+        bins: T,
+    ) -> Result<Record, CommandError>
     where
         T: Into<Bins> + Send + Sync + 'static,
     {
@@ -293,7 +299,7 @@ impl Client {
         policy: &'a WritePolicy,
         key: &'a Key,
         bins: &'a [Bin<'b>],
-    ) -> Result<()> {
+    ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
             policy,
             self.cluster.clone(),
@@ -336,7 +342,7 @@ impl Client {
         policy: &'a WritePolicy,
         key: &'a Key,
         bins: &'a [Bin<'b>],
-    ) -> Result<()> {
+    ) -> Result<(), CommandError> {
         let mut command =
             WriteCommand::new(policy, self.cluster.clone(), key, bins, OperationType::Incr);
         command.execute().await
@@ -350,7 +356,7 @@ impl Client {
         policy: &'a WritePolicy,
         key: &'a Key,
         bins: &'a [Bin<'b>],
-    ) -> Result<()> {
+    ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
             policy,
             self.cluster.clone(),
@@ -369,7 +375,7 @@ impl Client {
         policy: &'a WritePolicy,
         key: &'a Key,
         bins: &'a [Bin<'b>],
-    ) -> Result<()> {
+    ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
             policy,
             self.cluster.clone(),
@@ -404,7 +410,7 @@ impl Client {
     ///     }
     /// }
     /// ```
-    pub async fn delete(&self, policy: &WritePolicy, key: &Key) -> Result<bool> {
+    pub async fn delete(&self, policy: &WritePolicy, key: &Key) -> Result<bool, CommandError> {
         let mut command = DeleteCommand::new(policy, self.cluster.clone(), key);
         command.execute().await?;
         Ok(command.existed)
@@ -435,13 +441,13 @@ impl Client {
     ///     }
     /// }
     /// ```
-    pub async fn touch(&self, policy: &WritePolicy, key: &Key) -> Result<()> {
+    pub async fn touch(&self, policy: &WritePolicy, key: &Key) -> Result<(), CommandError> {
         let mut command = TouchCommand::new(policy, self.cluster.clone(), key);
         command.execute().await
     }
 
     /// Determine if a record key exists. The policy can be used to specify timeouts.
-    pub async fn exists(&self, policy: &WritePolicy, key: &Key) -> Result<bool> {
+    pub async fn exists(&self, policy: &WritePolicy, key: &Key) -> Result<bool, CommandError> {
         let mut command = ExistsCommand::new(policy, self.cluster.clone(), key);
         command.execute().await?;
         Ok(command.exists)
@@ -483,7 +489,7 @@ impl Client {
         policy: &WritePolicy,
         key: &Key,
         ops: &[Operation<'_>],
-    ) -> Result<Record> {
+    ) -> Result<Record, CommandError> {
         let mut command = OperateCommand::new(policy, self.cluster.clone(), key, ops);
         command.execute().await?;
         Ok(command.read_command.record.unwrap())
@@ -546,25 +552,25 @@ impl Client {
         let udf_body = general_purpose::STANDARD.encode(udf_body);
 
         let cmd = format!(
-            "udf-put:filename={};content={};content-len={};udf-type={};",
-            udf_name,
-            udf_body,
-            udf_body.len(),
-            language
+            "udf-put:filename={udf_name};content={udf_body};content-len={udf_len};\
+             udf-type={language};",
+            udf_len = udf_body.len(),
         );
-        let node = self.cluster.get_random_node().await?;
-        let response = node.info(&[&cmd]).await?;
+        let node = self.cluster.get_random_node().await.ok_or(Error::NoNodes)?;
+        let mut response = node.info(&[&cmd]).await?;
 
         if let Some(msg) = response.get("error") {
-            let msg = general_purpose::STANDARD.decode(msg)?;
-            let msg = str::from_utf8(&msg)?;
-            bail!(
-                "UDF Registration failed: {}, file: {}, line: {}, message: {}",
-                response.get("error").unwrap_or(&"-".to_string()),
-                response.get("file").unwrap_or(&"-".to_string()),
-                response.get("line").unwrap_or(&"-".to_string()),
-                msg
-            );
+            let msg = general_purpose::STANDARD
+                .decode(msg)
+                .map_err(Error::Base64)?;
+            let msg = str::from_utf8(&msg).map_err(Error::InvalidUtf8)?;
+            return Err(UdfError::RegistrationFailed {
+                error: response.remove("error"),
+                file: response.remove("file"),
+                line: response.remove("line"),
+                message: msg.to_owned(),
+            }
+            .into());
         }
 
         Ok(RegisterTask::new(
@@ -586,9 +592,9 @@ impl Client {
         language: UDFLang,
     ) -> Result<RegisterTask> {
         let path = Path::new(client_path);
-        let mut file = File::open(&path).await?;
+        let mut file = File::open(&path).await.map_err(Error::Io)?;
         let mut udf_body: Vec<u8> = vec![];
-        file.read_to_end(&mut udf_body).await?;
+        file.read_to_end(&mut udf_body).await.map_err(Error::Io)?;
 
         self.register_udf(&udf_body, udf_name, language).await
     }
@@ -596,13 +602,13 @@ impl Client {
     /// Remove a user-defined function (UDF) module from the server.
     pub async fn remove_udf(&self, udf_name: &str, language: UDFLang) -> Result<()> {
         let cmd = format!("udf-remove:filename={udf_name}.{language};");
-        let node = self.cluster.get_random_node().await?;
+        let node = self.cluster.get_random_node().await.ok_or(Error::NoNodes)?;
         // Sample response: {"udf-remove:filename=file_name.LUA;": "ok"}
         let response = node.info(&[&cmd]).await?;
 
         match response.get(&cmd).map(String::as_str) {
             Some("ok") => Ok(()),
-            _ => bail!("UDF Remove failed: {:?}", response),
+            _ => Err(UdfError::RemoveFailed(response).into()),
         }
     }
 
@@ -641,11 +647,11 @@ impl Client {
             if key.contains("SUCCESS") {
                 return Ok(Some(value.clone()));
             } else if key.contains("FAILURE") {
-                bail!("{:?}", value);
+                return Err(UdfError::InvalidReturnValue(Some(format!("{value:?}"))).into());
             }
         }
 
-        Err("Invalid UDF return value".into())
+        Err(UdfError::InvalidReturnValue(None).into())
     }
 
     /// Read all records in the specified namespace and set and return a record iterator. The scan
@@ -885,7 +891,7 @@ impl Client {
 
         self.send_info_cmd(&cmd)
             .await
-            .chain_err(|| "Error truncating ns/set")
+            .map_err(|e| Error::Truncate(Box::new(e)))
     }
 
     /// Create a secondary index on a bin containing scalar values. This asynchronous server call
@@ -961,7 +967,7 @@ impl Client {
         );
         self.send_info_cmd(&cmd)
             .await
-            .chain_err(|| "Error creating index")
+            .map_err(|e| Error::CreateIndex(Box::new(e)))
     }
 
     /// Delete secondary index.
@@ -979,11 +985,11 @@ impl Client {
         let cmd = format!("sindex-delete:ns={namespace};{set_name}indexname={index_name}");
         self.send_info_cmd(&cmd)
             .await
-            .chain_err(|| "Error dropping index")
+            .map_err(|e| Error::Truncate(Box::new(e)))
     }
 
     async fn send_info_cmd(&self, cmd: &str) -> Result<()> {
-        let node = self.cluster.get_random_node().await?;
+        let node = self.cluster.get_random_node().await.ok_or(Error::NoNodes)?;
         let response = node.info(&[cmd]).await?;
 
         if let Some(v) = response.values().next() {
@@ -991,12 +997,12 @@ impl Client {
                 return Ok(());
             } else if v.starts_with("FAIL:") {
                 let result = v.split(':').nth(1).unwrap().parse::<u8>()?;
-                bail!(ErrorKind::ServerError(ResultCode::from(result)));
+                return Err(Error::ServerError(ResultCode::from(result)));
             }
         }
 
-        bail!(ErrorKind::BadResponse(
-            "Unexpected sindex info command response".to_string()
+        Err(Error::BadResponse(
+            "Unexpected sindex info command response".to_string(),
         ))
     }
 }

@@ -14,7 +14,10 @@
 
 use std::{collections::HashMap, time::Duration};
 
-use crate::{commands::admin_command::AdminCommand, errors::Result};
+use crate::{
+    commands::{admin_command::AdminCommand, CommandError},
+    errors::Result,
+};
 
 /// `ClientPolicy` encapsulates parameters for client policy command.
 #[derive(Debug, Clone)]
@@ -104,7 +107,11 @@ impl Default for ClientPolicy {
 
 impl ClientPolicy {
     /// Set username and password to use when authenticating to the cluster.
-    pub fn set_user_password(&mut self, username: String, password: String) -> Result<()> {
+    pub fn set_user_password(
+        &mut self,
+        username: String,
+        password: String,
+    ) -> Result<(), CommandError> {
         let password = AdminCommand::hash_password(&password)?;
         self.user_password = Some((username, password));
         Ok(())

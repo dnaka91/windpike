@@ -14,10 +14,9 @@
 
 use std::{str, sync::Arc, time::Duration};
 
+use super::{Command, CommandError, ReadCommand, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
-    commands::{Command, ReadCommand, SingleCommand},
-    errors::Result,
     net::Connection,
     policy::WritePolicy,
     Bins, Key, Value,
@@ -49,7 +48,7 @@ impl<'a> ExecuteUDFCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<()> {
+    pub async fn execute(&mut self) -> Result<(), CommandError> {
         SingleCommand::execute(self.policy, self).await
     }
 }
@@ -66,20 +65,22 @@ impl<'a> Command for ExecuteUDFCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer.set_udf(
-            self.policy,
-            self.read_command.single_command.key,
-            self.package_name,
-            self.function_name,
-            self.args,
-        )
+        conn.buffer
+            .set_udf(
+                self.policy,
+                self.read_command.single_command.key,
+                self.package_name,
+                self.function_name,
+                self.args,
+            )
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.read_command.get_node().await
     }
 

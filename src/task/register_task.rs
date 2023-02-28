@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use crate::{
     cluster::Cluster,
-    errors::{ErrorKind, Result},
+    errors::{Error, Result},
     task::{Status, Task},
 };
 
@@ -48,7 +48,7 @@ impl Task for RegisterTask {
         let nodes = self.cluster.nodes().await;
 
         if nodes.is_empty() {
-            bail!(ErrorKind::Connection("No connected node".to_string()))
+            return Err(Error::Connection("No connected node".to_string()));
         }
 
         for node in &nodes {

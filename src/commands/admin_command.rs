@@ -17,10 +17,9 @@
 use std::str;
 
 use pwhash::bcrypt::{self, BcryptSetup, BcryptVariant};
-
+use super::{CommandError, Result};
 use crate::{
     cluster::Cluster,
-    errors::{ErrorKind, Result},
     net::{Connection, PooledConnection},
     ResultCode,
 };
@@ -70,19 +69,19 @@ impl AdminCommand {
         // Send command.
         if let Err(err) = conn.flush().await {
             conn.invalidate().await;
-            return Err(err);
+            return Err(err.into());
         }
 
         // read header
         if let Err(err) = conn.read_buffer(HEADER_SIZE).await {
             conn.invalidate().await;
-            return Err(err);
+            return Err(err.into());
         }
 
         let result_code = conn.buffer.read_u8(Some(RESULT_CODE));
         let result_code = ResultCode::from(result_code);
         if result_code != ResultCode::Ok {
-            bail!(ErrorKind::ServerError(result_code));
+            return Err(CommandError::ServerError(result_code));
         }
 
         Ok(())
@@ -104,7 +103,7 @@ impl AdminCommand {
         let result_code = conn.buffer.read_u8(Some(RESULT_CODE));
         let result_code = ResultCode::from(result_code);
         if ResultCode::SecurityNotEnabled != result_code && ResultCode::Ok != result_code {
-            bail!(ErrorKind::ServerError(result_code));
+            return Err(CommandError::ServerError(result_code));
         }
 
         // consume the rest of the buffer
@@ -121,7 +120,10 @@ impl AdminCommand {
         password: &str,
         roles: &[&str],
     ) -> Result<()> {
-        let node = cluster.get_random_node().await?;
+        let node = cluster
+            .get_random_node()
+            .await
+            .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
         conn.buffer.resize_buffer(1024)?;
@@ -135,7 +137,10 @@ impl AdminCommand {
     }
 
     pub async fn drop_user(cluster: &Cluster, user: &str) -> Result<()> {
-        let node = cluster.get_random_node().await?;
+        let node = cluster
+            .get_random_node()
+            .await
+            .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
         conn.buffer.resize_buffer(1024)?;
@@ -147,7 +152,10 @@ impl AdminCommand {
     }
 
     pub async fn set_password(cluster: &Cluster, user: &str, password: &str) -> Result<()> {
-        let node = cluster.get_random_node().await?;
+        let node = cluster
+            .get_random_node()
+            .await
+            .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
         conn.buffer.resize_buffer(1024)?;
@@ -160,7 +168,10 @@ impl AdminCommand {
     }
 
     pub async fn change_password(cluster: &Cluster, user: &str, password: &str) -> Result<()> {
-        let node = cluster.get_random_node().await?;
+        let node = cluster
+            .get_random_node()
+            .await
+            .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
         conn.buffer.resize_buffer(1024)?;
@@ -185,7 +196,10 @@ impl AdminCommand {
     }
 
     pub async fn grant_roles(cluster: &Cluster, user: &str, roles: &[&str]) -> Result<()> {
-        let node = cluster.get_random_node().await?;
+        let node = cluster
+            .get_random_node()
+            .await
+            .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
         conn.buffer.resize_buffer(1024)?;
@@ -198,7 +212,10 @@ impl AdminCommand {
     }
 
     pub async fn revoke_roles(cluster: &Cluster, user: &str, roles: &[&str]) -> Result<()> {
-        let node = cluster.get_random_node().await?;
+        let node = cluster
+            .get_random_node()
+            .await
+            .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
         conn.buffer.resize_buffer(1024)?;

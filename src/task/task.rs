@@ -15,7 +15,7 @@
 
 use tokio::time::{Duration, Instant};
 
-use crate::errors::{ErrorKind, Result};
+use crate::errors::{Error, Result};
 
 /// Status of task
 #[derive(Debug, Clone, Copy)]
@@ -48,14 +48,14 @@ pub trait Task {
 
             match self.query_status().await {
                 Ok(Status::NotFound) => {
-                    bail!(ErrorKind::BadResponse("task status not found".to_string()))
+                    return Err(Error::BadResponse("task status not found".to_string()))
                 }
                 Ok(Status::InProgress) => {} // do nothing and wait
                 error_or_complete => return error_or_complete,
             }
 
             if timeout.map_or(false, timeout_elapsed) {
-                bail!(ErrorKind::Timeout("Task timeout reached".to_string()))
+                return Err(Error::Timeout("Task timeout reached".to_string()));
             }
         }
     }

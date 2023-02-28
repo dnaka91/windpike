@@ -13,13 +13,13 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{collections::HashMap, vec::Vec};
+use std::collections::HashMap;
 
 use tracing::warn;
 
+use super::{MsgpackError, Result};
 use crate::{
     commands::{buffer::Buffer, ParticleType},
-    errors::{ErrorKind, Result},
     value::Value,
 };
 
@@ -106,10 +106,7 @@ fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
             Ok(Value::GeoJSON(val))
         }
 
-        _ => bail!(
-            "Error while unpacking BLOB. Type-header with code `{}` not recognized.",
-            vtype
-        ),
+        _ => Err(MsgpackError::UnrecognizedCode(vtype)),
     }
 }
 
@@ -214,9 +211,7 @@ fn unpack_value(buf: &mut Buffer) -> Result<Value> {
             let value = i16::from(obj_type) - 0xe0 - 32;
             Ok(Value::from(value))
         }
-        _ => Err(
-            ErrorKind::BadResponse(format!("Error unpacking value of type '{obj_type:x}'")).into(),
-        ),
+        _ => Err(MsgpackError::UnrecognizedCode(obj_type)),
     }
 }
 

@@ -13,16 +13,17 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use aerospike::Client;
+use aerospike::{Client, Error,cluster::ClusterError};
 
 mod common;
 
 #[tokio::test]
-#[should_panic(expected = "Failed to connect to host(s).")]
 async fn cluster_name() {
     let policy = &mut common::client_policy().clone();
     policy.cluster_name = Some(String::from("notTheRealClusterName"));
-    Client::new(policy, &common::hosts()).await.unwrap();
+    let err = Client::new(policy, &common::hosts()).await.unwrap_err();
+    eprintln!("{err:?}");
+    assert!(matches!(err, Error::Cluster(ClusterError::Connection)));
 }
 
 #[tokio::test]
@@ -46,7 +47,7 @@ async fn get_node() {
     let client = common::client().await;
     for name in client.node_names().await {
         let node = client.get_node(&name).await;
-        assert!(node.is_ok());
+        assert!(node.is_some());
     }
     client.close().await.unwrap();
 }

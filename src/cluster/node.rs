@@ -28,11 +28,10 @@ use std::{
 use tokio::sync::RwLock;
 use tracing::error;
 
+use super::{node_validator::NodeValidator, ClusterError, NodeError, NodeRefreshError, Result};
 use crate::{
-    cluster::node_validator::NodeValidator,
     commands::Message,
-    errors::{ErrorKind, Result, ResultExt},
-    net::{ConnectionPool, Host, PooledConnection},
+    net::{ConnectionPool, Host, NetError, PooledConnection},
     policy::ClientPolicy,
 };
 
@@ -125,7 +124,10 @@ impl Node {
     }
 
     // Refresh the node
-    pub async fn refresh(&self, current_aliases: HashMap<Host, Arc<Node>>) -> Result<Vec<Host>> {
+    pub async fn refresh(
+        &self,
+        current_aliases: HashMap<Host, Arc<Node>>,
+    ) -> Result<Vec<Host>, NodeRefreshError> {
         self.reference_count.store(0, Ordering::Relaxed);
         self.responded.store(false, Ordering::Relaxed);
         self.refresh_count.fetch_add(1, Ordering::Relaxed);
@@ -138,15 +140,15 @@ impl Node {
         let info_map = self
             .info(&commands)
             .await
-            .chain_err(|| "Info command failed")?;
+            .map_err(NodeRefreshError::InfoCommandFailed)?;
         self.validate_node(&info_map)
-            .chain_err(|| "Failed to validate node")?;
+            .map_err(NodeRefreshError::ValidationFailed)?;
         self.responded.store(true, Ordering::Relaxed);
         let friends = self
             .add_friends(current_aliases, &info_map)
-            .chain_err(|| "Failed to add friends")?;
+            .map_err(NodeRefreshError::FailedAddingFriends)?;
         self.update_partitions(&info_map)
-            .chain_err(|| "Failed to update partitions")?;
+            .map_err(NodeRefreshError::FailedUpdatingPartitions)?;
         self.reset_failures();
         Ok(friends)
     }
@@ -160,39 +162,38 @@ impl Node {
         }
     }
 
-    fn validate_node(&self, info_map: &HashMap<String, String>) -> Result<()> {
+    fn validate_node(&self, info_map: &HashMap<String, String>) -> Result<(), NodeError> {
         self.verify_node_name(info_map)?;
         self.verify_cluster_name(info_map)?;
         Ok(())
     }
 
-    fn verify_node_name(&self, info_map: &HashMap<String, String>) -> Result<()> {
+    fn verify_node_name(&self, info_map: &HashMap<String, String>) -> Result<(), NodeError> {
         match info_map.get("node") {
-            None => Err(ErrorKind::InvalidNode("Missing node name".to_string()).into()),
+            None => Err(NodeError::MissingNodeName),
             Some(info_name) if info_name == &self.name => Ok(()),
             Some(info_name) => {
                 self.inactivate();
-                Err(ErrorKind::InvalidNode(format!(
-                    "Node name has changed: '{}' => '{}'",
-                    self.name, info_name
-                ))
-                .into())
+                Err(NodeError::NameMismatch {
+                    expected: self.name.clone(),
+                    got: info_name.clone(),
+                })
             }
         }
     }
 
-    fn verify_cluster_name(&self, info_map: &HashMap<String, String>) -> Result<()> {
+    fn verify_cluster_name(&self, info_map: &HashMap<String, String>) -> Result<(), NodeError> {
         self.client_policy.cluster_name.as_ref().map_or_else(
             || Ok(()),
             |expected| match info_map.get("cluster-name") {
-                None => Err(ErrorKind::InvalidNode("Missing cluster name".to_string()).into()),
+                None => Err(NodeError::MissingClusterName),
                 Some(info_name) if info_name == expected => Ok(()),
                 Some(info_name) => {
                     self.inactivate();
-                    Err(ErrorKind::InvalidNode(format!(
-                        "Cluster name mismatch: expected={expected}, got={info_name}",
-                    ))
-                    .into())
+                    Err(NodeError::NameMismatch {
+                        expected: expected.clone(),
+                        got: info_name.clone(),
+                    })
                 }
             },
         )
@@ -206,7 +207,7 @@ impl Node {
         let mut friends: Vec<Host> = vec![];
 
         let friend_string = match info_map.get(self.services_name()) {
-            None => bail!(ErrorKind::BadResponse("Missing services list".to_string())),
+            None => return Err(ClusterError::MissingServicesList),
             Some(friend_string) if friend_string.is_empty() => return Ok(friends),
             Some(friend_string) => friend_string,
         };
@@ -243,9 +244,7 @@ impl Node {
 
     fn update_partitions(&self, info_map: &HashMap<String, String>) -> Result<()> {
         match info_map.get("partition-generation") {
-            None => bail!(ErrorKind::BadResponse(
-                "Missing partition generation".to_string()
-            )),
+            None => return Err(ClusterError::MissingPartitionGeneration),
             Some(gen_string) => {
                 let gen = gen_string.parse::<isize>()?;
                 self.partition_generation.store(gen, Ordering::Relaxed);
@@ -256,7 +255,7 @@ impl Node {
     }
 
     // Get a connection to the node from the connection pool
-    pub async fn get_connection(&self) -> Result<PooledConnection> {
+    pub async fn get_connection(&self) -> Result<PooledConnection, NetError> {
         self.connection_pool.get().await
     }
 
@@ -308,7 +307,7 @@ impl Node {
             Ok(info) => Ok(info),
             Err(e) => {
                 conn.invalidate().await;
-                Err(e)
+                Err(e.into())
             }
         }
     }

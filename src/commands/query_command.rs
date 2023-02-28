@@ -14,10 +14,10 @@
 
 use std::{sync::Arc, time::Duration};
 
+use super::Result;
 use crate::{
     cluster::Node,
     commands::{Command, SingleCommand, StreamCommand},
-    errors::Result,
     net::Connection,
     policy::QueryPolicy,
     Recordset, Statement,
@@ -63,20 +63,22 @@ impl<'a> Command for QueryCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer.set_query(
-            self.policy,
-            &self.statement,
-            false,
-            self.stream_command.recordset.task_id(),
-            &self.partitions,
-        )
+        conn.buffer
+            .set_query(
+                self.policy,
+                &self.statement,
+                false,
+                self.stream_command.recordset.task_id(),
+                &self.partitions,
+            )
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.stream_command.get_node().await
     }
 

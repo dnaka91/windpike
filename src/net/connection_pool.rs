@@ -25,11 +25,8 @@ use std::{
 
 use tokio::sync::Mutex;
 
-use crate::{
-    errors::{Error, ErrorKind, Result},
-    net::{Connection, Host},
-    policy::ClientPolicy,
-};
+use super::{Connection, Host, NetError, Result};
+use crate::policy::ClientPolicy;
 
 #[derive(Debug)]
 struct IdleConnection(Connection);
@@ -81,7 +78,7 @@ impl Queue {
             }
 
             if internals.num_conns >= self.0.capacity {
-                bail!(ErrorKind::NoMoreConnections);
+                return Err(NetError::NoMoreConnections);
             }
 
             internals.num_conns += 1;
@@ -99,9 +96,7 @@ impl Queue {
                 let mut internals = self.0.internals.lock().await;
                 internals.num_conns -= 1;
                 drop(internals);
-                bail!(ErrorKind::Connection(
-                    "Could not open network connection".to_string()
-                ));
+                return Err(NetError::FailedOpening);
             }
 
             let conn = conn.unwrap()?;
@@ -196,7 +191,7 @@ impl ConnectionPool {
             loop {
                 let i = self.queue_counter.fetch_add(1, Ordering::Relaxed);
                 let connection = self.queues[i % self.num_queues].get().await;
-                if let Err(Error(ErrorKind::NoMoreConnections, _)) = connection {
+                if matches!(connection, Err(NetError::NoMoreConnections)) {
                     attempts -= 1;
                     if attempts > 0 {
                         continue;

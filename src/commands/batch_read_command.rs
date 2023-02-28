@@ -17,10 +17,9 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::time::{Duration, Instant};
 use tracing::warn;
 
+use super::{Command, CommandError, Result};
 use crate::{
     cluster::Node,
-    commands::{self, Command},
-    errors::{ErrorKind, Result, ResultExt},
     net::Connection,
     policy::{BatchPolicy, Policy, PolicyLike},
     value, BatchRead, Record, ResultCode, Value,
@@ -47,7 +46,7 @@ impl BatchReadCommand {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<()> {
+    pub async fn execute(&mut self) -> Result<(), CommandError> {
         let mut iterations = 0;
         let base_policy = self.policy.base().clone();
 
@@ -61,9 +60,7 @@ impl BatchReadCommand {
             // too many retries
             if let Some(max_retries) = base_policy.max_retries() {
                 if iterations > max_retries + 1 {
-                    bail!(ErrorKind::Connection(format!(
-                        "Timeout after {iterations} tries",
-                    )));
+                    return Err(CommandError::Timeout);
                 }
             }
 
@@ -83,8 +80,8 @@ impl BatchReadCommand {
 
             // set command node, so when you return a record it has the node
             let node = match self.get_node().await {
-                Ok(node) => node,
-                Err(_) => continue, // Node is currently inactive. Retry.
+                Some(node) => node,
+                None => continue, // Node is currently inactive. Retry.
             };
 
             let mut conn = match node.get_connection().await {
@@ -96,10 +93,10 @@ impl BatchReadCommand {
             };
 
             self.prepare_buffer(&mut conn)
-                .chain_err(|| "Failed to prepare send buffer")?;
+                .map_err(|e| CommandError::PrepareBuffer(Box::new(e)))?;
             self.write_timeout(&mut conn, base_policy.timeout())
                 .await
-                .chain_err(|| "Failed to set timeout for send buffer")?;
+                .map_err(|e| CommandError::SetTimeout(Box::new(e)))?;
 
             // Send command.
             if let Err(err) = self.write_buffer(&mut conn).await {
@@ -116,7 +113,7 @@ impl BatchReadCommand {
                 // cancelling/closing the batch/multi commands will return an error, which will
                 // close the connection to throw away its data and signal the server about the
                 // situation. We will not put back the connection in the buffer.
-                if !commands::keep_connection(&err) {
+                if !super::keep_connection(&err) {
                     conn.invalidate().await;
                 }
                 return Err(err);
@@ -126,12 +123,12 @@ impl BatchReadCommand {
             return Ok(());
         }
 
-        bail!(ErrorKind::Connection("Timeout".to_string()))
+        Err(CommandError::Timeout)
     }
 
     async fn parse_group(&mut self, conn: &mut Connection, size: usize) -> Result<bool> {
         while conn.bytes_read() < size {
-            conn.read_buffer(commands::buffer::MSG_REMAINING_HEADER_SIZE as usize)
+            conn.read_buffer(super::buffer::MSG_REMAINING_HEADER_SIZE as usize)
                 .await?;
             match self.parse_record(conn).await? {
                 None => return Ok(false),
@@ -151,12 +148,12 @@ impl BatchReadCommand {
         let found_key = match ResultCode::from(conn.buffer.read_u8(Some(5))) {
             ResultCode::Ok => true,
             ResultCode::KeyNotFoundError => false,
-            rc => bail!(ErrorKind::ServerError(rc)),
+            rc => return Err(CommandError::ServerError(rc)),
         };
 
         // if cmd is the end marker of the response, do not proceed further
         let info3 = conn.buffer.read_u8(Some(3));
-        if info3 & commands::buffer::INFO3_LAST == commands::buffer::INFO3_LAST {
+        if info3 & super::buffer::INFO3_LAST == super::buffer::INFO3_LAST {
             return Ok(None);
         }
 
@@ -167,7 +164,7 @@ impl BatchReadCommand {
         let field_count = conn.buffer.read_u16(None) as usize; // almost certainly 0
         let op_count = conn.buffer.read_u16(None) as usize;
 
-        let key = commands::StreamCommand::parse_key(conn, field_count).await?;
+        let key = super::StreamCommand::parse_key(conn, field_count).await?;
 
         let record = if found_key {
             let mut bins: HashMap<String, Value> = HashMap::with_capacity(op_count);
@@ -200,7 +197,7 @@ impl BatchReadCommand {
 }
 
 #[async_trait::async_trait]
-impl commands::Command for BatchReadCommand {
+impl Command for BatchReadCommand {
     async fn write_timeout(
         &mut self,
         conn: &mut Connection,
@@ -211,16 +208,17 @@ impl commands::Command for BatchReadCommand {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer
             .set_batch_read(&self.policy, self.batch_reads.clone())
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
-        Ok(self.node.clone())
+    async fn get_node(&self) -> Option<Arc<Node>> {
+        Some(self.node.clone())
     }
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {

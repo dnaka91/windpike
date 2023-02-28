@@ -21,7 +21,6 @@ use std::{
     vec::Vec,
 };
 
-use byteorder::{ByteOrder, NetworkEndian};
 use ripemd::{Digest, Ripemd160};
 #[cfg(feature = "serialization")]
 use serde::ser::{SerializeMap, SerializeSeq};
@@ -29,9 +28,12 @@ use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
 use crate::{
-    commands::{buffer::Buffer, ParticleType},
+    commands::{
+        buffer::{Buffer, BufferError},
+        ParticleType,
+    },
     errors::Result,
-    msgpack::{decoder, encoder},
+    msgpack::{decoder, encoder, MsgpackError},
 };
 
 /// Container for floating point bin values stored in the Aerospike database.
@@ -198,8 +200,7 @@ impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match *self {
             Value::Nil => {
-                let v: Option<u8> = None;
-                v.hash(state);
+                Option::<u8>::None.hash(state);
             }
             Value::Bool(ref val) => val.hash(state),
             Value::Int(ref val) => val.hash(state),
@@ -305,9 +306,7 @@ impl Value {
     pub fn write_key_bytes(&self, h: &mut Ripemd160) -> Result<()> {
         match *self {
             Value::Int(ref val) => {
-                let mut buf = [0; 8];
-                NetworkEndian::write_i64(&mut buf, *val);
-                h.update(buf);
+                h.update(val.to_be_bytes());
                 Ok(())
             }
             Value::String(ref val) => {
@@ -553,22 +552,21 @@ impl<'a> From<&'a Value> for i64 {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum ParticleError {
+    #[error("Buffer error")]
+    Buffer(#[from] BufferError),
+    #[error("MessagePack error")]
+    Msgpack(#[from] MsgpackError),
+}
+
 #[doc(hidden)]
-pub fn bytes_to_particle(ptype: u8, buf: &mut Buffer, len: usize) -> Result<Value> {
+pub fn bytes_to_particle(ptype: u8, buf: &mut Buffer, len: usize) -> Result<Value, ParticleError> {
     match ParticleType::from(ptype) {
         ParticleType::NULL => Ok(Value::Nil),
-        ParticleType::INTEGER => {
-            let val = buf.read_i64(None);
-            Ok(Value::Int(val))
-        }
-        ParticleType::FLOAT => {
-            let val = buf.read_f64(None);
-            Ok(Value::Float(FloatValue::from(val)))
-        }
-        ParticleType::STRING => {
-            let val = buf.read_str(len)?;
-            Ok(Value::String(val))
-        }
+        ParticleType::INTEGER => Ok(Value::Int(buf.read_i64(None))),
+        ParticleType::FLOAT => Ok(Value::Float(buf.read_f64(None).into())),
+        ParticleType::STRING => Ok(Value::String(buf.read_str(len)?)),
         ParticleType::GEOJSON => {
             buf.skip(1);
             let ncells = buf.read_i16(None) as usize;
@@ -579,14 +577,8 @@ pub fn bytes_to_particle(ptype: u8, buf: &mut Buffer, len: usize) -> Result<Valu
             Ok(Value::GeoJSON(val))
         }
         ParticleType::BLOB => Ok(Value::Blob(buf.read_blob(len))),
-        ParticleType::LIST => {
-            let val = decoder::unpack_value_list(buf)?;
-            Ok(val)
-        }
-        ParticleType::MAP => {
-            let val = decoder::unpack_value_map(buf)?;
-            Ok(val)
-        }
+        ParticleType::LIST => Ok(decoder::unpack_value_list(buf)?),
+        ParticleType::MAP => Ok(decoder::unpack_value_map(buf)?),
         ParticleType::DIGEST => Ok(Value::from("A DIGEST, NOT IMPLEMENTED YET!")),
         ParticleType::LDT => Ok(Value::from("A LDT, NOT IMPLEMENTED YET!")),
         ParticleType::HLL => Ok(Value::HLL(buf.read_blob(len))),

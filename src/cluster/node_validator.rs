@@ -16,10 +16,9 @@ use std::{net::ToSocketAddrs, str, vec::Vec};
 
 use tracing::debug;
 
+use super::{Cluster, NodeError, Result};
 use crate::{
-    cluster::Cluster,
     commands::Message,
-    errors::{ErrorKind, Result, ResultExt},
     net::{Connection, Host},
     policy::ClientPolicy,
 };
@@ -55,9 +54,8 @@ impl NodeValidator {
         }
     }
 
-    pub async fn validate_node(&mut self, cluster: &Cluster, host: &Host) -> Result<()> {
-        self.resolve_aliases(host)
-            .chain_err(|| "Failed to resolve host aliases")?;
+    pub async fn validate_node(&mut self, cluster: &Cluster, host: &Host) -> Result<(), NodeError> {
+        self.resolve_aliases(host)?;
 
         let mut last_err = None;
         for alias in &self.aliases() {
@@ -76,35 +74,38 @@ impl NodeValidator {
         self.aliases.clone()
     }
 
-    fn resolve_aliases(&mut self, host: &Host) -> Result<()> {
+    fn resolve_aliases(&mut self, host: &Host) -> Result<(), NodeError> {
         self.aliases = (host.name.as_ref(), host.port)
             .to_socket_addrs()?
             .map(|addr| Host::new(&addr.ip().to_string(), addr.port()))
             .collect();
         debug!(%host, aliases = ?self.aliases, "Resolved aliases for host");
         if self.aliases.is_empty() {
-            Err(ErrorKind::Connection(format!("Failed to find addresses for {host}")).into())
+            Err(NodeError::NoAddress { host: host.clone() })
         } else {
             Ok(())
         }
     }
 
-    async fn validate_alias(&mut self, cluster: &Cluster, alias: &Host) -> Result<()> {
+    async fn validate_alias(&mut self, cluster: &Cluster, alias: &Host) -> Result<(), NodeError> {
         let mut conn = Connection::new(&alias.address(), &self.client_policy).await?;
         let info_map = Message::info(&mut conn, &["node", "cluster-name", "features"]).await?;
 
         match info_map.get("node") {
-            None => bail!(ErrorKind::InvalidNode(String::from("Missing node name"))),
+            None => return Err(NodeError::MissingNodeName),
             Some(node_name) => self.name = node_name.clone(),
         }
 
         if let Some(ref cluster_name) = *cluster.cluster_name() {
             match info_map.get("cluster-name") {
-                None => bail!(ErrorKind::InvalidNode(String::from("Missing cluster name"))),
+                None => return Err(NodeError::MissingClusterName),
                 Some(info_name) if info_name == cluster_name => {}
-                Some(info_name) => bail!(ErrorKind::InvalidNode(format!(
-                    "Cluster name mismatch: expected={cluster_name}, got={info_name}",
-                ))),
+                Some(info_name) => {
+                    return Err(NodeError::NameMismatch {
+                        expected: cluster_name.clone(),
+                        got: info_name.clone(),
+                    })
+                }
             }
         }
 

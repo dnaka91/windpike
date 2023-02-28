@@ -23,10 +23,9 @@ use std::{
 
 use tracing::warn;
 
+use super::{buffer, Command, CommandError, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
-    commands::{buffer, Command, SingleCommand},
-    errors::{ErrorKind, Result},
     net::Connection,
     policy::ReadPolicy,
     value::bytes_to_particle,
@@ -114,15 +113,16 @@ impl<'a> Command for ReadCommand<'a> {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer
             .set_read(self.policy, self.single_command.key, &self.bins)
+            .map_err(Into::into)
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
+    async fn get_node(&self) -> Option<Arc<Node>> {
         self.single_command.get_node().await
     }
 
@@ -132,7 +132,7 @@ impl<'a> Command for ReadCommand<'a> {
             .await
         {
             warn!(%err, "Parse result error");
-            bail!(err);
+            return Err(err.into());
         }
 
         conn.buffer.reset_offset();
@@ -149,7 +149,7 @@ impl<'a> Command for ReadCommand<'a> {
         if receive_size > 0 {
             if let Err(err) = conn.read_buffer(receive_size).await {
                 warn!(%err, "Parse result error");
-                bail!(err);
+                return Err(err.into());
             }
         }
 
@@ -171,9 +171,9 @@ impl<'a> Command for ReadCommand<'a> {
                     .bins
                     .get("FAILURE")
                     .map_or_else(|| "UDF Error".to_owned(), ToString::to_string);
-                Err(ErrorKind::UdfBadResponse(reason).into())
+                Err(CommandError::UdfBadResponse(reason))
             }
-            rc => Err(ErrorKind::ServerError(rc).into()),
+            rc => Err(CommandError::ServerError(rc)),
         }
     }
 }

@@ -19,10 +19,7 @@ use std::{
     vec::IntoIter,
 };
 
-use crate::{
-    errors::{ErrorKind, Result, ResultExt},
-    net::parser::Parser,
-};
+use super::{parser::Parser, ParseHostError, Result};
 
 /// Host name/port of database server.
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -70,27 +67,25 @@ pub trait ToHosts {
     /// # Errors
     ///
     /// Any errors encountered during conversion will be returned as an `Err`.
-    fn to_hosts(&self) -> Result<Vec<Host>>;
+    fn to_hosts(&self) -> Result<Vec<Host>, ParseHostError>;
 }
 
 impl ToHosts for Vec<Host> {
-    fn to_hosts(&self) -> Result<Vec<Host>> {
+    fn to_hosts(&self) -> Result<Vec<Host>, ParseHostError> {
         Ok(self.clone())
     }
 }
 
 impl ToHosts for String {
-    fn to_hosts(&self) -> Result<Vec<Host>> {
-        let mut parser = Parser::new(self, 3000);
-        parser
-            .read_hosts()
-            .chain_err(|| ErrorKind::InvalidArgument(format!("Invalid hosts list: '{self}'")))
+    fn to_hosts(&self) -> Result<Vec<Host>, ParseHostError> {
+        self.as_str().to_hosts()
     }
 }
 
 impl<'a> ToHosts for &'a str {
-    fn to_hosts(&self) -> Result<Vec<Host>> {
-        (*self).to_string().to_hosts()
+    fn to_hosts(&self) -> Result<Vec<Host>, ParseHostError> {
+        let mut parser = Parser::new(self, 3000);
+        parser.read_hosts()
     }
 }
 

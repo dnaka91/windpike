@@ -21,9 +21,9 @@ use tokio::{
     time::{Duration, Instant},
 };
 
+use super::{NetError, Result};
 use crate::{
     commands::{admin_command::AdminCommand, buffer::Buffer},
-    errors::{ErrorKind, Result},
     policy::ClientPolicy,
 };
 
@@ -47,9 +47,7 @@ impl Connection {
     pub async fn new(addr: &str, policy: &ClientPolicy) -> Result<Self> {
         let stream = tokio::time::timeout(Duration::from_secs(10), TcpStream::connect(addr)).await;
         if stream.is_err() {
-            bail!(ErrorKind::Connection(
-                "Could not open network connection".to_string()
-            ));
+            return Err(NetError::FailedOpening);
         }
         let mut conn = Connection {
             buffer: Buffer::new(policy.buffer_reclaim_threshold),
@@ -114,7 +112,7 @@ impl Connection {
                 Ok(()) => Ok(()),
                 Err(err) => {
                     self.close().await;
-                    Err(err)
+                    Err(NetError::Authenticate(Box::new(err)))
                 }
             };
         }

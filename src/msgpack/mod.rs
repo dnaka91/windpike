@@ -15,3 +15,15 @@
 
 pub mod decoder;
 pub mod encoder;
+
+pub type Result<T, E = MsgpackError> = std::result::Result<T, E>;
+
+#[derive(Debug, thiserror::Error)]
+pub enum MsgpackError {
+    #[error("Type header with code `{0}` not recognized")]
+    UnrecognizedCode(u8),
+    #[error("Error unpacking value of type `{0:x}`")]
+    InvalidValueType(u8),
+    #[error("Buffer error")]
+    Buffer(#[from] crate::commands::buffer::BufferError),
+}

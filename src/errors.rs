@@ -20,7 +20,7 @@
 //! Handling an error returned by the client.
 //!
 //! ```rust
-//! use aerospike::{as_key, Bins, Client, ClientPolicy, Error, ErrorKind, ReadPolicy, ResultCode};
+//! use aerospike::{as_key, Bins, Client, ClientPolicy,commands::CommandError, ReadPolicy, ResultCode};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -34,19 +34,11 @@
 //!             None => println!("record never expires"),
 //!             Some(duration) => println!("ttl: {} secs", duration.as_secs()),
 //!         },
-//!         Err(Error(ErrorKind::ServerError(ResultCode::KeyNotFoundError), _)) => {
-//!             println!("No such record: {}", key);
+//!         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
+//!             println!("No such record: {key}");
 //!         }
 //!         Err(err) => {
-//!             println!("Error fetching record: {}", err);
-//!             for err in err.iter().skip(1) {
-//!                 println!("Caused by: {}", err);
-//!             }
-//!             // The backtrace is not always generated. Try to run this example
-//!             // with `RUST_BACKTRACE=1`.
-//!             if let Some(backtrace) = err.backtrace() {
-//!                 println!("Backtrace: {:?}", backtrace);
-//!             }
+//!             println!("Error fetching record: {err:#?}");
 //!         }
 //!     }
 //! }
@@ -54,92 +46,85 @@
 
 #![allow(missing_docs)]
 
-use crate::ResultCode;
+use std::collections::HashMap;
 
-error_chain! {
+use crate::result_code::ResultCode;
 
-// Automatic conversions between this error chain and other error types not defined by the
-// `error_chain!`.
-    foreign_links {
-        Base64(::base64::DecodeError)
-            #[doc = "Error decoding Base64 encoded value"];
-        InvalidUtf8(::std::str::Utf8Error)
-            #[doc = "Error interpreting a sequence of u8 as a UTF-8 encoded string."];
-        Io(::std::io::Error)
-            #[doc = "Error during an I/O operation"];
-        MpscRecv(::std::sync::mpsc::RecvError)
-            #[doc = "Error returned from the `recv` function on an MPSC `Receiver`"];
-        ParseAddr(::std::net::AddrParseError)
-            #[doc = "Error parsing an IP or socket address"];
-        ParseInt(::std::num::ParseIntError)
-            #[doc = "Error parsing an integer"];
-        PwHash(::pwhash::error::Error)
-            #[doc = "Error returned while hashing a password for user authentication"];
-    }
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-// Additional `ErrorKind` variants.
-    errors {
-
-/// The client received a server response that it was not able to process.
-        BadResponse(details: String) {
-            description("Bad Server Response")
-            display("Bad Server Response: {}", details)
-        }
-
-/// The client was not able to communicate with the cluster due to some issue with the
-/// network connection.
-        Connection(details: String) {
-            description("Network Connection Issue")
-            display("Unable to communicate with server cluster: {}", details)
-        }
-
-/// One or more of the arguments passed to the client are invalid.
-        InvalidArgument(details: String) {
-            description("Invalid Argument")
-            display("Invalid argument: {}", details)
-        }
-
-/// Cluster node is invalid.
-        InvalidNode(details: String) {
-            description("Invalid cluster node")
-            display("Invalid cluster node: {}", details)
-        }
-
-/// Exceeded max. number of connections per node.
-        NoMoreConnections {
-            description("Too many connections")
-            display("Too many connections")
-        }
-
-/// Server responded with a response code indicating an error condition.
-        ServerError(rc: ResultCode) {
-            description("Server Error")
-            display("Server error: {}", rc.into_string())
-        }
-
-/// Error returned when executing a User-Defined Function (UDF) resulted in an error.
-        UdfBadResponse(details: String) {
-            description("UDF Bad Response")
-            display("UDF Bad Response: {}", details)
-        }
-
-/// Error returned when a tasked timeed out before it could be completed.
-        Timeout(details: String) {
-            description("Timeout")
-            display("Timeout: {}", details)
-        }
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Error decoding Base64 encoded value")]
+    Base64(#[from] base64::DecodeError),
+    #[error("Error interpreting a sequence of u8 as a UTF-8 encoded string")]
+    InvalidUtf8(#[from] std::str::Utf8Error),
+    #[error("Error during an I/O operation")]
+    Io(#[from] std::io::Error),
+    #[error("Error returned from the `recv` function on an MPSC `Receiver`")]
+    MpscRecv(#[from] tokio::sync::mpsc::error::TryRecvError),
+    #[error("Error parsing an IP or socket address")]
+    ParseAddr(#[from] std::net::AddrParseError),
+    #[error("Error parsing an integer")]
+    ParseInt(#[from] std::num::ParseIntError),
+    #[error("Error returned while hashing a password for user authentication")]
+    Pwhash(#[from] pwhash::error::Error),
+    /// The client received a server response that it was not able to process.
+    #[error("Bad server response: {0}")]
+    BadResponse(String),
+    /// The client was not able to communicate with the cluster due to some issue with the
+    /// network connection.
+    #[error("Unable to communicate with server cluster: {0}")]
+    Connection(String),
+    /// One or more of the arguments passed to the client are invalid.
+    #[error("Invalid argument: {0}")]
+    InvalidArgument(String),
+    /// Cluster node is invalid.
+    #[error("Invalid cluster node: {0}")]
+    InvalidNode(String),
+    /// Exceeded max. number of connections per node.
+    #[error("Too many connections")]
+    NoMoreConnections,
+    /// Server responded with a response code indicating an error condition.
+    #[error("Server error: {0}")]
+    ServerError(ResultCode),
+    /// Error returned when a tasked timed out before it could be completed.
+    #[error("Timeout: {0}")]
+    Timeout(String),
+    #[error("No nodes available")]
+    NoNodes,
+    #[error("Failed to truncate namespace or set")]
+    Truncate(#[source] Box<Self>),
+    #[error("Error creating index")]
+    CreateIndex(#[source] Box<Self>),
+    #[error("Network error")]
+    Net(#[from] crate::net::NetError),
+    #[error("Command error")]
+    Command(#[from] crate::commands::CommandError),
+    #[error("Cluster error")]
+    Cluster(#[from] crate::cluster::ClusterError),
+    #[error("MessagePack error")]
+    Msgpack(#[from] crate::msgpack::MsgpackError),
+    #[error("Failed parsing host value")]
+    ParseHost(#[from] crate::net::ParseHostError),
+    #[error("UDF error")]
+    Udf(#[from] UdfError),
 }
 
-macro_rules! log_error_chain {
-    ($err:expr, $($arg:tt)*) => {
-        tracing::error!($($arg)*);
-        tracing::error!("Error: {}", $err);
-        for e in $err.iter().skip(1) {
-            tracing::error!("caused by: {e}");
-        }
-        if let Some(backtrace) = $err.backtrace() {
-            tracing::error!("backtrace: {backtrace:?}");
-        }
-    };
+#[derive(Debug, thiserror::Error)]
+pub enum UdfError {
+    #[error("UDF registration failed: {error}, file: {file}, line: {line}, message: {message}",
+        error = .error.as_deref().unwrap_or("-"),
+        file = .file.as_deref().unwrap_or("-"),
+        line = .line.as_deref().unwrap_or("-"),
+    )]
+    RegistrationFailed {
+        error: Option<String>,
+        file: Option<String>,
+        line: Option<String>,
+        message: String,
+    },
+    #[error("UDF remove failed: {0:?}")]
+    RemoveFailed(HashMap<String, String>),
+    #[error("Invalid UDF return value: {0:?}")]
+    InvalidReturnValue(Option<String>),
 }

@@ -16,14 +16,10 @@ use std::{collections::HashMap, sync::Arc, thread, time::Duration};
 
 use tracing::warn;
 
+use super::{buffer, field_type::FieldType, Command, CommandError, Result};
 use crate::{
-    cluster::Node,
-    commands::{buffer, field_type::FieldType, Command},
-    errors::{ErrorKind, Result},
-    net::Connection,
-    query::Recordset,
-    value::bytes_to_particle,
-    Key, Record, ResultCode, Value,
+    cluster::Node, net::Connection, query::Recordset, value::bytes_to_particle, Key, Record,
+    ResultCode, Value,
 };
 
 pub struct StreamCommand {
@@ -51,10 +47,10 @@ impl StreamCommand {
                 conn.read_buffer(remaining).await?;
             }
 
-            match result_code {
-                ResultCode::KeyNotFoundError => return Ok((None, false)),
-                _ => bail!(ErrorKind::ServerError(result_code)),
-            }
+            return match result_code {
+                ResultCode::KeyNotFoundError => Ok((None, false)),
+                _ => Err(CommandError::ServerError(result_code)),
+            };
         }
 
         // if cmd is the end marker of the response, do not proceed further
@@ -108,7 +104,7 @@ impl StreamCommand {
                 .await
             {
                 warn!(%err, "Parse result error");
-                return Err(err);
+                return Err(err.into());
             }
 
             let res = StreamCommand::parse_record(conn, size).await;
@@ -118,14 +114,14 @@ impl StreamCommand {
                     match result {
                         None => break,
                         Some(returned) => {
-                            rec = returned?;
+                            rec = returned.map_err(|e| CommandError::Other(Box::new(e)))?;
                             thread::yield_now();
                         }
                     }
                 },
                 Ok((None, cont)) => return Ok(cont),
                 Err(err) => {
-                    self.recordset.push(Err(err));
+                    self.recordset.push(Err(err.into()));
                     return Ok(false);
                 }
             };
@@ -190,7 +186,7 @@ impl Command for StreamCommand {
     }
 
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await
+        conn.flush().await.map_err(Into::into)
     }
 
     #[allow(unused_variables)]
@@ -199,8 +195,8 @@ impl Command for StreamCommand {
         unreachable!()
     }
 
-    async fn get_node(&self) -> Result<Arc<Node>> {
-        Ok(self.node.clone())
+    async fn get_node(&self) -> Option<Arc<Node>> {
+        Some(self.node.clone())
     }
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {

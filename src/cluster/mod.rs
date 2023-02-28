@@ -29,19 +29,77 @@ use std::{
 
 use tokio::{
     sync::{mpsc, Mutex, RwLock},
+    task::JoinError,
     time::{Duration, Instant},
 };
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 pub use self::node::Node;
 use self::{
     node_validator::NodeValidator, partition::Partition, partition_tokenizer::PartitionTokenizer,
 };
-use crate::{
-    errors::{ErrorKind, Result},
-    net::Host,
-    policy::ClientPolicy,
-};
+use crate::{net::Host, policy::ClientPolicy};
+
+type Result<T, E = ClusterError> = std::result::Result<T, E>;
+
+#[derive(Debug, thiserror::Error)]
+pub enum ClusterError {
+    #[error("Missing replicas information")]
+    MissingReplicas,
+    #[error("Error parsing partition information")]
+    InvalidPartitionInfo,
+    #[error("Invalid UTF-8 content discovered")]
+    InvalidUtf8(#[from] std::str::Utf8Error),
+    #[error("Invalid integer")]
+    InvalidInteger(#[from] std::num::ParseIntError),
+    #[error("Base64 decoding error")]
+    Base64(#[from] base64::DecodeError),
+    #[error(
+        "Failed to connect to host(s). The network connection(s) to cluster nodes may have timed \
+         out, or the cluster may be in a state of flux."
+    )]
+    Connection,
+    #[error("Networking error")]
+    Network(#[from] crate::net::NetError),
+    #[error("Command error")]
+    Command(#[from] crate::commands::CommandError),
+    #[error("Missing services list")]
+    MissingServicesList,
+    #[error("Missing partition generation")]
+    MissingPartitionGeneration,
+    #[error("Error during initial cluster tend")]
+    InitialTend(#[source] JoinError),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum NodeError {
+    #[error("No addresses for host `{host}`")]
+    NoAddress { host: Host },
+    #[error("Missing node name")]
+    MissingNodeName,
+    #[error("Missing cluster name")]
+    MissingClusterName,
+    #[error("Cluster name mismatch. Expected `{expected}`, but got `{got}`")]
+    NameMismatch { expected: String, got: String },
+    #[error("Networking error")]
+    Net(#[from] crate::net::NetError),
+    #[error("I/O related error")]
+    Io(#[from] std::io::Error),
+    #[error("Command error")]
+    Command(#[from] crate::commands::CommandError),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum NodeRefreshError {
+    #[error("Info command failed")]
+    InfoCommandFailed(#[source] ClusterError),
+    #[error("Failed to validate node")]
+    ValidationFailed(#[source] NodeError),
+    #[error("Failed to add friends")]
+    FailedAddingFriends(#[source] ClusterError),
+    #[error("Failed to update partitions")]
+    FailedUpdatingPartitions(#[source] ClusterError),
+}
 
 // Cluster encapsulates the aerospike cluster nodes and manages
 // them.
@@ -89,11 +147,7 @@ impl Cluster {
 
         // apply policy rules
         if cluster.client_policy.fail_if_not_connected && !cluster.is_connected().await {
-            bail!(ErrorKind::Connection(
-                "Failed to connect to host(s). The network connection(s) to cluster nodes may \
-                 have timed out, or the cluster may be in a state of flux."
-                    .to_string()
-            ));
+            return Err(ClusterError::Connection);
         }
 
         let cluster_for_tend = cluster.clone();
@@ -109,7 +163,7 @@ impl Cluster {
             if rx.try_recv().is_ok() {
                 unreachable!();
             } else if let Err(err) = cluster.tend().await {
-                log_error_chain!(err, "Error tending cluster");
+                error!(error = ?err, "Error tending cluster");
             }
             tokio::time::sleep(tend_interval).await;
         }
@@ -191,7 +245,7 @@ impl Cluster {
                 }
 
                 if let Err(err) = cluster.tend().await {
-                    log_error_chain!(err, "Error during initial cluster tend");
+                    error!(error = ?err, "Error during initial cluster tend");
                 }
 
                 let old_count = count;
@@ -204,9 +258,7 @@ impl Cluster {
             }
         });
 
-        return handle
-            .await
-            .map_err(|err| format!("Error during initial cluster tend: {err:?}").into());
+        return handle.await.map_err(ClusterError::InitialTend);
     }
 
     pub const fn cluster_name(&self) -> &Option<String> {
@@ -279,7 +331,7 @@ impl Cluster {
         for seed in &*seed_array {
             let mut seed_node_validator = NodeValidator::new(self);
             if let Err(err) = seed_node_validator.validate_node(self, seed).await {
-                log_error_chain!(err, "Failed to validate seed host: {}", seed);
+                error!(error = ?err, %seed, "Failed to validate seed host");
                 continue;
             };
 
@@ -289,7 +341,7 @@ impl Cluster {
                 } else {
                     let mut nv2 = NodeValidator::new(self);
                     if let Err(err) = nv2.validate_node(self, seed).await {
-                        log_error_chain!(err, "Seeding host {} failed with error", alias);
+                        error!(error = ?err, %alias, "Seeding host failed with error");
                         continue;
                     };
                     nv2
@@ -320,7 +372,7 @@ impl Cluster {
         for host in hosts {
             let mut nv = NodeValidator::new(self);
             if let Err(err) = nv.validate_node(self, &host).await {
-                log_error_chain!(err, "Adding node {} failed with error", host.name);
+                error!(error = ?err, %host, "Adding node failed with error");
                 continue;
             };
 
@@ -330,11 +382,11 @@ impl Cluster {
             // and do not add new node.
             let mut dup = false;
             match self.get_node_by_name(&nv.name).await {
-                Ok(node) => {
+                Some(node) => {
                     self.add_alias(host, node.clone()).await;
                     dup = true;
                 }
-                Err(_) => {
+                None => {
                     if let Some(node) = list.iter().find(|n| n.name() == nv.name) {
                         self.add_alias(host, node.clone()).await;
                         dup = true;
@@ -493,20 +545,25 @@ impl Cluster {
         *nodes = new_nodes;
     }
 
-    pub async fn get_node(&self, partition: &Partition<'_>) -> Result<Arc<Node>> {
-        let partitions = self.partitions();
-        let partitions = partitions.read().await;
+    pub async fn get_node(&self, partition: &Partition<'_>) -> Option<Arc<Node>> {
+        let node = {
+            let partitions = self.partitions();
+            let partitions = partitions.read().await;
 
-        if let Some(node_array) = partitions.get(partition.namespace) {
-            if let Some(node) = node_array.get(partition.partition_id) {
-                return Ok(node.clone());
-            }
+            partitions
+                .get(partition.namespace)
+                .and_then(|node_array| node_array.get(partition.partition_id))
+                .cloned()
+        };
+
+        if node.is_none() {
+            self.get_random_node().await
+        } else {
+            node
         }
-
-        self.get_random_node().await
     }
 
-    pub async fn get_random_node(&self) -> Result<Arc<Node>> {
+    pub async fn get_random_node(&self) -> Option<Arc<Node>> {
         let node_array = self.nodes().await;
         let length = node_array.len() as isize;
 
@@ -514,24 +571,20 @@ impl Cluster {
             let index = ((self.node_index.fetch_add(1, Ordering::Relaxed) + 1) % length).abs();
             if let Some(node) = node_array.get(index as usize) {
                 if node.is_active() {
-                    return Ok(node.clone());
+                    return Some(node.clone());
                 }
             }
         }
 
-        bail!("No active node")
+        None
     }
 
-    pub async fn get_node_by_name(&self, node_name: &str) -> Result<Arc<Node>> {
-        let node_array = self.nodes().await;
-
-        for node in &node_array {
-            if node.name() == node_name {
-                return Ok(node.clone());
-            }
-        }
-
-        bail!("Requested node `{}` not found.", node_name)
+    pub async fn get_node_by_name(&self, node_name: &str) -> Option<Arc<Node>> {
+        self.nodes()
+            .await
+            .iter()
+            .find(|node| node.name() == node_name)
+            .cloned()
     }
 
     pub async fn close(&self) -> Result<()> {

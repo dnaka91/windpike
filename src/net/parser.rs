@@ -15,10 +15,7 @@
 
 use std::{iter::Peekable, str::Chars};
 
-use crate::{
-    errors::{ErrorKind, Result},
-    Host,
-};
+use super::{Host, ParseHostError, Result};
 
 pub struct Parser<'a> {
     s: Peekable<Chars<'a>>,
@@ -33,12 +30,16 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn read_hosts(&mut self) -> Result<Vec<Host>> {
+    pub fn read_hosts(&mut self) -> Result<Vec<Host>, ParseHostError> {
         let mut hosts = Vec::new();
         loop {
             let addr = self.read_addr_tuple()?;
             let (host, _tls_name, port) = match addr.len() {
-                3 => (addr[0].clone(), Some(addr[1].clone()), addr[2].parse()?),
+                3 => (
+                    addr[0].clone(),
+                    Some(addr[1].clone()),
+                    addr[2].parse().map_err(ParseHostError::PortNumber)?,
+                ),
                 2 => {
                     if let Ok(port) = addr[1].parse() {
                         (addr[0].clone(), None, port)
@@ -47,9 +48,7 @@ impl<'a> Parser<'a> {
                     }
                 }
                 1 => (addr[0].clone(), None, self.default_port),
-                _ => bail!(ErrorKind::InvalidArgument(
-                    "Invalid address string".to_string()
-                )),
+                _ => return Err(ParseHostError::InvalidArgument),
             };
             // TODO: add TLS name
             hosts.push(Host::new(&host, port));
@@ -63,7 +62,7 @@ impl<'a> Parser<'a> {
         Ok(hosts)
     }
 
-    fn read_addr_tuple(&mut self) -> Result<Vec<String>> {
+    fn read_addr_tuple(&mut self) -> Result<Vec<String>, ParseHostError> {
         let mut parts = Vec::new();
         loop {
             let part = self.read_addr_part()?;
@@ -76,7 +75,7 @@ impl<'a> Parser<'a> {
         Ok(parts)
     }
 
-    fn read_addr_part(&mut self) -> Result<String> {
+    fn read_addr_part(&mut self) -> Result<String, ParseHostError> {
         let mut substr = String::new();
         loop {
             match self.peek() {
@@ -86,9 +85,7 @@ impl<'a> Parser<'a> {
                 }
                 _ => {
                     return if substr.is_empty() {
-                        bail!(ErrorKind::InvalidArgument(
-                            "Invalid address string".to_string()
-                        ))
+                        Err(ParseHostError::InvalidArgument)
                     } else {
                         Ok(substr)
                     }

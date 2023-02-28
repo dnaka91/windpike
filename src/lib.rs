@@ -40,7 +40,8 @@
     clippy::unused_self,
     clippy::use_self,
     clippy::missing_errors_doc,
-    clippy::manual_let_else
+    clippy::manual_let_else,
+    missing_docs,
 )]
 
 //! A pure-rust client for the Aerospike NoSQL database.
@@ -124,23 +125,12 @@
 //! }
 //! ```
 
-// `error_chain` can recurse deeply
-#![recursion_limit = "1024"]
-
-extern crate base64;
-extern crate byteorder;
-extern crate crossbeam_queue;
-#[macro_use]
-extern crate error_chain;
-extern crate pwhash;
-extern crate rand;
-
 pub use batch::BatchRead;
 pub use bin::{Bin, Bins};
 pub use client::Client;
 pub use cluster::Node;
 pub use commands::particle_type::ParticleType;
-pub use errors::{Error, ErrorKind, Result};
+pub use errors::{Error, Result};
 pub use expressions::regex_flag::RegexFlag;
 pub use key::Key;
 pub use net::{Host, ToHosts};
@@ -167,8 +157,8 @@ mod bin;
 mod key;
 mod batch;
 mod client;
-mod cluster;
-mod commands;
+pub mod cluster;
+pub mod commands;
 pub mod expressions;
 mod msgpack;
 mod net;
@@ -179,6 +169,3 @@ mod record;
 mod result_code;
 pub mod task;
 mod user;
-
-#[cfg(test)]
-extern crate hex;

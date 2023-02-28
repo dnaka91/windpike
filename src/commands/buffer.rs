@@ -18,7 +18,6 @@ use byteorder::{ByteOrder, LittleEndian, NetworkEndian};
 
 use crate::{
     commands::field_type::FieldType,
-    errors::Result,
     expressions::FilterExpression,
     msgpack::encoder,
     operations::{Operation, OperationBin, OperationData, OperationType},
@@ -96,6 +95,16 @@ const AS_MSG_TYPE: u8 = 3;
 // LDT elements in your queries.
 const MAX_BUFFER_SIZE: usize = 1024 * 1024 + 8; // 1 MB + header
 
+pub type Result<T, E = BufferError> = std::result::Result<T, E>;
+
+#[derive(Debug, thiserror::Error)]
+pub enum BufferError {
+    #[error("Invalid size for buffer: {size} (max {max})")]
+    SizeExceeded { size: usize, max: usize },
+    #[error("Invalid UTF-8 content ecountered")]
+    InvalidUtf8(#[from] std::str::Utf8Error),
+}
+
 // Holds data buffer for the command
 #[derive(Debug, Default)]
 pub struct Buffer {
@@ -126,7 +135,10 @@ impl Buffer {
         // Corrupted data streams can result in a huge length.
         // Do a sanity check here.
         if size > MAX_BUFFER_SIZE {
-            bail!("Invalid size for buffer: {}", size);
+            return Err(BufferError::SizeExceeded {
+                size,
+                max: MAX_BUFFER_SIZE,
+            });
         }
 
         let mem_size = self.data_buffer.capacity();
