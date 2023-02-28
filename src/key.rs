@@ -113,7 +113,11 @@ mod tests {
 
     macro_rules! digest {
         ($x:expr) => {
-            hex::encode(as_key!("namespace", "set", $x).digest)
+            as_key!("namespace", "set", $x)
+                .digest
+                .iter()
+                .map(|v| format!("{v:02x}"))
+                .collect::<String>()
         };
     }
     macro_rules! str_repeat {

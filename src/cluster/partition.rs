@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{fmt, io::Cursor};
-
-use byteorder::{LittleEndian, ReadBytesExt};
+use std::{
+    fmt,
+    io::{Cursor, Read},
+};
 
 use crate::{cluster::node, Key};
 
@@ -42,7 +43,12 @@ impl<'a> Partition<'a> {
             // CAN'T USE MOD directly - mod will give negative numbers.
             // First AND makes positive and negative correctly, then mod.
             // For any x, y : x % 2^y = x & (2^y - 1); the second method is twice as fast
-            partition_id: rdr.read_u32::<LittleEndian>().unwrap() as usize & (node::PARTITIONS - 1),
+            partition_id: {
+                let mut buf = [0; 4];
+                rdr.read_exact(&mut buf).unwrap();
+
+                u32::from_le_bytes(buf) as usize & (node::PARTITIONS - 1)
+            },
         }
     }
 }

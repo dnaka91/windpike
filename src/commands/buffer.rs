@@ -14,8 +14,6 @@
 
 use std::{str, time::Duration};
 
-use byteorder::{ByteOrder, LittleEndian, NetworkEndian};
-
 use crate::{
     commands::field_type::FieldType,
     expressions::FilterExpression,
@@ -459,10 +457,8 @@ impl Buffer {
         }
 
         let field_size = self.data_offset - MSG_TOTAL_HEADER_SIZE as usize - 4;
-        NetworkEndian::write_u32(
-            &mut self.data_buffer[field_size_offset..field_size_offset + 4],
-            field_size as u32,
-        );
+        self.data_buffer[field_size_offset..field_size_offset + 4]
+            .copy_from_slice(&(field_size as u32).to_be_bytes());
 
         self.end();
         Ok(())
@@ -1203,16 +1199,7 @@ impl Buffer {
 
     #[allow(clippy::option_if_let_else)]
     pub fn read_u16(&mut self, pos: Option<usize>) -> u16 {
-        let len = 2;
-        if let Some(pos) = pos {
-            NetworkEndian::read_u16(&self.data_buffer[pos..pos + len])
-        } else {
-            let res = NetworkEndian::read_u16(
-                &self.data_buffer[self.data_offset..self.data_offset + len],
-            );
-            self.data_offset += len;
-            res
-        }
+        self.read_int(pos, u16::from_be_bytes)
     }
 
     pub fn read_i16(&mut self, pos: Option<usize>) -> i16 {
@@ -1222,16 +1209,7 @@ impl Buffer {
 
     #[allow(clippy::option_if_let_else)]
     pub fn read_u32(&mut self, pos: Option<usize>) -> u32 {
-        let len = 4;
-        if let Some(pos) = pos {
-            NetworkEndian::read_u32(&self.data_buffer[pos..pos + len])
-        } else {
-            let res = NetworkEndian::read_u32(
-                &self.data_buffer[self.data_offset..self.data_offset + len],
-            );
-            self.data_offset += len;
-            res
-        }
+        self.read_int(pos, u32::from_be_bytes)
     }
 
     pub fn read_i32(&mut self, pos: Option<usize>) -> i32 {
@@ -1241,16 +1219,7 @@ impl Buffer {
 
     #[allow(clippy::option_if_let_else)]
     pub fn read_u64(&mut self, pos: Option<usize>) -> u64 {
-        let len = 8;
-        if let Some(pos) = pos {
-            NetworkEndian::read_u64(&self.data_buffer[pos..pos + len])
-        } else {
-            let res = NetworkEndian::read_u64(
-                &self.data_buffer[self.data_offset..self.data_offset + len],
-            );
-            self.data_offset += len;
-            res
-        }
+        self.read_int(pos, u64::from_be_bytes)
     }
 
     pub fn read_i64(&mut self, pos: Option<usize>) -> i64 {
@@ -1266,30 +1235,29 @@ impl Buffer {
 
     #[allow(clippy::option_if_let_else)]
     pub fn read_f32(&mut self, pos: Option<usize>) -> f32 {
-        let len = 4;
-        if let Some(pos) = pos {
-            NetworkEndian::read_f32(&self.data_buffer[pos..pos + len])
-        } else {
-            let res = NetworkEndian::read_f32(
-                &self.data_buffer[self.data_offset..self.data_offset + len],
-            );
-            self.data_offset += len;
-            res
-        }
+        self.read_int(pos, f32::from_be_bytes)
     }
 
     #[allow(clippy::option_if_let_else)]
     pub fn read_f64(&mut self, pos: Option<usize>) -> f64 {
-        let len = 8;
+        self.read_int(pos, f64::from_be_bytes)
+    }
+
+    fn read_int<const LEN: usize, T>(
+        &mut self,
+        pos: Option<usize>,
+        convert: impl FnOnce([u8; LEN]) -> T,
+    ) -> T {
+        let mut buf = [0; LEN];
+
         if let Some(pos) = pos {
-            NetworkEndian::read_f64(&self.data_buffer[pos..pos + len])
+            buf.copy_from_slice(&self.data_buffer[pos..pos + LEN]);
         } else {
-            let res = NetworkEndian::read_f64(
-                &self.data_buffer[self.data_offset..self.data_offset + len],
-            );
-            self.data_offset += len;
-            res
+            buf.copy_from_slice(&self.data_buffer[self.data_offset..self.data_offset + LEN]);
+            self.data_offset += LEN;
         }
+
+        (convert)(buf)
     }
 
     pub fn read_str(&mut self, len: usize) -> Result<String> {
@@ -1325,19 +1293,15 @@ impl Buffer {
     }
 
     pub fn write_u16(&mut self, val: u16) -> usize {
-        NetworkEndian::write_u16(
-            &mut self.data_buffer[self.data_offset..self.data_offset + 2],
-            val,
-        );
+        self.data_buffer[self.data_offset..self.data_offset + 2]
+            .copy_from_slice(&val.to_be_bytes());
         self.data_offset += 2;
         2
     }
 
     pub fn write_u16_little_endian(&mut self, val: u16) -> usize {
-        LittleEndian::write_u16(
-            &mut self.data_buffer[self.data_offset..self.data_offset + 2],
-            val,
-        );
+        self.data_buffer[self.data_offset..self.data_offset + 2]
+            .copy_from_slice(&val.to_le_bytes());
         self.data_offset += 2;
         2
     }
@@ -1347,10 +1311,8 @@ impl Buffer {
     }
 
     pub fn write_u32(&mut self, val: u32) -> usize {
-        NetworkEndian::write_u32(
-            &mut self.data_buffer[self.data_offset..self.data_offset + 4],
-            val,
-        );
+        self.data_buffer[self.data_offset..self.data_offset + 4]
+            .copy_from_slice(&val.to_be_bytes());
         self.data_offset += 4;
         4
     }
@@ -1360,10 +1322,8 @@ impl Buffer {
     }
 
     pub fn write_u64(&mut self, val: u64) -> usize {
-        NetworkEndian::write_u64(
-            &mut self.data_buffer[self.data_offset..self.data_offset + 8],
-            val,
-        );
+        self.data_buffer[self.data_offset..self.data_offset + 8]
+            .copy_from_slice(&val.to_be_bytes());
         self.data_offset += 8;
         8
     }
@@ -1377,19 +1337,15 @@ impl Buffer {
     }
 
     pub fn write_f32(&mut self, val: f32) -> usize {
-        NetworkEndian::write_f32(
-            &mut self.data_buffer[self.data_offset..self.data_offset + 4],
-            val,
-        );
+        self.data_buffer[self.data_offset..self.data_offset + 4]
+            .copy_from_slice(&val.to_be_bytes());
         self.data_offset += 4;
         4
     }
 
     pub fn write_f64(&mut self, val: f64) -> usize {
-        NetworkEndian::write_f64(
-            &mut self.data_buffer[self.data_offset..self.data_offset + 8],
-            val,
-        );
+        self.data_buffer[self.data_offset..self.data_offset + 8]
+            .copy_from_slice(&val.to_be_bytes());
         self.data_offset += 8;
         8
     }
@@ -1416,7 +1372,7 @@ impl Buffer {
     pub fn write_timeout(&mut self, val: Option<Duration>) {
         if let Some(val) = val {
             let millis: i32 = (val.as_secs() * 1_000) as i32 + val.subsec_millis() as i32;
-            NetworkEndian::write_i32(&mut self.data_buffer[22..22 + 4], millis);
+            self.data_buffer[22..22 + 4].copy_from_slice(&millis.to_be_bytes());
         }
     }
 
