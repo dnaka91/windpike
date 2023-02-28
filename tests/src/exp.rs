@@ -26,7 +26,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 
     let wpolicy = WritePolicy::default();
     for i in 0..no_records as i64 {
-        let key = as_key!(namespace, &set_name, i);
+        let key = Key::new(namespace, &set_name, i).unwrap();
         let ibin = as_bin!("bin", i);
         let sbin = as_bin!("bin2", format!("{}", i));
         let fbin = as_bin!("bin3", i as f64 / 3_f64);
@@ -609,7 +609,7 @@ async fn expression_commands() {
 
     let wpolicy = WritePolicy::default();
     for i in 0..EXPECTED as i64 {
-        let key = as_key!(namespace, &set_name, i);
+        let key = Key::new(namespace, &set_name, i).unwrap();
         let ibin = as_bin!("bin", i);
 
         let bins = vec![ibin];
@@ -622,7 +622,7 @@ async fn expression_commands() {
     let mut bpolicy = BatchPolicy::default();
 
     // DELETE
-    let key = as_key!(namespace, &set_name, 15);
+    let key = Key::new(namespace, &set_name, 15).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(16)));
     let test = client.delete(&wpolicy, &key).await;
     assert!(test.is_err(), "DELETE EXP Err Test Failed");
@@ -632,7 +632,7 @@ async fn expression_commands() {
     assert!(test.is_ok(), "DELETE EXP Ok Test Failed");
 
     // PUT
-    let key = as_key!(namespace, &set_name, 25);
+    let key = Key::new(namespace, &set_name, 25).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(15)));
     let test = client.put(&wpolicy, &key, &[as_bin!("bin", 26)]).await;
     assert!(test.is_err(), "PUT Err Test Failed");
@@ -642,7 +642,7 @@ async fn expression_commands() {
     assert!(test.is_ok(), "PUT Ok Test Failed");
 
     // GET
-    let key = as_key!(namespace, &set_name, 35);
+    let key = Key::new(namespace, &set_name, 35).unwrap();
     rpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(15)));
     let test = client.get(&rpolicy, &key, Bins::All).await;
     assert!(test.is_err(), "GET Err Test Failed");
@@ -652,7 +652,7 @@ async fn expression_commands() {
     assert!(test.is_ok(), "GET Ok Test Failed");
 
     // EXISTS
-    let key = as_key!(namespace, &set_name, 45);
+    let key = Key::new(namespace, &set_name, 45).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(15)));
     let test = client.exists(&wpolicy, &key).await;
     assert!(test.is_err(), "EXISTS Err Test Failed");
@@ -662,7 +662,7 @@ async fn expression_commands() {
     assert!(test.is_ok(), "EXISTS Ok Test Failed");
 
     // APPEND
-    let key = as_key!(namespace, &set_name, 55);
+    let key = Key::new(namespace, &set_name, 55).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(15)));
     let test = client
         .add(&wpolicy, &key, &[as_bin!("test55", "test")])
@@ -676,7 +676,7 @@ async fn expression_commands() {
     assert!(test.is_ok(), "APPEND Ok Test Failed");
 
     // PREPEND
-    let key = as_key!(namespace, &set_name, 55);
+    let key = Key::new(namespace, &set_name, 55).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(15)));
     let test = client
         .prepend(&wpolicy, &key, &[as_bin!("test55", "test")])
@@ -690,7 +690,7 @@ async fn expression_commands() {
     assert!(test.is_ok(), "PREPEND Ok Test Failed");
 
     // TOUCH
-    let key = as_key!(namespace, &set_name, 65);
+    let key = Key::new(namespace, &set_name, 65).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(15)));
     let test = client.touch(&wpolicy, &key).await;
     assert!(test.is_err(), "TOUCH Err Test Failed");
@@ -719,12 +719,12 @@ async fn expression_commands() {
     let bin = as_bin!("test85", 85);
     let ops = vec![operations::add(&bin)];
 
-    let key = as_key!(namespace, &set_name, 85);
+    let key = Key::new(namespace, &set_name, 85).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(15)));
     let op = client.operate(&wpolicy, &key, &ops).await;
     assert!(op.is_err(), "OPERATE Err Test Failed");
 
-    let key = as_key!(namespace, &set_name, 85);
+    let key = Key::new(namespace, &set_name, 85).unwrap();
     wpolicy.filter_expression = Some(eq(int_bin("bin".to_string()), int_val(85)));
     let op = client.operate(&wpolicy, &key, &ops).await;
     assert!(op.is_ok(), "OPERATE Ok Test Failed");
@@ -733,7 +733,7 @@ async fn expression_commands() {
     let mut batch_reads = vec![];
     let b = Bins::from(["bin"]);
     for i in 85..90 {
-        let key = as_key!(namespace, &set_name, i);
+        let key = Key::new(namespace, &set_name, i).unwrap();
         batch_reads.push(BatchRead::new(key, b.clone()));
     }
     bpolicy.filter_expression = Some(gt(int_bin("bin".to_string()), int_val(84)));

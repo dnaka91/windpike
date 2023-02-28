@@ -33,7 +33,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 
     let wpolicy = WritePolicy::default();
     for i in 0..no_records as i64 {
-        let key = as_key!(namespace, &set_name, i);
+        let key = Key::new(namespace, &set_name, i).unwrap();
         let wbin = as_bin!("bin", i);
         let bins = vec![wbin];
         client.delete(&wpolicy, &key).await.unwrap();

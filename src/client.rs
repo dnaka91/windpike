@@ -140,7 +140,7 @@ impl Client {
     /// Fetch specified bins for a record with the given key.
     ///
     /// ```rust
-    /// use aerospike::{as_key, Client, ClientPolicy, commands::CommandError, ReadPolicy, ResultCode};
+    /// use aerospike::{commands::CommandError, Client, ClientPolicy, Key, ReadPolicy, ResultCode};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -148,7 +148,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     match client.get(&ReadPolicy::default(), &key, ["a", "b"]).await {
     ///         Ok(record) => println!("a={:?}", record.bins.get("a")),
     ///         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
@@ -162,7 +162,9 @@ impl Client {
     /// Determine the remaining time-to-live of a record.
     ///
     /// ```rust
-    /// use aerospike::{as_key, Bins, Client, ClientPolicy, commands::CommandError, ReadPolicy, ResultCode};
+    /// use aerospike::{
+    ///     commands::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -170,7 +172,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     match client.get(&ReadPolicy::default(), &key, Bins::None).await {
     ///         Ok(record) => match record.time_to_live() {
     ///             None => println!("record never expires"),
@@ -212,7 +214,7 @@ impl Client {
     /// Fetch multiple records in a single client request
     ///
     /// ```rust
-    /// use aerospike::{as_key, BatchPolicy, BatchRead, Bins, Client, ClientPolicy};
+    /// use aerospike::{BatchPolicy, BatchRead, Bins, Client, ClientPolicy, Key};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -223,7 +225,7 @@ impl Client {
     ///     let bins = Bins::from(["name", "age"]);
     ///     let mut batch_reads = vec![];
     ///     for i in 0..10 {
-    ///         let key = as_key!("test", "test", i);
+    ///         let key = Key::new("test", "test", i).unwrap();
     ///         batch_reads.push(BatchRead::new(key, bins.clone()));
     ///     }
     ///     match client.batch_get(&BatchPolicy::default(), batch_reads).await {
@@ -256,7 +258,7 @@ impl Client {
     /// Write a record with a single integer bin.
     ///
     /// ```rust
-    /// use aerospike::{as_bin, as_key, Client, ClientPolicy, WritePolicy};
+    /// use aerospike::{as_bin, Client, ClientPolicy, Key, WritePolicy};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -264,7 +266,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     let bin = as_bin!("i", 42);
     ///     match client.put(&WritePolicy::default(), &key, &vec![bin]).await {
     ///         Ok(()) => println!("Record written"),
@@ -276,7 +278,7 @@ impl Client {
     /// Write a record with an expiration of 10 seconds.
     ///
     /// ```rust
-    /// use aerospike::{as_bin, as_key, policy, Client, ClientPolicy, WritePolicy};
+    /// use aerospike::{as_bin, policy, Client, ClientPolicy, Key, WritePolicy};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -284,7 +286,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     let bin = as_bin!("i", 42);
     ///     let mut policy = WritePolicy::default();
     ///     policy.expiration = policy::Expiration::Seconds(10);
@@ -319,7 +321,7 @@ impl Client {
     /// Add two integer values to two existing bin values.
     ///
     /// ```rust
-    /// # use aerospike::{Client,ClientPolicy,WritePolicy,as_key,as_bin};
+    /// use aerospike::{as_bin, Client, ClientPolicy, Key, WritePolicy};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -327,7 +329,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     let bina = as_bin!("a", 1);
     ///     let binb = as_bin!("b", 2);
     ///     let bins = vec![bina, binb];
@@ -394,7 +396,7 @@ impl Client {
     /// Delete a record.
     ///
     /// ```rust
-    /// use aerospike::{as_key, Client, ClientPolicy, WritePolicy};
+    /// use aerospike::{Client, ClientPolicy, Key, WritePolicy};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -402,7 +404,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     match client.delete(&WritePolicy::default(), &key).await {
     ///         Ok(true) => println!("Record deleted"),
     ///         Ok(false) => println!("Record did not exist"),
@@ -424,7 +426,7 @@ impl Client {
     /// Reset a record's time to expiration to the default ttl for the namespace.
     ///
     /// ```rust
-    /// # use aerospike::{Client,ClientPolicy,WritePolicy,policy,as_key};
+    /// use aerospike::{policy, Client, ClientPolicy, Key, WritePolicy};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -432,7 +434,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     let mut policy = WritePolicy::default();
     ///     policy.expiration = policy::Expiration::NamespaceDefault;
     ///     match client.touch(&policy, &key).await {
@@ -465,7 +467,7 @@ impl Client {
     /// call.
     ///
     /// ```rust
-    /// # use aerospike::{Client,ClientPolicy,as_key,as_bin,WritePolicy,operations};
+    /// use aerospike::{as_bin, operations, Client, ClientPolicy, Key, WritePolicy};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -473,7 +475,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = as_key!("test", "test", "mykey");
+    ///     let key = Key::new("test", "test", "mykey").unwrap();
     ///     let bin = as_bin!("a", 42);
     ///     let ops = vec![operations::add(&bin), operations::get_bin("a")];
     ///     match client.operate(&WritePolicy::default(), &key, &ops).await {
@@ -505,7 +507,7 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// # use aerospike::{Client,ClientPolicy,UDFLang};
+    /// use aerospike::{Client, ClientPolicy, UDFLang};
     ///
     /// #[tokio::main]
     /// async fn main() {

@@ -1,8 +1,8 @@
 use aerospike::{
-    as_bin, as_key, as_val,
+    as_bin, as_val,
     expressions::{int_bin, int_val, num_add},
     operations::exp::{read_exp, write_exp, ExpReadFlags, ExpWriteFlags},
-    Bins, ReadPolicy, WritePolicy,
+    Bins, Key, ReadPolicy, WritePolicy,
 };
 
 use crate::common;
@@ -18,7 +18,7 @@ async fn exp_ops() {
     let policy = ReadPolicy::default();
 
     let wpolicy = WritePolicy::default();
-    let key = as_key!(namespace, set_name, -1);
+    let key = Key::new(namespace, set_name, -1).unwrap();
     let wbin = as_bin!("bin", as_val!(25));
     let bins = vec![wbin];
 

@@ -16,10 +16,10 @@
 use std::{thread, time::Duration};
 
 use aerospike::{
-    as_bin, as_key,
+    as_bin,
     errors::Error,
     task::{Status, Task},
-    IndexType, UDFLang, WritePolicy,
+    IndexType, Key, UDFLang, WritePolicy,
 };
 
 use crate::common;
@@ -78,7 +78,7 @@ async fn index_task_test() {
 
     let wpolicy = WritePolicy::default();
     for i in 0..2_i64 {
-        let key = as_key!(namespace, &set_name, i);
+        let key = Key::new(namespace, &set_name, i).unwrap();
         let wbin = as_bin!(&bin_name, i);
         let bins = vec![wbin];
         client.put(&wpolicy, &key, &bins).await.unwrap();

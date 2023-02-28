@@ -14,12 +14,11 @@
 // the License.
 
 use aerospike::{
-    as_key,
     operations::{
         bitwise,
         bitwise::{BitPolicy, BitwiseOverflowActions},
     },
-    Value, WritePolicy,
+    Key, Value, WritePolicy,
 };
 
 use crate::common;
@@ -33,7 +32,7 @@ async fn cdt_bitwise() {
     let set_name = &common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
-    let key = as_key!(namespace, set_name, -1);
+    let key = Key::new(namespace, set_name, -1).unwrap();
     let val = Value::Blob(vec![
         0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101,
     ]);

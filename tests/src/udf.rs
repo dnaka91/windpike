@@ -13,7 +13,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use aerospike::{as_bin, as_key, as_val, errors::Error, Task, UDFLang, Value, WritePolicy, commands::CommandError};
+use aerospike::{
+    as_bin, as_val, commands::CommandError, errors::Error, Key, Task, UDFLang, Value, WritePolicy,
+};
 
 use crate::common;
 
@@ -26,7 +28,7 @@ async fn execute_udf() {
     let set_name = &common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
-    let key = as_key!(namespace, set_name, 1);
+    let key = Key::new(namespace, set_name, 1).unwrap();
     let wbin = as_bin!("bin", 10);
     let bins = vec![wbin];
     client.put(&wpolicy, &key, &bins).await.unwrap();

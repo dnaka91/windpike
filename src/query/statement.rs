@@ -58,7 +58,7 @@ impl Statement {
     /// "age" bins for each matching record.
     ///
     /// ```rust
-    /// # use aerospike::*;
+    /// use aerospike::*;
     ///
     /// let stmt = Statement::new("foo", "bar", Bins::from(["name", "age"]));
     /// ```
@@ -82,7 +82,7 @@ impl Statement {
     /// all records using a filter with the range 0 to 100 inclusive:
     ///
     /// ```rust
-    /// # use aerospike::*;
+    /// use aerospike::*;
     ///
     /// let mut stmt = Statement::new("foo", "bar", Bins::from(["name", "age"]));
     /// stmt.add_filter(as_range!("baz", 0, 100));

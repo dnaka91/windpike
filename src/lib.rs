@@ -41,7 +41,7 @@
     clippy::use_self,
     clippy::missing_errors_doc,
     clippy::manual_let_else,
-    missing_docs,
+    missing_docs
 )]
 
 //! A pure-rust client for the Aerospike NoSQL database.
@@ -67,9 +67,7 @@
 //! ```rust
 //! use std::{sync::Arc, time::Instant};
 //!
-//! use aerospike::{
-//!     as_bin, as_key, operations, Bins, Client, ClientPolicy, ReadPolicy, WritePolicy,
-//! };
+//! use aerospike::{as_bin, operations, Bins, Client, ClientPolicy, Key, ReadPolicy, WritePolicy};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -85,7 +83,7 @@
 //!         let t = tokio::spawn(async move {
 //!             let rpolicy = ReadPolicy::default();
 //!             let wpolicy = WritePolicy::default();
-//!             let key = as_key!("test", "test", i);
+//!             let key = Key::new("test", "test", i).unwrap();
 //!             let bins = [as_bin!("int", 123), as_bin!("str", "Hello, World!")];
 //!
 //!             client.put(&wpolicy, &key, &bins).await.unwrap();

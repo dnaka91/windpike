@@ -14,12 +14,12 @@
 // the License.
 
 use aerospike::{
-    as_bin, as_key, as_list, as_val, as_values, operations,
+    as_bin, as_list, as_val, as_values, operations,
     operations::{
         lists,
         lists::{ListPolicy, ListReturnType, ListSortFlags},
     },
-    Bins, ReadPolicy, Value, WritePolicy,
+    Bins, Key, ReadPolicy, Value, WritePolicy,
 };
 
 use crate::common;
@@ -35,7 +35,7 @@ async fn cdt_list() {
     let policy = ReadPolicy::default();
 
     let wpolicy = WritePolicy::default();
-    let key = as_key!(namespace, set_name, -1);
+    let key = Key::new(namespace, set_name, -1).unwrap();
     let val = as_list!("0", 1, 2.1f64);
     let wbin = as_bin!("bin", val.clone());
     let bins = vec![wbin];

@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use aerospike::{as_bin, as_key, BatchPolicy, BatchRead, Bins, Concurrency, WritePolicy};
+use aerospike::{as_bin, BatchPolicy, BatchRead, Bins, Concurrency, Key, WritePolicy};
 
 use crate::common;
 
@@ -34,16 +34,16 @@ async fn batch_get() {
     let bin2 = as_bin!("b", "another value");
     let bin3 = as_bin!("c", 42);
     let bins = [bin1, bin2, bin3];
-    let key1 = as_key!(namespace, set_name, 1);
+    let key1 = Key::new(namespace, set_name, 1).unwrap();
     client.put(&wpolicy, &key1, &bins).await.unwrap();
 
-    let key2 = as_key!(namespace, set_name, 2);
+    let key2 = Key::new(namespace, set_name, 2).unwrap();
     client.put(&wpolicy, &key2, &bins).await.unwrap();
 
-    let key3 = as_key!(namespace, set_name, 3);
+    let key3 = Key::new(namespace, set_name, 3).unwrap();
     client.put(&wpolicy, &key3, &bins).await.unwrap();
 
-    let key4 = as_key!(namespace, set_name, -1);
+    let key4 = Key::new(namespace, set_name, -1).unwrap();
     // key does not exist
 
     let selected = Bins::from(["a"]);

@@ -1,7 +1,7 @@
 use aerospike::{
-    as_key, as_list, as_val,
+    as_list, as_val,
     operations::{hll, hll::HLLPolicy},
-    Bins, FloatValue, ReadPolicy, Value, WritePolicy,
+    Bins, FloatValue, Key, ReadPolicy, Value, WritePolicy,
 };
 
 use crate::common;
@@ -14,7 +14,7 @@ async fn hll() {
     let namespace = common::namespace();
     let set_name = &common::rand_str(10);
 
-    let key = as_key!(namespace, set_name, "test");
+    let key = Key::new(namespace, set_name, "test").unwrap();
 
     let hpolicy = HLLPolicy::default();
     let wpolicy = WritePolicy::default();

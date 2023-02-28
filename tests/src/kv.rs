@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 use aerospike::{
-    as_bin, as_blob, as_geo, as_key, as_list, as_map, as_val, operations, Bins, ReadPolicy, Value,
+    as_bin, as_blob, as_geo, as_list, as_map, as_val, operations, Bins, Key, ReadPolicy, Value,
     WritePolicy,
 };
 
@@ -28,7 +28,7 @@ async fn connect() {
     let set_name = &common::rand_str(10);
     let policy = ReadPolicy::default();
     let wpolicy = WritePolicy::default();
-    let key = as_key!(namespace, set_name, -1);
+    let key = Key::new(namespace, set_name, -1).unwrap();
 
     client.delete(&wpolicy, &key).await.unwrap();
 

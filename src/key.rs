@@ -47,15 +47,16 @@ impl Key {
     ///
     /// Only integers, strings and blobs (`Vec<u8>`) can be used as user keys. The constructor will
     /// panic if any other value type is passed.
-    pub fn new<S>(namespace: S, set_name: S, key: Value) -> Result<Self>
+    pub fn new<S, K>(namespace: S, set_name: S, key: K) -> Result<Self>
     where
         S: Into<String>,
+        K: Into<Value>,
     {
         let mut key = Key {
             namespace: namespace.into(),
             set_name: set_name.into(),
             digest: [0; 20],
-            user_key: Some(key),
+            user_key: Some(key.into()),
         };
 
         key.compute_digest()?;
@@ -94,26 +95,16 @@ impl fmt::Display for Key {
     }
 }
 
-/// Construct a new key given a namespace, a set name and a user key.
-///
-/// # Panics
-///
-/// Only integers, strings and blobs (`Vec<u8>`) can be used as user keys. The macro will
-/// panic if any other value type is passed.
-#[macro_export]
-macro_rules! as_key {
-    ($ns:expr, $set:expr, $val:expr) => {{
-        $crate::Key::new($ns, $set, $crate::Value::from($val)).unwrap()
-    }};
-}
-
 #[cfg(test)]
 mod tests {
     use std::str;
 
+    use crate::Key;
+
     macro_rules! digest {
         ($x:expr) => {
-            as_key!("namespace", "set", $x)
+            Key::new("namespace", "set", $x)
+                .unwrap()
                 .digest
                 .iter()
                 .map(|v| format!("{v:02x}"))
@@ -270,12 +261,12 @@ mod tests {
     #[test]
     #[should_panic(expected = "Data type is not supported as Key value.")]
     fn unsupported_float_key() {
-        as_key!("namespace", "set", 4.1415);
+        Key::new("namespace", "set", 4.1415).unwrap();
     }
 
     #[test]
     #[should_panic(expected = "Aerospike does not support u64 natively on server-side.")]
     fn unsupported_u64_key() {
-        as_key!("namespace", "set", u64::max_value());
+        Key::new("namespace", "set", u64::max_value()).unwrap();
     }
 }

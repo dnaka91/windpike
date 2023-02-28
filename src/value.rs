@@ -30,7 +30,8 @@ use serde::{Serialize, Serializer};
 use crate::{
     commands::{
         buffer::{Buffer, BufferError},
-        ParticleType, particle_type::ParseParticleError,
+        particle_type::ParseParticleError,
+        ParticleType,
     },
     errors::Result,
     msgpack::{decoder, encoder, MsgpackError},
@@ -618,7 +619,7 @@ macro_rules! as_blob {
 /// Write a list value to a record bin.
 ///
 /// ```rust
-/// use aerospike::{as_bin, as_key, as_list, as_val, Client, ClientPolicy, WritePolicy};
+/// use aerospike::{as_bin, as_list, as_val, Client, ClientPolicy, Key, WritePolicy};
 ///
 /// #[tokio::main]
 /// async fn main() {
@@ -626,7 +627,7 @@ macro_rules! as_blob {
 ///         .await
 ///         .unwrap();
 ///
-///     let key = as_key!("test", "test", "mykey");
+///     let key = Key::new("test", "test", "mykey").unwrap();
 ///     let list = as_list!("a", "b", "c");
 ///     let bin = as_bin!("list", list);
 ///     client
@@ -655,7 +656,7 @@ macro_rules! as_list {
 /// Execute a user-defined function (UDF) with some arguments.
 ///
 /// ```rust,should_panic
-/// use aerospike::{as_key, as_val, as_values, Client, ClientPolicy, WritePolicy};
+/// use aerospike::{as_val, as_values, Client, ClientPolicy, Key, WritePolicy};
 ///
 /// #[tokio::main]
 /// async fn main() {
@@ -663,7 +664,7 @@ macro_rules! as_list {
 ///         .await
 ///         .unwrap();
 ///
-///     let key = as_key!("test", "test", "mykey");
+///     let key = Key::new("test", "test", "mykey").unwrap();
 ///     let module = "myUDF";
 ///     let func = "myFunction";
 ///     let args = as_values!("a", "b", "c");
@@ -693,7 +694,7 @@ macro_rules! as_values {
 /// Write a map value to a record bin.
 ///
 /// ```rust
-/// use aerospike::{as_bin, as_key, as_map, as_val, Client, ClientPolicy, WritePolicy};
+/// use aerospike::{as_bin, Key, as_map, as_val, Client, ClientPolicy, WritePolicy};
 
 /// #[tokio::main]
 /// async fn main() {
@@ -701,7 +702,7 @@ macro_rules! as_values {
 ///         .await
 ///         .unwrap();
 ///
-///     let key = as_key!("test", "test", "mykey");
+///     let key = Key::new("test", "test", "mykey").unwrap();
 ///     let map = as_map!("a" => 1, "b" => 2);
 ///     let bin = as_bin!("map", map);
 ///     client

@@ -20,7 +20,9 @@
 //! Handling an error returned by the client.
 //!
 //! ```rust
-//! use aerospike::{as_key, Bins, Client, ClientPolicy,commands::CommandError, ReadPolicy, ResultCode};
+//! use aerospike::{
+//!     commands::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
+//! };
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -28,7 +30,7 @@
 //!         .await
 //!         .expect("Failed to connect to cluster");
 //!
-//!     let key = as_key!("test", "test", "someKey");
+//!     let key = Key::new("test", "test", "someKey").unwrap();
 //!     match client.get(&ReadPolicy::default(), &key, Bins::None).await {
 //!         Ok(record) => match record.time_to_live() {
 //!             None => println!("record never expires"),

@@ -16,12 +16,12 @@
 use std::collections::HashMap;
 
 use aerospike::{
-    as_bin, as_key, as_list, as_map, as_val,
+    as_bin, as_list, as_map, as_val,
     operations::{
         cdt_context::{ctx_map_key, ctx_map_key_create},
         maps, MapOrder,
     },
-    Bins, MapPolicy, MapReturnType, ReadPolicy, WritePolicy,
+    Bins, Key, MapPolicy, MapReturnType, ReadPolicy, WritePolicy,
 };
 
 use crate::common;
@@ -39,7 +39,7 @@ async fn map_operations() {
     let rpolicy = ReadPolicy::default();
 
     let key = common::rand_str(10);
-    let key = as_key!(namespace, set_name, &key);
+    let key = Key::new(namespace, set_name, &key).unwrap();
 
     client.delete(&wpolicy, &key).await.unwrap();
 
