@@ -15,6 +15,7 @@
 
 #[derive(Debug, Clone)]
 #[doc(hidden)]
+#[repr(u8)]
 pub enum ParticleType {
     // Server particle types. Unsupported types are commented out.
     NULL = 0,
@@ -43,9 +44,15 @@ pub enum ParticleType {
     GEOJSON = 23,
 }
 
-impl From<u8> for ParticleType {
-    fn from(val: u8) -> ParticleType {
-        match val {
+#[derive(Debug, thiserror::Error)]
+#[error("Invalid particle type `{0}`")]
+pub struct ParseParticleError(u8);
+
+impl TryFrom<u8> for ParticleType {
+    type Error = ParseParticleError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        Ok(match value {
             0 => ParticleType::NULL,
             1 => ParticleType::INTEGER,
             2 => ParticleType::FLOAT,
@@ -70,7 +77,7 @@ impl From<u8> for ParticleType {
             20 => ParticleType::LIST,
             21 => ParticleType::LDT,
             23 => ParticleType::GEOJSON,
-            _ => unreachable!(),
-        }
+            _ => return Err(ParseParticleError(value)),
+        })
     }
 }

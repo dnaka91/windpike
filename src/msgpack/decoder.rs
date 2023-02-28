@@ -93,7 +93,7 @@ fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
     let vtype = buf.read_u8(None);
     let count = count - 1;
 
-    match ParticleType::from(vtype) {
+    match ParticleType::try_from(vtype)? {
         ParticleType::STRING => {
             let val = buf.read_str(count)?;
             Ok(Value::String(val))

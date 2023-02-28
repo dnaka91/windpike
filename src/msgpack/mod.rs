@@ -13,6 +13,8 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+use crate::commands::particle_type::ParseParticleError;
+
 pub mod decoder;
 pub mod encoder;
 
@@ -20,6 +22,8 @@ pub type Result<T, E = MsgpackError> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MsgpackError {
+    #[error("Particle type not recognized")]
+    UnrecognizedParticle(#[from] ParseParticleError),
     #[error("Type header with code `{0}` not recognized")]
     UnrecognizedCode(u8),
     #[error("Error unpacking value of type `{0:x}`")]

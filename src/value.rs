@@ -30,7 +30,7 @@ use serde::{Serialize, Serializer};
 use crate::{
     commands::{
         buffer::{Buffer, BufferError},
-        ParticleType,
+        ParticleType, particle_type::ParseParticleError,
     },
     errors::Result,
     msgpack::{decoder, encoder, MsgpackError},
@@ -554,6 +554,8 @@ impl<'a> From<&'a Value> for i64 {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParticleError {
+    #[error("Particle type not recognized")]
+    UnrecognizedParticle(#[from] ParseParticleError),
     #[error("Buffer error")]
     Buffer(#[from] BufferError),
     #[error("MessagePack error")]
@@ -562,7 +564,7 @@ pub enum ParticleError {
 
 #[doc(hidden)]
 pub fn bytes_to_particle(ptype: u8, buf: &mut Buffer, len: usize) -> Result<Value, ParticleError> {
-    match ParticleType::from(ptype) {
+    match ParticleType::try_from(ptype)? {
         ParticleType::NULL => Ok(Value::Nil),
         ParticleType::INTEGER => Ok(Value::Int(buf.read_i64(None))),
         ParticleType::FLOAT => Ok(Value::Float(buf.read_f64(None).into())),
