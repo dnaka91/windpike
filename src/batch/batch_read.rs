@@ -13,13 +13,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#[cfg(feature = "serialization")]
-use serde::Serialize;
-
 use crate::{Bins, Key, Record};
 
 /// Key and bin names used in batch read commands where variable bins are needed for each key.
-#[cfg_attr(feature = "serialization", derive(Serialize))]
 #[derive(Debug, Clone)]
 pub struct BatchRead {
     /// Key.

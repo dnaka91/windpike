@@ -16,8 +16,6 @@
 use std::{fmt, result::Result as StdResult};
 
 use ripemd::{Digest, Ripemd160};
-#[cfg(feature = "serialization")]
-use serde::Serialize;
 
 use crate::{errors::Result, Value};
 
@@ -25,7 +23,6 @@ use crate::{errors::Result, Value};
 /// set name and a user defined key which must be uique within a set. Records can also be
 /// identified by namespace/digest, which is the combination used on the server.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serialization", derive(Serialize))]
 pub struct Key {
     /// Namespace.
     pub namespace: String,

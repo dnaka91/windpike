@@ -21,7 +21,5 @@ mod hll;
 mod index;
 mod kv;
 mod scan;
-#[cfg(feature = "serialization")]
-mod serialization;
 mod task;
 mod truncate;

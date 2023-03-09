@@ -22,10 +22,6 @@ use std::{
 };
 
 use ripemd::{Digest, Ripemd160};
-#[cfg(feature = "serialization")]
-use serde::ser::{SerializeMap, SerializeSeq};
-#[cfg(feature = "serialization")]
-use serde::{Serialize, Serializer};
 
 use crate::{
     commands::{
@@ -644,51 +640,6 @@ macro_rules! as_map {
     };
 }
 
-#[cfg(feature = "serialization")]
-impl Serialize for Value {
-    fn serialize<S>(
-        &self,
-        serializer: S,
-    ) -> std::result::Result<<S as Serializer>::Ok, <S as Serializer>::Error>
-    where
-        S: Serializer,
-    {
-        match &self {
-            Self::Nil => serializer.serialize_none(),
-            Self::Bool(b) => serializer.serialize_bool(*b),
-            Self::Int(i) => serializer.serialize_i64(*i),
-            Self::Uint(u) => serializer.serialize_u64(*u),
-            Self::Float(f) => match f {
-                FloatValue::F32(u) => serializer.serialize_f32(f32::from_bits(*u)),
-                FloatValue::F64(u) => serializer.serialize_f64(f64::from_bits(*u)),
-            },
-            Self::String(s) | Self::GeoJson(s) => serializer.serialize_str(s),
-            Self::Blob(b) | Self::Hll(b) => serializer.serialize_bytes(&b[..]),
-            Self::List(l) => {
-                let mut seq = serializer.serialize_seq(Some(l.len()))?;
-                for elem in l {
-                    seq.serialize_element(&elem)?;
-                }
-                seq.end()
-            }
-            Self::HashMap(m) => {
-                let mut map = serializer.serialize_map(Some(m.len()))?;
-                for (key, value) in m {
-                    map.serialize_entry(&key, &value)?;
-                }
-                map.end()
-            }
-            Self::OrderedMap(m) => {
-                let mut map = serializer.serialize_map(Some(m.len()))?;
-                for (key, value) in m {
-                    map.serialize_entry(&key, &value)?;
-                }
-                map.end()
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::Value;
@@ -714,24 +665,5 @@ mod tests {
         let string = String::from(r#"{"type":"Point"}"#);
         let str = r#"{"type":"Point"}"#;
         assert_eq!(as_geo!(string), as_geo!(str));
-    }
-
-    #[test]
-    #[cfg(feature = "serialization")]
-    fn serializer() {
-        let val: Value = as_list!("0", 9, 8, 7, 1, 2.1f64, -1, as_list!(5, 6, 7, 8, "asd"));
-        let json = serde_json::to_string(&val);
-        assert_eq!(
-            json.unwrap(),
-            "[\"0\",9,8,7,1,2.1,-1,[5,6,7,8,\"asd\"]]",
-            "List Serialization failed"
-        );
-
-        let val: Value =
-            as_map!("a" => 1, "b" => 2, "c" => 3, "d" => 4, "e" => 5, "f" => as_map!("test"=>123));
-        let json = serde_json::to_string(&val);
-        // We only check for the len of the String because HashMap serialization does not keep the
-        // key order. Comparing like the list above is not possible.
-        assert_eq!(json.unwrap().len(), 48, "Map Serialization failed");
     }
 }

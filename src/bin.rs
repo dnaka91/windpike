@@ -15,9 +15,6 @@
 
 use std::convert::From;
 
-#[cfg(feature = "serialization")]
-use serde::{Deserialize, Serialize};
-
 use crate::value::Value;
 
 /// Container object for a record bin, comprising a name and a value.
@@ -57,7 +54,6 @@ macro_rules! as_bin {
 
 /// Specify which, if any, bins to return in read operations.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub enum Bins {
     /// Read all bins.
     All,

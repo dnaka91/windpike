@@ -20,8 +20,6 @@ use std::{
 };
 
 use once_cell::sync::Lazy;
-#[cfg(feature = "serialization")]
-use serde::Serialize;
 
 use crate::{Key, Value};
 
@@ -31,7 +29,6 @@ pub static CITRUSLEAF_EPOCH: Lazy<SystemTime> =
 
 /// Container object for a database record.
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serialization", derive(Serialize))]
 pub struct Record {
     /// Record key. When reading a record from the database, the key is not set in the returned
     /// Record struct.
