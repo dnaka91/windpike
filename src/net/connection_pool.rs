@@ -225,8 +225,8 @@ impl PooledConnection {
 impl Drop for PooledConnection {
     fn drop(&mut self) {
         if let Some(conn) = self.conn.take() {
-            // TODO: This probably doesn't do well with the tokio runtime.
-            futures_executor::block_on(self.queue.put_back(conn));
+            let queue = self.queue.clone();
+            tokio::spawn(async move { queue.put_back(conn).await });
         }
     }
 }
