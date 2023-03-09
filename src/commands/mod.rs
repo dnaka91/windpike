@@ -72,7 +72,7 @@ pub enum CommandError {
     #[error("Parsing failed: {0}")]
     Parse(&'static str),
     #[error("Other error")]
-    Other(#[source] Box<crate::Error>),
+    Other(#[source] Box<crate::errors::Error>),
 }
 
 // Command interface describes all commands available

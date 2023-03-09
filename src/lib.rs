@@ -107,7 +107,6 @@ pub use batch::BatchRead;
 pub use bin::{Bin, Bins};
 pub use client::Client;
 pub use cluster::Node;
-pub use errors::{Error, Result};
 pub use key::Key;
 pub use net::{Host, ToHosts};
 pub use operations::{MapPolicy, MapReturnType, MapWriteMode};
@@ -122,7 +121,6 @@ pub use task::{IndexTask, Task};
 pub use user::User;
 pub use value::{FloatValue, Value};
 
-#[macro_use]
 pub mod errors;
 #[macro_use]
 mod value;

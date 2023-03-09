@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use aerospike::{cluster::ClusterError, Client, Error};
+use aerospike::{cluster::ClusterError, errors::Error, Client};
 
 mod common;
 

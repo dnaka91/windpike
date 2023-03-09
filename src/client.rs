@@ -135,7 +135,7 @@ impl Client {
     /// Fetch specified bins for a record with the given key.
     ///
     /// ```rust
-    /// use aerospike::{commands::CommandError, Client, ClientPolicy, Key, ReadPolicy, ResultCode};
+    /// use aerospike::{errors::CommandError, Client, ClientPolicy, Key, ReadPolicy, ResultCode};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -158,7 +158,7 @@ impl Client {
     ///
     /// ```rust
     /// use aerospike::{
-    ///     commands::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
+    ///     errors::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
     /// };
     ///
     /// #[tokio::main]

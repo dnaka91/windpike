@@ -21,7 +21,7 @@
 //!
 //! ```rust
 //! use aerospike::{
-//!     commands::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
+//!     errors::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
 //! };
 //!
 //! #[tokio::main]
