@@ -49,7 +49,7 @@ impl<'a> Command for TouchCommand<'a> {
         conn: &mut Connection,
         timeout: Option<Duration>,
     ) -> Result<()> {
-        conn.buffer.write_timeout(timeout);
+        conn.buffer().write_timeout(timeout);
         Ok(())
     }
 
@@ -58,7 +58,7 @@ impl<'a> Command for TouchCommand<'a> {
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer
+        conn.buffer()
             .set_touch(self.policy, self.single_command.key)
             .map_err(Into::into)
     }
@@ -77,9 +77,9 @@ impl<'a> Command for TouchCommand<'a> {
             return Err(err.into());
         }
 
-        conn.buffer.reset_offset();
+        conn.buffer().reset_offset();
 
-        let result_code = ResultCode::from(conn.buffer.read_u8(Some(13)));
+        let result_code = ResultCode::from(conn.buffer().read_u8(Some(13)));
         if result_code != ResultCode::Ok {
             return Err(CommandError::ServerError(result_code));
         }

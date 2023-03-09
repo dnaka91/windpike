@@ -48,13 +48,13 @@ impl<'a> SingleCommand<'a> {
     pub async fn empty_socket(conn: &mut Connection) -> Result<()> {
         // There should not be any more bytes.
         // Empty the socket to be safe.
-        let sz = conn.buffer.read_i64(None);
-        let header_length = i64::from(conn.buffer.read_u8(None));
+        let sz = conn.buffer().read_i64(None);
+        let header_length = i64::from(conn.buffer().read_u8(None));
         let receive_size = ((sz & 0xFFFF_FFFF_FFFF) - header_length) as usize;
 
         // Read remaining message bytes.
         if receive_size > 0 {
-            conn.buffer.resize_buffer(receive_size)?;
+            conn.buffer().resize_buffer(receive_size)?;
             conn.read_buffer(receive_size).await?;
         }
 

@@ -55,7 +55,7 @@ impl<'a> Command for OperateCommand<'a> {
         conn: &mut Connection,
         timeout: Option<Duration>,
     ) -> Result<()> {
-        conn.buffer.write_timeout(timeout);
+        conn.buffer().write_timeout(timeout);
         Ok(())
     }
 
@@ -64,7 +64,7 @@ impl<'a> Command for OperateCommand<'a> {
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer
+        conn.buffer()
             .set_operate(
                 self.policy,
                 self.read_command.single_command.key,

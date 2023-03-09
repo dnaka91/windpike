@@ -65,20 +65,20 @@ impl<'a> ReadCommand<'a> {
         // There can be fields in the response (setname etc). For now, ignore them. Expose them to
         // the API if needed in the future.
         for _ in 0..field_count {
-            let field_size = conn.buffer.read_u32(None) as usize;
-            conn.buffer.skip(4 + field_size);
+            let field_size = conn.buffer().read_u32(None) as usize;
+            conn.buffer().skip(4 + field_size);
         }
 
         for _ in 0..op_count {
-            let op_size = conn.buffer.read_u32(None) as usize;
-            conn.buffer.skip(1);
-            let particle_type = conn.buffer.read_u8(None);
-            conn.buffer.skip(1);
-            let name_size = conn.buffer.read_u8(None) as usize;
-            let name: String = conn.buffer.read_str(name_size)?;
+            let op_size = conn.buffer().read_u32(None) as usize;
+            conn.buffer().skip(1);
+            let particle_type = conn.buffer().read_u8(None);
+            conn.buffer().skip(1);
+            let name_size = conn.buffer().read_u8(None) as usize;
+            let name: String = conn.buffer().read_str(name_size)?;
 
             let particle_bytes_size = op_size - (4 + name_size);
-            let value = bytes_to_particle(particle_type, &mut conn.buffer, particle_bytes_size)?;
+            let value = bytes_to_particle(particle_type, conn.buffer(), particle_bytes_size)?;
 
             if !value.is_nil() {
                 // list/map operations may return multiple values for the same bin.
@@ -107,7 +107,7 @@ impl<'a> Command for ReadCommand<'a> {
         conn: &mut Connection,
         timeout: Option<Duration>,
     ) -> Result<()> {
-        conn.buffer.write_timeout(timeout);
+        conn.buffer().write_timeout(timeout);
         Ok(())
     }
 
@@ -116,7 +116,7 @@ impl<'a> Command for ReadCommand<'a> {
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer
+        conn.buffer()
             .set_read(self.policy, self.single_command.key, &self.bins)
             .map_err(Into::into)
     }
@@ -134,14 +134,14 @@ impl<'a> Command for ReadCommand<'a> {
             return Err(err.into());
         }
 
-        conn.buffer.reset_offset();
-        let sz = conn.buffer.read_u64(Some(0));
-        let header_length = conn.buffer.read_u8(Some(8));
-        let result_code = conn.buffer.read_u8(Some(13));
-        let generation = conn.buffer.read_u32(Some(14));
-        let expiration = conn.buffer.read_u32(Some(18));
-        let field_count = conn.buffer.read_u16(Some(26)) as usize; // almost certainly 0
-        let op_count = conn.buffer.read_u16(Some(28)) as usize;
+        conn.buffer().reset_offset();
+        let sz = conn.buffer().read_u64(Some(0));
+        let header_length = conn.buffer().read_u8(Some(8));
+        let result_code = conn.buffer().read_u8(Some(13));
+        let generation = conn.buffer().read_u32(Some(14));
+        let expiration = conn.buffer().read_u32(Some(18));
+        let field_count = conn.buffer().read_u16(Some(26)) as usize; // almost certainly 0
+        let op_count = conn.buffer().read_u16(Some(28)) as usize;
         let receive_size = ((sz & 0xFFFF_FFFF_FFFF) - u64::from(header_length)) as usize;
 
         // Read remaining message bytes

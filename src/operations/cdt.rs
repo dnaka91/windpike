@@ -15,11 +15,7 @@
 
 use std::collections::HashMap;
 
-use crate::{
-    commands::{buffer::Buffer, ParticleType},
-    operations::cdt_context::CdtContext,
-    Value,
-};
+use crate::{commands::ParticleType, msgpack, operations::cdt_context::CdtContext, Value};
 
 pub(crate) enum CdtArgument<'a> {
     Byte(u8),
@@ -30,12 +26,27 @@ pub(crate) enum CdtArgument<'a> {
     Map(&'a HashMap<Value, Value>),
 }
 
-pub(crate) type OperationEncoder = Box<
-    dyn Fn(&mut Option<&mut Buffer>, &CdtOperation<'_>, &[CdtContext]) -> usize
-        + Send
-        + Sync
-        + 'static,
->;
+#[derive(Clone, Copy)]
+pub(crate) enum OperationEncoder {
+    Cdt,
+    CdtBit,
+    Hll,
+}
+
+impl OperationEncoder {
+    pub fn encode(
+        self,
+        w: &mut impl msgpack::Write,
+        op: &CdtOperation<'_>,
+        ctx: &[CdtContext],
+    ) -> usize {
+        match self {
+            Self::Cdt => msgpack::encoder::pack_cdt_op(w, op, ctx),
+            Self::CdtBit => msgpack::encoder::pack_cdt_bit_op(w, op, ctx),
+            Self::Hll => msgpack::encoder::pack_hll_op(w, op, ctx),
+        }
+    }
+}
 
 pub(crate) struct CdtOperation<'a> {
     pub op: u8,
@@ -50,12 +61,10 @@ impl<'a> CdtOperation<'a> {
     }
 
     pub fn estimate_size(&self, ctx: &[CdtContext]) -> usize {
-        let size: usize = (self.encoder)(&mut None, self, ctx);
-        size
+        self.encoder.encode(&mut msgpack::Sink, self, ctx)
     }
 
-    pub fn write_to(&self, buffer: &mut Buffer, ctx: &[CdtContext]) -> usize {
-        let size: usize = (self.encoder)(&mut Some(buffer), self, ctx);
-        size
+    pub fn write_to(&self, w: &mut impl msgpack::Write, ctx: &[CdtContext]) -> usize {
+        self.encoder.encode(w, self, ctx)
     }
 }

@@ -33,7 +33,7 @@ use crate::{
         ParseParticleError, ParticleType,
     },
     errors::Result,
-    msgpack::{decoder, encoder, MsgpackError},
+    msgpack::{self, decoder, encoder, MsgpackError},
 };
 
 /// Container for floating point bin values stored in the Aerospike database.
@@ -222,7 +222,7 @@ impl Value {
             ),
             Self::String(ref s) => s.len(),
             Self::Blob(ref b) => b.len(),
-            Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut None, self),
+            Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut msgpack::Sink, self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
             Self::GeoJson(ref s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
             Self::Hll(ref h) => h.len(),
@@ -231,24 +231,24 @@ impl Value {
 
     /// Serialize the value into the given buffer.
     /// For internal use only.
-    pub(crate) fn write_to(&self, buf: &mut Buffer) -> usize {
+    pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
         match *self {
             Self::Nil => 0,
-            Self::Int(ref val) => buf.write_i64(*val),
+            Self::Int(ref val) => w.write_i64(*val),
             Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Self::Bool(ref val) => buf.write_bool(*val),
-            Self::Float(ref val) => buf.write_f64(match *val {
+            Self::Bool(ref val) => w.write_bool(*val),
+            Self::Float(ref val) => w.write_f64(match *val {
                 FloatValue::F32(val) => f64::from(f32::from_bits(val)),
                 FloatValue::F64(val) => f64::from_bits(val),
             }),
-            Self::String(ref val) => buf.write_str(val),
-            Self::Blob(ref val) | Self::Hll(ref val) => buf.write_bytes(val),
-            Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut Some(buf), self),
+            Self::String(ref val) => w.write_str(val),
+            Self::Blob(ref val) | Self::Hll(ref val) => w.write_bytes(val),
+            Self::List(_) | Self::HashMap(_) => encoder::pack_value(w, self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Self::GeoJson(ref val) => buf.write_geo(val),
+            Self::GeoJson(ref val) => w.write_geo(val),
         }
     }
 

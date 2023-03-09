@@ -40,7 +40,7 @@ pub struct Connection {
 
     bytes_read: usize,
 
-    pub buffer: Buffer,
+    buffer: Buffer,
 }
 
 impl Connection {
@@ -67,14 +67,14 @@ impl Connection {
     }
 
     pub async fn flush(&mut self) -> Result<()> {
-        self.conn.write_all(&self.buffer.data_buffer).await?;
+        self.conn.write_all(&self.buffer.buffer).await?;
         self.refresh();
         Ok(())
     }
 
     pub async fn read_buffer(&mut self, size: usize) -> Result<()> {
         self.buffer.resize_buffer(size)?;
-        self.conn.read_exact(&mut self.buffer.data_buffer).await?;
+        self.conn.read_exact(&mut self.buffer.buffer).await?;
         self.bytes_read += size;
         self.buffer.reset_offset();
         self.refresh();
@@ -126,5 +126,9 @@ impl Connection {
 
     pub const fn bytes_read(&self) -> usize {
         self.bytes_read
+    }
+
+    pub fn buffer(&mut self) -> &mut Buffer {
+        &mut self.buffer
     }
 }

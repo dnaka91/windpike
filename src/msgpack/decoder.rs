@@ -24,7 +24,7 @@ use crate::{
 };
 
 pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
-    if buf.data_buffer.is_empty() {
+    if buf.buffer.is_empty() {
         return Ok(Value::List(vec![]));
     }
 
@@ -41,7 +41,7 @@ pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
 }
 
 pub fn unpack_value_map(buf: &mut Buffer) -> Result<Value> {
-    if buf.data_buffer.is_empty() {
+    if buf.buffer.is_empty() {
         return Ok(Value::from(HashMap::with_capacity(0)));
     }
 

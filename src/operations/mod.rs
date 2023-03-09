@@ -29,11 +29,7 @@ pub use self::{
     maps::{MapOrder, MapPolicy, MapReturnType, MapWriteMode},
     scalar::*,
 };
-use crate::{
-    commands::{buffer::Buffer, ParticleType},
-    operations::cdt_context::CdtContext,
-    Value,
-};
+use crate::{commands::ParticleType, msgpack, operations::cdt_context::CdtContext, Value};
 
 #[derive(Clone, Copy)]
 pub(crate) enum OperationType {
@@ -101,47 +97,45 @@ impl<'a> Operation<'a> {
         size
     }
 
-    #[doc(hidden)]
-    pub fn write_to(&self, buffer: &mut Buffer) -> usize {
+    pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
         let mut size: usize = 0;
 
         // remove the header size from the estimate
         let op_size = self.estimate_size();
 
-        size += buffer.write_u32(op_size as u32 + 4);
-        size += buffer.write_u8(self.op as u8);
+        size += w.write_u32(op_size as u32 + 4);
+        size += w.write_u8(self.op as u8);
 
         match self.data {
             OperationData::None => {
-                size += self.write_op_header_to(buffer, ParticleType::Null as u8);
+                size += self.write_op_header_to(w, ParticleType::Null as u8);
             }
             OperationData::Value(value) => {
-                size += self.write_op_header_to(buffer, value.particle_type() as u8);
-                size += value.write_to(buffer);
+                size += self.write_op_header_to(w, value.particle_type() as u8);
+                size += value.write_to(w);
             }
             OperationData::CdtListOp(ref cdt_op)
             | OperationData::CdtMapOp(ref cdt_op)
             | OperationData::CdtBitOp(ref cdt_op)
             | OperationData::HllOp(ref cdt_op) => {
-                size += self.write_op_header_to(buffer, CdtOperation::particle_type() as u8);
-                size += cdt_op.write_to(buffer, self.ctx);
+                size += self.write_op_header_to(w, CdtOperation::particle_type() as u8);
+                size += cdt_op.write_to(w, self.ctx);
             }
         };
 
         size
     }
 
-    #[doc(hidden)]
-    fn write_op_header_to(&self, buffer: &mut Buffer, particle_type: u8) -> usize {
-        let mut size = buffer.write_u8(particle_type);
-        size += buffer.write_u8(0);
+    fn write_op_header_to(&self, w: &mut impl msgpack::Write, particle_type: u8) -> usize {
+        let mut size = w.write_u8(particle_type);
+        size += w.write_u8(0);
         match self.bin {
             OperationBin::Name(bin) => {
-                size += buffer.write_u8(bin.len() as u8);
-                size += buffer.write_str(bin);
+                size += w.write_u8(bin.len() as u8);
+                size += w.write_str(bin);
             }
             OperationBin::None | OperationBin::All => {
-                size += buffer.write_u8(0);
+                size += w.write_u8(0);
             }
         }
         size

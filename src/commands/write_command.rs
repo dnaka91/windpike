@@ -60,7 +60,7 @@ impl<'a> Command for WriteCommand<'a> {
         conn: &mut Connection,
         timeout: Option<Duration>,
     ) -> Result<()> {
-        conn.buffer.write_timeout(timeout);
+        conn.buffer().write_timeout(timeout);
         Ok(())
     }
 
@@ -69,7 +69,7 @@ impl<'a> Command for WriteCommand<'a> {
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer
+        conn.buffer()
             .set_write(
                 self.policy,
                 self.operation,
@@ -93,8 +93,8 @@ impl<'a> Command for WriteCommand<'a> {
             return Err(err.into());
         }
 
-        conn.buffer.reset_offset();
-        let result_code = ResultCode::from(conn.buffer.read_u8(Some(13)));
+        conn.buffer().reset_offset();
+        let result_code = ResultCode::from(conn.buffer().read_u8(Some(13)));
         if result_code != ResultCode::Ok {
             return Err(CommandError::ServerError(result_code));
         }

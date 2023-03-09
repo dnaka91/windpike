@@ -51,7 +51,7 @@ impl<'a> Command for DeleteCommand<'a> {
         conn: &mut Connection,
         timeout: Option<Duration>,
     ) -> Result<()> {
-        conn.buffer.write_timeout(timeout);
+        conn.buffer().write_timeout(timeout);
         Ok(())
     }
 
@@ -60,7 +60,7 @@ impl<'a> Command for DeleteCommand<'a> {
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<(), CommandError> {
-        conn.buffer
+        conn.buffer()
             .set_delete(self.policy, self.single_command.key)
             .map_err(Into::into)
     }
@@ -79,11 +79,11 @@ impl<'a> Command for DeleteCommand<'a> {
             return Err(err.into());
         }
 
-        conn.buffer.reset_offset();
+        conn.buffer().reset_offset();
 
         // A number of these are commented out because we just don't care enough to read
         // that section of the header. If we do care, uncomment and check!
-        let result_code = ResultCode::from(conn.buffer.read_u8(Some(13)));
+        let result_code = ResultCode::from(conn.buffer().read_u8(Some(13)));
 
         if result_code != ResultCode::Ok && result_code != ResultCode::KeyNotFoundError {
             return Err(CommandError::ServerError(result_code));

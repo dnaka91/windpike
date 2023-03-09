@@ -61,7 +61,7 @@ impl<'a> Command for ScanCommand<'a> {
         conn: &mut Connection,
         timeout: Option<Duration>,
     ) -> Result<()> {
-        conn.buffer.write_timeout(timeout);
+        conn.buffer().write_timeout(timeout);
         Ok(())
     }
 
@@ -70,7 +70,7 @@ impl<'a> Command for ScanCommand<'a> {
     }
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.buffer
+        conn.buffer()
             .set_scan(
                 self.policy,
                 self.namespace,

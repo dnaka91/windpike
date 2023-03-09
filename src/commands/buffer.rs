@@ -22,6 +22,7 @@ use std::{str, time::Duration};
 
 use crate::{
     commands::field_type::FieldType,
+    msgpack::Write,
     operations::{Operation, OperationBin, OperationData, OperationType},
     policy::{
         BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy, ReadPolicy,
@@ -110,8 +111,8 @@ pub enum BufferError {
 // Holds data buffer for the command
 #[derive(Debug, Default)]
 pub struct Buffer {
-    pub data_buffer: Vec<u8>,
-    pub data_offset: usize,
+    pub buffer: Vec<u8>,
+    pub offset: usize,
     pub reclaim_threshold: usize,
 }
 
@@ -119,18 +120,18 @@ impl Buffer {
     #[must_use]
     pub fn new(reclaim_threshold: usize) -> Self {
         Self {
-            data_buffer: Vec::with_capacity(1024),
-            data_offset: 0,
+            buffer: Vec::with_capacity(1024),
+            offset: 0,
             reclaim_threshold,
         }
     }
 
     fn begin(&mut self) {
-        self.data_offset = MSG_TOTAL_HEADER_SIZE as usize;
+        self.offset = MSG_TOTAL_HEADER_SIZE as usize;
     }
 
     pub fn size_buffer(&mut self) -> Result<()> {
-        let offset = self.data_offset;
+        let offset = self.offset;
         self.resize_buffer(offset)
     }
 
@@ -144,10 +145,10 @@ impl Buffer {
             });
         }
 
-        let mem_size = self.data_buffer.capacity();
-        self.data_buffer.resize(size, 0);
+        let mem_size = self.buffer.capacity();
+        self.buffer.resize(size, 0);
         if mem_size > self.reclaim_threshold && size < mem_size {
-            self.data_buffer.shrink_to_fit();
+            self.buffer.shrink_to_fit();
         }
 
         Ok(())
@@ -155,11 +156,11 @@ impl Buffer {
 
     pub fn reset_offset(&mut self) {
         // reset data offset
-        self.data_offset = 0;
+        self.offset = 0;
     }
 
     pub fn end(&mut self) {
-        let size = ((self.data_offset - 8) as i64)
+        let size = ((self.offset - 8) as i64)
             | (i64::from(CL_MSG_VERSION) << 56)
             | (i64::from(AS_MSG_TYPE) << 48);
 
@@ -305,20 +306,20 @@ impl Buffer {
 
         self.begin();
         let field_count = 1;
-        self.data_offset += FIELD_HEADER_SIZE as usize + 5;
+        self.offset += FIELD_HEADER_SIZE as usize + 5;
 
         let mut prev: Option<&BatchRead> = None;
         for batch_read in batch_reads {
-            self.data_offset += batch_read.key.digest.len() + 4;
+            self.offset += batch_read.key.digest.len() + 4;
             match prev {
                 Some(prev) if batch_read.match_header(prev, policy.send_set_name) => {
-                    self.data_offset += 1;
+                    self.offset += 1;
                 }
                 _ => {
                     let key = &batch_read.key;
-                    self.data_offset += key.namespace.len() + FIELD_HEADER_SIZE as usize + 6;
+                    self.offset += key.namespace.len() + FIELD_HEADER_SIZE as usize + 6;
                     if policy.send_set_name {
-                        self.data_offset += key.set_name.len() + FIELD_HEADER_SIZE as usize;
+                        self.offset += key.set_name.len() + FIELD_HEADER_SIZE as usize;
                     }
                     if let Bins::Some(ref bin_names) = batch_read.bins {
                         for name in bin_names {
@@ -339,7 +340,7 @@ impl Buffer {
             0,
         );
 
-        let field_size_offset = self.data_offset;
+        let field_size_offset = self.offset;
         let field_type = if policy.send_set_name {
             FieldType::BatchIndexWithSet
         } else {
@@ -397,8 +398,8 @@ impl Buffer {
             prev = Some(batch_read);
         }
 
-        let field_size = self.data_offset - MSG_TOTAL_HEADER_SIZE as usize - 4;
-        self.data_buffer[field_size_offset..field_size_offset + 4]
+        let field_size = self.offset - MSG_TOTAL_HEADER_SIZE as usize - 4;
+        self.buffer[field_size_offset..field_size_offset + 4]
             .copy_from_slice(&(field_size as u32).to_be_bytes());
 
         self.end();
@@ -450,7 +451,7 @@ impl Buffer {
                 write_attr |= INFO2_RESPOND_ALL_OPS;
             }
 
-            self.data_offset += operation.estimate_size() + OPERATION_HEADER_SIZE as usize;
+            self.offset += operation.estimate_size() + OPERATION_HEADER_SIZE as usize;
         }
 
         let field_count = self.estimate_key_size(key, policy.send_key && write_attr != 0);
@@ -496,12 +497,12 @@ impl Buffer {
         let mut field_count = 0;
 
         if !namespace.is_empty() {
-            self.data_offset += namespace.len() + FIELD_HEADER_SIZE as usize;
+            self.offset += namespace.len() + FIELD_HEADER_SIZE as usize;
             field_count += 1;
         }
 
         if !set_name.is_empty() {
-            self.data_offset += set_name.len() + FIELD_HEADER_SIZE as usize;
+            self.offset += set_name.len() + FIELD_HEADER_SIZE as usize;
             field_count += 1;
         }
 
@@ -510,15 +511,15 @@ impl Buffer {
         // field_count += 1;
 
         // Estimate pid size
-        self.data_offset += partitions.len() * 2 + FIELD_HEADER_SIZE as usize;
+        self.offset += partitions.len() * 2 + FIELD_HEADER_SIZE as usize;
         field_count += 1;
 
         // Estimate scan timeout size.
-        self.data_offset += 4 + FIELD_HEADER_SIZE as usize;
+        self.offset += 4 + FIELD_HEADER_SIZE as usize;
         field_count += 1;
 
         // Allocate space for task_id field.
-        self.data_offset += 8 + FIELD_HEADER_SIZE as usize;
+        self.offset += 8 + FIELD_HEADER_SIZE as usize;
         field_count += 1;
 
         let bin_count = match *bins {
@@ -592,22 +593,22 @@ impl Buffer {
         let mut field_count: u16 = 0;
 
         if !key.namespace.is_empty() {
-            self.data_offset += key.namespace.len() + FIELD_HEADER_SIZE as usize;
+            self.offset += key.namespace.len() + FIELD_HEADER_SIZE as usize;
             field_count += 1;
         }
 
         if !key.set_name.is_empty() {
-            self.data_offset += key.set_name.len() + FIELD_HEADER_SIZE as usize;
+            self.offset += key.set_name.len() + FIELD_HEADER_SIZE as usize;
             field_count += 1;
         }
 
-        self.data_offset += (DIGEST_SIZE + FIELD_HEADER_SIZE) as usize;
+        self.offset += (DIGEST_SIZE + FIELD_HEADER_SIZE) as usize;
         field_count += 1;
 
         if send_key {
             if let Some(ref user_key) = key.user_key {
                 // field header size + key size
-                self.data_offset += user_key.estimate_size() + FIELD_HEADER_SIZE as usize + 1;
+                self.offset += user_key.estimate_size() + FIELD_HEADER_SIZE as usize + 1;
                 field_count += 1;
             }
         }
@@ -616,16 +617,16 @@ impl Buffer {
     }
 
     fn estimate_operation_size_for_bin(&mut self, bin: &Bin<'_>) {
-        self.data_offset += bin.name.len() + OPERATION_HEADER_SIZE as usize;
-        self.data_offset += bin.value.estimate_size();
+        self.offset += bin.name.len() + OPERATION_HEADER_SIZE as usize;
+        self.offset += bin.value.estimate_size();
     }
 
     fn estimate_operation_size_for_bin_name(&mut self, bin_name: &str) {
-        self.data_offset += bin_name.len() + OPERATION_HEADER_SIZE as usize;
+        self.offset += bin_name.len() + OPERATION_HEADER_SIZE as usize;
     }
 
     fn estimate_operation_size(&mut self) {
-        self.data_offset += OPERATION_HEADER_SIZE as usize;
+        self.offset += OPERATION_HEADER_SIZE as usize;
     }
 
     fn write_header(
@@ -643,19 +644,19 @@ impl Buffer {
         }
 
         // Write all header data except total size which must be written last.
-        self.data_buffer[8] = MSG_REMAINING_HEADER_SIZE; // Message header length.
-        self.data_buffer[9] = read_attr;
-        self.data_buffer[10] = write_attr;
+        self.buffer[8] = MSG_REMAINING_HEADER_SIZE; // Message header length.
+        self.buffer[9] = read_attr;
+        self.buffer[10] = write_attr;
 
         for i in 11..26 {
-            self.data_buffer[i] = 0;
+            self.buffer[i] = 0;
         }
 
-        self.data_offset = 26;
+        self.offset = 26;
         self.write_u16(field_count);
         self.write_u16(operation_count);
 
-        self.data_offset = MSG_TOTAL_HEADER_SIZE as usize;
+        self.offset = MSG_TOTAL_HEADER_SIZE as usize;
     }
 
     // Header write for write operations.
@@ -706,7 +707,7 @@ impl Buffer {
         }
 
         // Write all header data except total size which must be written last.
-        self.data_offset = 8;
+        self.offset = 8;
         self.write_u8(MSG_REMAINING_HEADER_SIZE); // Message header length.
         self.write_u8(read_attr);
         self.write_u8(write_attr);
@@ -725,7 +726,7 @@ impl Buffer {
 
         self.write_u16(field_count);
         self.write_u16(operation_count);
-        self.data_offset = MSG_TOTAL_HEADER_SIZE as usize;
+        self.offset = MSG_TOTAL_HEADER_SIZE as usize;
     }
 
     fn write_key(&mut self, key: &Key, send_key: bool) {
@@ -802,29 +803,29 @@ impl Buffer {
 
     #[must_use]
     pub const fn data_offset(&self) -> usize {
-        self.data_offset
+        self.offset
     }
 
     pub fn skip_bytes(&mut self, count: usize) {
-        self.data_offset += count;
+        self.offset += count;
     }
 
     pub fn skip(&mut self, count: usize) {
-        self.data_offset += count;
+        self.offset += count;
     }
 
     #[must_use]
     pub fn peek(&self) -> u8 {
-        self.data_buffer[self.data_offset]
+        self.buffer[self.offset]
     }
 
     #[allow(clippy::option_if_let_else)]
     pub fn read_u8(&mut self, pos: Option<usize>) -> u8 {
         if let Some(pos) = pos {
-            self.data_buffer[pos]
+            self.buffer[pos]
         } else {
-            let res = self.data_buffer[self.data_offset];
-            self.data_offset += 1;
+            let res = self.buffer[self.offset];
+            self.offset += 1;
             res
         }
     }
@@ -832,10 +833,10 @@ impl Buffer {
     #[allow(clippy::option_if_let_else)]
     pub fn read_i8(&mut self, pos: Option<usize>) -> i8 {
         if let Some(pos) = pos {
-            self.data_buffer[pos] as i8
+            self.buffer[pos] as i8
         } else {
-            let res = self.data_buffer[self.data_offset] as i8;
-            self.data_offset += 1;
+            let res = self.buffer[self.offset] as i8;
+            self.offset += 1;
             res
         }
     }
@@ -894,132 +895,124 @@ impl Buffer {
         let mut buf = [0; LEN];
 
         if let Some(pos) = pos {
-            buf.copy_from_slice(&self.data_buffer[pos..pos + LEN]);
+            buf.copy_from_slice(&self.buffer[pos..pos + LEN]);
         } else {
-            buf.copy_from_slice(&self.data_buffer[self.data_offset..self.data_offset + LEN]);
-            self.data_offset += LEN;
+            buf.copy_from_slice(&self.buffer[self.offset..self.offset + LEN]);
+            self.offset += LEN;
         }
 
         (convert)(buf)
     }
 
     pub fn read_str(&mut self, len: usize) -> Result<String> {
-        let s = str::from_utf8(&self.data_buffer[self.data_offset..self.data_offset + len])?;
-        self.data_offset += len;
+        let s = str::from_utf8(&self.buffer[self.offset..self.offset + len])?;
+        self.offset += len;
         Ok(s.to_owned())
     }
 
     pub fn read_bytes(&mut self, pos: usize, count: usize) -> &[u8] {
-        &self.data_buffer[pos..pos + count]
+        &self.buffer[pos..pos + count]
     }
 
     pub fn read_slice(&mut self, count: usize) -> &[u8] {
-        &self.data_buffer[self.data_offset..self.data_offset + count]
+        &self.buffer[self.offset..self.offset + count]
     }
 
     pub fn read_blob(&mut self, len: usize) -> Vec<u8> {
-        let val = self.data_buffer[self.data_offset..self.data_offset + len].to_vec();
-        self.data_offset += len;
+        let val = self.buffer[self.offset..self.offset + len].to_vec();
+        self.offset += len;
         val
     }
 
-    pub fn write_u8(&mut self, val: u8) -> usize {
-        self.data_buffer[self.data_offset] = val;
-        self.data_offset += 1;
-        1
-    }
-
-    pub fn write_i8(&mut self, val: i8) -> usize {
-        self.data_buffer[self.data_offset] = val as u8;
-        self.data_offset += 1;
-        1
-    }
-
-    pub fn write_u16(&mut self, val: u16) -> usize {
-        self.data_buffer[self.data_offset..self.data_offset + 2]
-            .copy_from_slice(&val.to_be_bytes());
-        self.data_offset += 2;
-        2
-    }
-
     pub fn write_u16_little_endian(&mut self, val: u16) -> usize {
-        self.data_buffer[self.data_offset..self.data_offset + 2]
-            .copy_from_slice(&val.to_le_bytes());
-        self.data_offset += 2;
+        self.buffer[self.offset..self.offset + 2].copy_from_slice(&val.to_le_bytes());
+        self.offset += 2;
         2
-    }
-
-    pub fn write_i16(&mut self, val: i16) -> usize {
-        self.write_u16(val as u16)
-    }
-
-    pub fn write_u32(&mut self, val: u32) -> usize {
-        self.data_buffer[self.data_offset..self.data_offset + 4]
-            .copy_from_slice(&val.to_be_bytes());
-        self.data_offset += 4;
-        4
-    }
-
-    pub fn write_i32(&mut self, val: i32) -> usize {
-        self.write_u32(val as u32)
-    }
-
-    pub fn write_u64(&mut self, val: u64) -> usize {
-        self.data_buffer[self.data_offset..self.data_offset + 8]
-            .copy_from_slice(&val.to_be_bytes());
-        self.data_offset += 8;
-        8
-    }
-
-    pub fn write_i64(&mut self, val: i64) -> usize {
-        self.write_u64(val as u64)
-    }
-
-    pub fn write_bool(&mut self, val: bool) -> usize {
-        self.write_i64(i64::from(val))
-    }
-
-    pub fn write_f32(&mut self, val: f32) -> usize {
-        self.data_buffer[self.data_offset..self.data_offset + 4]
-            .copy_from_slice(&val.to_be_bytes());
-        self.data_offset += 4;
-        4
-    }
-
-    pub fn write_f64(&mut self, val: f64) -> usize {
-        self.data_buffer[self.data_offset..self.data_offset + 8]
-            .copy_from_slice(&val.to_be_bytes());
-        self.data_offset += 8;
-        8
-    }
-
-    pub fn write_bytes(&mut self, bytes: &[u8]) -> usize {
-        for b in bytes {
-            self.write_u8(*b);
-        }
-        bytes.len()
-    }
-
-    pub fn write_str(&mut self, val: &str) -> usize {
-        self.write_bytes(val.as_bytes())
-    }
-
-    pub fn write_geo(&mut self, value: &str) -> usize {
-        self.write_u8(0);
-        self.write_u8(0);
-        self.write_u8(0);
-        self.write_bytes(value.as_bytes());
-        3 + value.len()
     }
 
     pub fn write_timeout(&mut self, val: Option<Duration>) {
         if let Some(val) = val {
             let millis: i32 = (val.as_secs() * 1_000) as i32 + val.subsec_millis() as i32;
-            self.data_buffer[22..22 + 4].copy_from_slice(&millis.to_be_bytes());
+            self.buffer[22..22 + 4].copy_from_slice(&millis.to_be_bytes());
         }
     }
+}
 
-    pub fn dump_buffer(&self) {
-        println!(">>>>>>>>>>>>>>> {:?}", self.data_buffer.clone());
+impl Write for Buffer {
+    fn write_u8(&mut self, v: u8) -> usize {
+        self.buffer[self.offset] = v;
+        self.offset += 1;
+        1
+    }
+
+    fn write_u16(&mut self, v: u16) -> usize {
+        self.buffer[self.offset..self.offset + 2].copy_from_slice(&v.to_be_bytes());
+        self.offset += 2;
+        2
+    }
+
+    fn write_u32(&mut self, v: u32) -> usize {
+        self.buffer[self.offset..self.offset + 4].copy_from_slice(&v.to_be_bytes());
+        self.offset += 4;
+        4
+    }
+
+    fn write_u64(&mut self, v: u64) -> usize {
+        self.buffer[self.offset..self.offset + 8].copy_from_slice(&v.to_be_bytes());
+        self.offset += 8;
+        8
+    }
+
+    fn write_i8(&mut self, v: i8) -> usize {
+        self.buffer[self.offset] = v as u8;
+        self.offset += 1;
+        1
+    }
+
+    fn write_i16(&mut self, v: i16) -> usize {
+        self.write_u16(v as u16)
+    }
+
+    fn write_i32(&mut self, v: i32) -> usize {
+        self.write_u32(v as u32)
+    }
+
+    fn write_i64(&mut self, v: i64) -> usize {
+        self.write_u64(v as u64)
+    }
+
+    fn write_f32(&mut self, v: f32) -> usize {
+        self.buffer[self.offset..self.offset + 4].copy_from_slice(&v.to_be_bytes());
+        self.offset += 4;
+        4
+    }
+
+    fn write_f64(&mut self, v: f64) -> usize {
+        self.buffer[self.offset..self.offset + 8].copy_from_slice(&v.to_be_bytes());
+        self.offset += 8;
+        8
+    }
+
+    fn write_bytes(&mut self, v: &[u8]) -> usize {
+        for b in v {
+            self.write_u8(*b);
+        }
+        v.len()
+    }
+
+    fn write_str(&mut self, v: &str) -> usize {
+        self.write_bytes(v.as_bytes())
+    }
+
+    fn write_bool(&mut self, v: bool) -> usize {
+        self.write_i64(v.into())
+    }
+
+    fn write_geo(&mut self, v: &str) -> usize {
+        self.write_u8(0);
+        self.write_u8(0);
+        self.write_u8(0);
+        self.write_bytes(v.as_bytes());
+        3 + v.len()
     }
 }
