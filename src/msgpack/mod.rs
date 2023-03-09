@@ -19,12 +19,12 @@
     clippy::cast_sign_loss
 )]
 
-use crate::commands::particle_type::ParseParticleError;
+use crate::commands::ParseParticleError;
 
-pub mod decoder;
-pub mod encoder;
+pub(crate) mod decoder;
+pub(crate) mod encoder;
 
-pub type Result<T, E = MsgpackError> = std::result::Result<T, E>;
+pub(crate) type Result<T, E = MsgpackError> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MsgpackError {

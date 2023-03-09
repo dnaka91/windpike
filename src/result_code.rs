@@ -211,9 +211,8 @@ pub enum ResultCode {
 
 impl ResultCode {
     /// Convert the result code from the server response.
-    #[doc(hidden)]
     #[must_use]
-    pub const fn from_u8(n: u8) -> Self {
+    pub(crate) const fn from_u8(n: u8) -> Self {
         match n {
             0 => Self::Ok,
             1 => Self::ServerError,

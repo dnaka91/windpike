@@ -36,8 +36,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-#[doc(hidden)]
-pub enum OperationType {
+pub(crate) enum OperationType {
     Read = 1,
     Write = 2,
     CdtRead = 3,
@@ -55,8 +54,7 @@ pub enum OperationType {
     HllWrite = 16,
 }
 
-#[doc(hidden)]
-pub enum OperationData<'a> {
+pub(crate) enum OperationData<'a> {
     None,
     Value(&'a Value),
     CdtListOp(CdtOperation<'a>),
@@ -65,8 +63,7 @@ pub enum OperationData<'a> {
     HLLOp(CdtOperation<'a>),
 }
 
-#[doc(hidden)]
-pub enum OperationBin<'a> {
+pub(crate) enum OperationBin<'a> {
     None,
     All,
     Name(&'a str),
@@ -75,26 +72,18 @@ pub enum OperationBin<'a> {
 /// Database operation definition. This data type is used in the client's `operate()` method.
 pub struct Operation<'a> {
     // OpType determines type of operation.
-    #[doc(hidden)]
-    pub op: OperationType,
-
+    pub(crate) op: OperationType,
     // CDT context for nested types
-    #[doc(hidden)]
-    pub ctx: &'a [CdtContext],
-
+    pub(crate) ctx: &'a [CdtContext],
     // BinName (Optional) determines the name of bin used in operation.
-    #[doc(hidden)]
-    pub bin: OperationBin<'a>,
-
+    pub(crate) bin: OperationBin<'a>,
     // BinData determines bin value used in operation.
-    #[doc(hidden)]
-    pub data: OperationData<'a>,
+    pub(crate) data: OperationData<'a>,
 }
 
 impl<'a> Operation<'a> {
-    #[doc(hidden)]
     #[must_use]
-    pub fn estimate_size(&self) -> usize {
+    pub(crate) fn estimate_size(&self) -> usize {
         let mut size: usize = 0;
         size += match self.bin {
             OperationBin::Name(bin) => bin.len(),

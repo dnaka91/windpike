@@ -15,7 +15,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use crate::{
-    commands::{admin_command::AdminCommand, CommandError},
+    commands::{AdminCommand, CommandError},
     errors::Result,
 };
 

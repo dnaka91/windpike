@@ -22,12 +22,10 @@ use crate::{
     Value,
 };
 
-#[doc(hidden)]
 // Empty Context for scalar operations
-pub const DEFAULT_CTX: &[CdtContext] = &[];
+pub(crate) const DEFAULT_CTX: &[CdtContext] = &[];
 
-#[doc(hidden)]
-pub enum CtxType {
+pub(crate) enum CtxType {
     ListIndex = 0x10,
     ListRank = 0x11,
     ListValue = 0x13,

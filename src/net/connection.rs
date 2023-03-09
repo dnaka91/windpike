@@ -23,7 +23,7 @@ use tokio::{
 
 use super::{NetError, Result};
 use crate::{
-    commands::{admin_command::AdminCommand, buffer::Buffer},
+    commands::{AdminCommand, buffer::Buffer},
     policy::ClientPolicy,
 };
 

@@ -49,9 +49,8 @@ pub struct Record {
 
 impl Record {
     /// Construct a new Record. For internal use only.
-    #[doc(hidden)]
     #[must_use]
-    pub const fn new(
+    pub(crate) const fn new(
         key: Option<Key>,
         bins: HashMap<String, Value>,
         generation: u32,

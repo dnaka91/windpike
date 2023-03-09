@@ -42,9 +42,8 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-#[doc(hidden)]
 #[repr(u8)]
-pub enum CdtListOpType {
+pub(crate) enum CdtListOpType {
     SetType = 0,
     Append = 1,
     AppendItems = 2,
@@ -185,9 +184,8 @@ impl Default for ListPolicy {
     }
 }
 
-#[doc(hidden)]
 #[must_use]
-pub const fn list_order_flag(order: ListOrderType, pad: bool) -> u8 {
+pub(crate) const fn list_order_flag(order: ListOrderType, pad: bool) -> u8 {
     if matches!(order, ListOrderType::Ordered) {
         0xc0
     } else if pad {

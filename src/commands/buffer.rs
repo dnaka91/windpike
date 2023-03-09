@@ -169,7 +169,7 @@ impl Buffer {
     }
 
     // Writes the command for write operations
-    pub fn set_write<'b, A: AsRef<Bin<'b>>>(
+    pub(crate) fn set_write<'b, A: AsRef<Bin<'b>>>(
         &mut self,
         policy: &WritePolicy,
         op_type: OperationType,

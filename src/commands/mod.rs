@@ -12,31 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod admin_command;
-pub mod batch_read_command;
-pub mod buffer;
-pub mod delete_command;
-pub mod exists_command;
-pub mod info_command;
-pub mod operate_command;
-pub mod particle_type;
-pub mod read_command;
-pub mod scan_command;
-pub mod single_command;
-pub mod stream_command;
-pub mod touch_command;
-pub mod write_command;
+mod admin_command;
+mod batch_read_command;
+pub(crate) mod buffer;
+mod delete_command;
+mod exists_command;
+mod info_command;
+mod operate_command;
+mod particle_type;
+mod read_command;
+mod scan_command;
+mod single_command;
+mod stream_command;
+mod touch_command;
+mod write_command;
 
 mod field_type;
 
 use std::{sync::Arc, time::Duration};
 
-pub use self::{
-    batch_read_command::BatchReadCommand, delete_command::DeleteCommand,
-    exists_command::ExistsCommand, info_command::Message, operate_command::OperateCommand,
-    particle_type::ParticleType, read_command::ReadCommand, scan_command::ScanCommand,
-    single_command::SingleCommand, stream_command::StreamCommand, touch_command::TouchCommand,
-    write_command::WriteCommand,
+pub use self::particle_type::ParseParticleError;
+pub(crate) use self::{
+    admin_command::AdminCommand, batch_read_command::BatchReadCommand,
+    delete_command::DeleteCommand, exists_command::ExistsCommand, info_command::Message,
+    operate_command::OperateCommand, particle_type::ParticleType, read_command::ReadCommand,
+    scan_command::ScanCommand, single_command::SingleCommand, stream_command::StreamCommand,
+    touch_command::TouchCommand, write_command::WriteCommand,
 };
 use crate::{cluster::Node, net::Connection, ResultCode};
 

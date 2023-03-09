@@ -49,6 +49,12 @@
 #![allow(missing_docs)]
 
 use crate::result_code::ResultCode;
+pub use crate::{
+    cluster::ClusterError,
+    commands::{CommandError, ParseParticleError},
+    msgpack::MsgpackError,
+    net::ParseHostError,
+};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 

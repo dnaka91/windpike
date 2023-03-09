@@ -30,8 +30,7 @@ use serde::{Serialize, Serializer};
 use crate::{
     commands::{
         buffer::{Buffer, BufferError},
-        particle_type::ParseParticleError,
-        ParticleType,
+        ParseParticleError, ParticleType,
     },
     errors::Result,
     msgpack::{decoder, encoder, MsgpackError},
@@ -183,9 +182,8 @@ impl Value {
 
     /// Return the particle type for the value used in the wire protocol.
     /// For internal use only.
-    #[doc(hidden)]
     #[must_use]
-    pub fn particle_type(&self) -> ParticleType {
+    pub(crate) fn particle_type(&self) -> ParticleType {
         match *self {
             Self::Nil => ParticleType::NULL,
             Self::Int(_) | Self::Bool(_) => ParticleType::INTEGER,
@@ -231,8 +229,7 @@ impl Value {
 
     /// Calculate the size in bytes that the representation on wire for this value will require.
     /// For internal use only.
-    #[doc(hidden)]
-    pub fn estimate_size(&self) -> usize {
+    pub(crate) fn estimate_size(&self) -> usize {
         match *self {
             Self::Nil => 0,
             Self::Int(_) | Self::Bool(_) | Self::Float(_) => 8,
@@ -251,8 +248,7 @@ impl Value {
 
     /// Serialize the value into the given buffer.
     /// For internal use only.
-    #[doc(hidden)]
-    pub fn write_to(&self, buf: &mut Buffer) -> usize {
+    pub(crate) fn write_to(&self, buf: &mut Buffer) -> usize {
         match *self {
             Self::Nil => 0,
             Self::Int(ref val) => buf.write_i64(*val),
@@ -275,8 +271,7 @@ impl Value {
 
     /// Serialize the value as a record key.
     /// For internal use only.
-    #[doc(hidden)]
-    pub fn write_key_bytes(&self, h: &mut Ripemd160) -> Result<()> {
+    pub(crate) fn write_key_bytes(&self, h: &mut Ripemd160) -> Result<()> {
         match *self {
             Self::Int(ref val) => {
                 h.update(val.to_be_bytes());
@@ -515,8 +510,11 @@ pub enum ParticleError {
     Msgpack(#[from] MsgpackError),
 }
 
-#[doc(hidden)]
-pub fn bytes_to_particle(ptype: u8, buf: &mut Buffer, len: usize) -> Result<Value, ParticleError> {
+pub(crate) fn bytes_to_particle(
+    ptype: u8,
+    buf: &mut Buffer,
+    len: usize,
+) -> Result<Value, ParticleError> {
     match ParticleType::try_from(ptype)? {
         ParticleType::NULL => Ok(Value::Nil),
         ParticleType::INTEGER => Ok(Value::Int(buf.read_i64(None))),

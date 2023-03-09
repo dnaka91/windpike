@@ -57,8 +57,7 @@ impl Statement {
         }
     }
 
-    #[doc(hidden)]
-    pub fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         if self.set_name.is_empty() {
             return Err(Error::InvalidArgument("Empty set name".to_string()));
         }

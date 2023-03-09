@@ -21,8 +21,7 @@ use crate::{
     Value,
 };
 
-#[doc(hidden)]
-pub enum CdtArgument<'a> {
+pub(crate) enum CdtArgument<'a> {
     Byte(u8),
     Int(i64),
     Bool(bool),
@@ -31,15 +30,14 @@ pub enum CdtArgument<'a> {
     Map(&'a HashMap<Value, Value>),
 }
 
-pub type OperationEncoder = Box<
+pub(crate) type OperationEncoder = Box<
     dyn Fn(&mut Option<&mut Buffer>, &CdtOperation<'_>, &[CdtContext]) -> usize
         + Send
         + Sync
         + 'static,
 >;
 
-#[doc(hidden)]
-pub struct CdtOperation<'a> {
+pub(crate) struct CdtOperation<'a> {
     pub op: u8,
     pub encoder: OperationEncoder,
     pub args: Vec<CdtArgument<'a>>,

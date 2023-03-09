@@ -53,9 +53,8 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[doc(hidden)]
 #[repr(u8)]
-pub enum CdtMapOpType {
+pub(crate) enum CdtMapOpType {
     SetType = 64,
     Add = 65,
     AddItems = 66,
@@ -235,9 +234,8 @@ const fn map_order_arg(policy: &MapPolicy) -> Option<CdtArgument<'_>> {
     }
 }
 
-#[doc(hidden)]
 #[must_use]
-pub const fn map_order_flag(order: MapOrder) -> u8 {
+pub(crate) const fn map_order_flag(order: MapOrder) -> u8 {
     match order {
         MapOrder::KeyOrdered => 0x80,
         MapOrder::Unordered => 0x40,

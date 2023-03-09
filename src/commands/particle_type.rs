@@ -14,9 +14,8 @@
 // the License.
 
 #[derive(Debug, Clone)]
-#[doc(hidden)]
 #[repr(u8)]
-pub enum ParticleType {
+pub(crate) enum ParticleType {
     // Server particle types. Unsupported types are commented out.
     NULL = 0,
     INTEGER = 1,

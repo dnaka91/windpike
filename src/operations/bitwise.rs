@@ -43,8 +43,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-#[doc(hidden)]
-pub enum CdtBitwiseOpType {
+pub(crate) enum CdtBitwiseOpType {
     Resize = 0,
     Insert = 1,
     Remove = 2,

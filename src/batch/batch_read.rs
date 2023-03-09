@@ -43,9 +43,8 @@ impl BatchRead {
         }
     }
 
-    #[doc(hidden)]
     #[must_use]
-    pub fn match_header(&self, other: &Self, match_set: bool) -> bool {
+    pub(crate) fn match_header(&self, other: &Self, match_set: bool) -> bool {
         let key = &self.key;
         let other_key = &other.key;
         (key.namespace == other_key.namespace)
