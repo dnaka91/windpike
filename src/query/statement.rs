@@ -13,10 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::{
-    errors::{Error, Result},
-    Bins,
-};
+use crate::Bins;
 
 /// Query statement parameters.
 pub struct Statement {
@@ -55,19 +52,5 @@ impl Statement {
             bins,
             index_name: None,
         }
-    }
-
-    pub(crate) fn validate(&self) -> Result<()> {
-        if self.set_name.is_empty() {
-            return Err(Error::InvalidArgument("Empty set name".to_string()));
-        }
-
-        if let Some(ref index_name) = self.index_name {
-            if index_name.is_empty() {
-                return Err(Error::InvalidArgument("Empty index name".to_string()));
-            }
-        }
-
-        Ok(())
     }
 }

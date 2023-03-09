@@ -154,7 +154,7 @@ impl<'a> Command for ReadCommand<'a> {
 
         match ResultCode::from(result_code) {
             ResultCode::Ok => {
-                let record = if self.bins.is_none() {
+                let record = if self.bins == Bins::None {
                     Record::new(None, HashMap::new(), generation, expiration)
                 } else {
                     Self::parse_record(conn, op_count, field_count, generation, expiration)?

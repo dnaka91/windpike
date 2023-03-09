@@ -47,7 +47,7 @@ pub use self::{
 /// an instance of `BasePolicy`.
 pub trait Policy {
     /// Transaction priority.
-    fn priority(&self) -> &Priority;
+    fn priority(&self) -> Priority;
 
     #[doc(hidden)]
     /// Deadline for current transaction based on specified timeout. For internal use only.
@@ -71,7 +71,7 @@ pub trait Policy {
 
     /// How replicas should be consulted in read operations to provide the desired consistency
     /// guarantee.
-    fn consistency_level(&self) -> &ConsistencyLevel;
+    fn consistency_level(&self) -> ConsistencyLevel;
 }
 
 /// Policy-like object that encapsulates a base policy instance.
@@ -84,12 +84,8 @@ impl<T> Policy for T
 where
     T: PolicyLike,
 {
-    fn priority(&self) -> &Priority {
+    fn priority(&self) -> Priority {
         self.base().priority()
-    }
-
-    fn consistency_level(&self) -> &ConsistencyLevel {
-        self.base().consistency_level()
     }
 
     fn deadline(&self) -> Option<Instant> {
@@ -106,6 +102,10 @@ where
 
     fn sleep_between_retries(&self) -> Option<Duration> {
         self.base().sleep_between_retries()
+    }
+
+    fn consistency_level(&self) -> ConsistencyLevel {
+        self.base().consistency_level()
     }
 }
 
@@ -140,8 +140,8 @@ pub struct BasePolicy {
 }
 
 impl Policy for BasePolicy {
-    fn priority(&self) -> &Priority {
-        &self.priority
+    fn priority(&self) -> Priority {
+        self.priority
     }
 
     fn deadline(&self) -> Option<Instant> {
@@ -160,7 +160,7 @@ impl Policy for BasePolicy {
         self.sleep_between_retries
     }
 
-    fn consistency_level(&self) -> &ConsistencyLevel {
-        &self.consistency_level
+    fn consistency_level(&self) -> ConsistencyLevel {
+        self.consistency_level
     }
 }

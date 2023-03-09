@@ -1,6 +1,6 @@
 use aerospike::{
     as_list, as_val,
-    operations::{hll, hll::HLLPolicy},
+    operations::{hll, hll::HllPolicy},
     Bins, FloatValue, Key, ReadPolicy, Value, WritePolicy,
 };
 
@@ -16,7 +16,7 @@ async fn hll() {
 
     let key = Key::new(namespace, set_name, "test").unwrap();
 
-    let hpolicy = HLLPolicy::default();
+    let hpolicy = HllPolicy::default();
     let wpolicy = WritePolicy::default();
     let rpolicy = ReadPolicy::default();
 
@@ -87,7 +87,7 @@ async fn hll() {
 
     let ops = &vec![hll::get_union("bin", &bin2val)];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
-    let val = Value::HLL(vec![
+    let val = Value::Hll(vec![
         0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ]);
     assert_eq!(*rec.bins.get("bin").unwrap(), val, "Union does not match");

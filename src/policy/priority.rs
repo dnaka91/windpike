@@ -13,23 +13,15 @@
 // limitations under the License.
 
 /// Priority of operations on database server.
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum Priority {
     /// Default determines that the server defines the priority.
+    #[default]
     Default = 0,
-
     /// Low determines that the server should run the operation in a background thread.
-    Low = 1,
-
+    Low,
     /// Medium determines that the server should run the operation at medium priority.
-    Medium = 2,
-
+    Medium,
     /// High determines that the server should run the operation at the highest priority.
-    High = 3,
-}
-
-impl Default for Priority {
-    fn default() -> Self {
-        Self::Default
-    }
+    High,
 }

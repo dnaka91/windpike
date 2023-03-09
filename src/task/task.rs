@@ -18,7 +18,7 @@ use tokio::time::{Duration, Instant};
 use crate::errors::{Error, Result};
 
 /// Status of task
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Status {
     /// long running task not found
     NotFound,

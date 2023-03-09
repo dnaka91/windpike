@@ -443,7 +443,7 @@ impl Buffer {
 
             let each_op = matches!(
                 operation.data,
-                OperationData::CdtMapOp(_) | OperationData::CdtBitOp(_) | OperationData::HLLOp(_)
+                OperationData::CdtMapOp(_) | OperationData::CdtBitOp(_) | OperationData::HllOp(_)
             );
 
             if policy.respond_per_each_op || each_op {
@@ -534,7 +534,7 @@ impl Buffer {
         self.size_buffer()?;
 
         let mut read_attr = INFO1_READ;
-        if bins.is_none() {
+        if *bins == Bins::None {
             read_attr |= INFO1_NOBINDATA;
         }
 
@@ -554,7 +554,7 @@ impl Buffer {
             self.write_field_string(set_name, FieldType::Table);
         }
 
-        self.write_field_header(partitions.len() * 2, FieldType::PIDArray);
+        self.write_field_header(partitions.len() * 2, FieldType::PidArray);
         for pid in partitions {
             self.write_u16_little_endian(*pid);
         }

@@ -15,10 +15,11 @@
 //
 
 /// `RecordExistsAction` determines how to handle record writes based on record generation.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum RecordExistsAction {
     /// Update means: Create or update record.
     /// Merge write command bins with existing bins.
+    #[default]
     Update = 0,
     /// UpdateOnly means: Update record only. Fail if record does not exist.
     /// Merge write command bins with existing bins.
@@ -35,10 +36,4 @@ pub enum RecordExistsAction {
     ReplaceOnly,
     /// CreateOnly means: Create only. Fail if record exists.
     CreateOnly,
-}
-
-impl Default for RecordExistsAction {
-    fn default() -> Self {
-        Self::Update
-    }
 }

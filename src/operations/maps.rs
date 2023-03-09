@@ -53,106 +53,93 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u8)]
 pub(crate) enum CdtMapOpType {
     SetType = 64,
-    Add = 65,
-    AddItems = 66,
-    Put = 67,
-    PutItems = 68,
-    Replace = 69,
-    ReplaceItems = 70,
+    Add,
+    AddItems,
+    Put,
+    PutItems,
+    Replace,
+    ReplaceItems,
     Increment = 73,
-    Decrement = 74,
-    Clear = 75,
-    RemoveByKey = 76,
-    RemoveByIndex = 77,
+    Decrement,
+    Clear,
+    RemoveByKey,
+    RemoveByIndex,
     RemoveByRank = 79,
     RemoveKeyList = 81,
-    RemoveByValue = 82,
-    RemoveValueList = 83,
-    RemoveByKeyInterval = 84,
-    RemoveByIndexRange = 85,
-    RemoveByValueInterval = 86,
-    RemoveByRankRange = 87,
-    RemoveByKeyRelIndexRange = 88,
-    RemoveByValueRelRankRange = 89,
+    RemoveByValue,
+    RemoveValueList,
+    RemoveByKeyInterval,
+    RemoveByIndexRange,
+    RemoveByValueInterval,
+    RemoveByRankRange,
+    RemoveByKeyRelIndexRange,
+    RemoveByValueRelRankRange,
     Size = 96,
-    GetByKey = 97,
-    GetByIndex = 98,
+    GetByKey,
+    GetByIndex,
     GetByRank = 100,
     GetByValue = 102,
-    GetByKeyInterval = 103,
-    GetByIndexRange = 104,
-    GetByValueInterval = 105,
-    GetByRankRange = 106,
-    GetByKeyList = 107,
-    GetByValueList = 108,
-    GetByKeyRelIndexRange = 109,
-    GetByValueRelRankRange = 110,
+    GetByKeyInterval,
+    GetByIndexRange,
+    GetByValueInterval,
+    GetByRankRange,
+    GetByKeyList,
+    GetByValueList,
+    GetByKeyRelIndexRange,
+    GetByValueRelRankRange,
 }
 /// Map storage order.
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
 pub enum MapOrder {
     /// Map is not ordered. This is the default.
     Unordered = 0,
-
     /// Order map by key.
-    KeyOrdered = 1,
-
+    KeyOrdered,
     /// Order map by key, then value.
     KeyValueOrdered = 3,
 }
 
 /// Map return type. Type of data to return when selecting or removing items from the map.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum MapReturnType {
     /// Do not return a result.
     None = 0,
-
     /// Return key index order.
     ///
     /// * 0 = first key
     /// * N = Nth key
     /// * -1 = last key
-    Index = 1,
-
+    Index,
     /// Return reverse key order.
     ///
     /// * 0 = last key
     /// * -1 = first key
-    ReverseIndex = 2,
-
+    ReverseIndex,
     /// Return value order.
     ///
     /// * 0 = smallest value
     /// * N = Nth smallest value
     /// * -1 = largest value
-    Rank = 3,
-
+    Rank,
     /// Return reserve value order.
     ///
     /// * 0 = largest value
     /// * N = Nth largest value
     /// * -1 = smallest value
-    ReverseRank = 4,
-
+    ReverseRank,
     /// Return count of items selected.
-    Count = 5,
-
+    Count,
     /// Return key for single key read and key list for range read.
-    Key = 6,
-
+    Key,
     /// Return value for single key read and value list for range read.
-    Value = 7,
-
+    Value,
     /// Return key/value items. The possible return types are:
     ///
     /// * `Value::HashMap`: Returned for unordered maps
     /// * `Value::OrderedMap`: Returned for range results where range order needs to be preserved.
-    KeyValue = 8,
-
+    KeyValue,
     /// Invert meaning of map command and return values.
     /// With the INVERTED flag enabled, the keys outside of the specified key range will be removed
     /// and returned.
@@ -160,23 +147,21 @@ pub enum MapReturnType {
 }
 
 /// Unique key map write type.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum MapWriteMode {
     /// If the key already exists, the item will be overwritten.
     /// If the key does not exist, a new item will be created.
     Update,
-
     /// If the key already exists, the item will be overwritten.
     /// If the key does not exist, the write will fail.
     UpdateOnly,
-
     /// If the key already exists, the write will fail.
     /// If the key does not exist, a new item will be created.
     CreateOnly,
 }
 
 /// `MapPolicy` directives when creating a map and writing map items.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct MapPolicy {
     /// The Order of the Map
     pub order: MapOrder,

@@ -13,17 +13,16 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#[derive(Debug, Clone)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) enum ParticleType {
     // Server particle types. Unsupported types are commented out.
-    NULL = 0,
-    INTEGER = 1,
-    FLOAT = 2,
-    STRING = 3,
-    BLOB = 4,
+    Null = 0,
+    Integer,
+    Float,
+    String,
+    Blob,
     // TIMESTAMP       = 5,
-    DIGEST = 6,
+    Digest = 6,
     // JBLOB  = 7,
     // CSHARP_BLOB     = 8,
     // PYTHON_BLOB     = 9,
@@ -36,11 +35,11 @@ pub(crate) enum ParticleType {
     // RTA_APPEND_DICT = 16,
     // RTA_APPEND_LIST = 17,
     // LUA_BLOB        = 18,
-    HLL = 18,
-    MAP = 19,
-    LIST = 20,
-    LDT = 21,
-    GEOJSON = 23,
+    Hll = 18,
+    Map,
+    List,
+    Ldt,
+    GeoJson = 23,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -52,13 +51,13 @@ impl TryFrom<u8> for ParticleType {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
-            0 => Self::NULL,
-            1 => Self::INTEGER,
-            2 => Self::FLOAT,
-            3 => Self::STRING,
-            4 => Self::BLOB,
+            0 => Self::Null,
+            1 => Self::Integer,
+            2 => Self::Float,
+            3 => Self::String,
+            4 => Self::Blob,
             // 5 => ParticleType::TIMESTAMP      ,
-            6 => Self::DIGEST,
+            6 => Self::Digest,
             // 7 => ParticleType::JBLOB ,
             // 8 => ParticleType::CSHARP_BLOB    ,
             // 9 => ParticleType::PYTHON_BLOB    ,
@@ -71,11 +70,11 @@ impl TryFrom<u8> for ParticleType {
             // 16 => ParticleType::RTA_APPEND_DICT,
             // 17 => ParticleType::RTA_APPEND_LIST,
             // 18 => ParticleType::LUA_BLOB       ,
-            18 => Self::HLL,
-            19 => Self::MAP,
-            20 => Self::LIST,
-            21 => Self::LDT,
-            23 => Self::GEOJSON,
+            18 => Self::Hll,
+            19 => Self::Map,
+            20 => Self::List,
+            21 => Self::Ldt,
+            23 => Self::GeoJson,
             _ => return Err(ParseParticleError(value)),
         })
     }

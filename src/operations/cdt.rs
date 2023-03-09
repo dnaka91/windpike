@@ -45,8 +45,8 @@ pub(crate) struct CdtOperation<'a> {
 
 impl<'a> CdtOperation<'a> {
     #[must_use]
-    pub const fn particle_type(&self) -> ParticleType {
-        ParticleType::BLOB
+    pub const fn particle_type() -> ParticleType {
+        ParticleType::Blob
     }
 
     pub fn estimate_size(&self, ctx: &[CdtContext]) -> usize {

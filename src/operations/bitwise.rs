@@ -42,30 +42,30 @@ use crate::{
     Value,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) enum CdtBitwiseOpType {
     Resize = 0,
-    Insert = 1,
-    Remove = 2,
-    Set = 3,
-    Or = 4,
-    Xor = 5,
-    And = 6,
-    Not = 7,
-    LShift = 8,
-    RShift = 9,
-    Add = 10,
-    Subtract = 11,
-    SetInt = 12,
+    Insert,
+    Remove,
+    Set,
+    Or,
+    Xor,
+    And,
+    Not,
+    Lshift,
+    Rshift,
+    Add,
+    Subtract,
+    SetInt,
     Get = 50,
-    Count = 51,
-    LScan = 52,
-    RScan = 53,
-    GetInt = 54,
+    Count,
+    Lscan,
+    Rscan,
+    GetInt,
 }
 
 /// `CdtBitwiseResizeFlags` specifies the bitwise operation flags for resize.
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug)]
 pub enum BitwiseResizeFlags {
     /// Default specifies the defalt flag.
     Default = 0,
@@ -78,7 +78,7 @@ pub enum BitwiseResizeFlags {
 }
 
 /// `CdtBitwiseWriteFlags` specify bitwise operation policy write flags.
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug)]
 pub enum BitwiseWriteFlags {
     /// Default allows create or update.
     Default = 0,
@@ -99,7 +99,7 @@ pub enum BitwiseWriteFlags {
 
 /// `CdtBitwiseOverflowActions` specifies the action to take when bitwise add/subtract results in
 /// overflow/underflow.
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug)]
 pub enum BitwiseOverflowActions {
     /// Fail specifies to fail operation with error.
     Fail = 0,
@@ -111,7 +111,7 @@ pub enum BitwiseOverflowActions {
     Wrap = 4,
 }
 /// `BitPolicy` determines the Bit operation policy.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct BitPolicy {
     /// The flags determined by CdtBitwiseWriteFlags
     pub flags: u8,
@@ -443,7 +443,7 @@ pub fn lshift<'a>(
     policy: &'a BitPolicy,
 ) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: CdtBitwiseOpType::LShift as u8,
+        op: CdtBitwiseOpType::Lshift as u8,
         encoder: Box::new(pack_cdt_bit_op),
         args: vec![
             CdtArgument::Int(bit_offset),
@@ -482,7 +482,7 @@ pub fn rshift<'a>(
 ) -> Operation<'a> {
     let cdt_op = CdtOperation {
         encoder: Box::new(pack_cdt_bit_op),
-        op: CdtBitwiseOpType::RShift as u8,
+        op: CdtBitwiseOpType::Rshift as u8,
         args: vec![
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
@@ -699,7 +699,7 @@ pub fn count(bin: &str, bit_offset: i64, bit_size: i64) -> Operation<'_> {
 /// ```
 pub fn lscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operation<'_> {
     let cdt_op = CdtOperation {
-        op: CdtBitwiseOpType::LScan as u8,
+        op: CdtBitwiseOpType::Lscan as u8,
         encoder: Box::new(pack_cdt_bit_op),
         args: vec![
             CdtArgument::Int(bit_offset),
@@ -730,7 +730,7 @@ pub fn lscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operatio
 /// ```
 pub fn rscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operation<'_> {
     let cdt_op = CdtOperation {
-        op: CdtBitwiseOpType::RScan as u8,
+        op: CdtBitwiseOpType::Rscan as u8,
         encoder: Box::new(pack_cdt_bit_op),
         args: vec![
             CdtArgument::Int(bit_offset),

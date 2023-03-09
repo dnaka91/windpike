@@ -94,16 +94,16 @@ fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
     let count = count - 1;
 
     match ParticleType::try_from(vtype)? {
-        ParticleType::STRING => {
+        ParticleType::String => {
             let val = buf.read_str(count)?;
             Ok(Value::String(val))
         }
 
-        ParticleType::BLOB => Ok(Value::Blob(buf.read_blob(count))),
+        ParticleType::Blob => Ok(Value::Blob(buf.read_blob(count))),
 
-        ParticleType::GEOJSON => {
+        ParticleType::GeoJson => {
             let val = buf.read_str(count)?;
-            Ok(Value::GeoJSON(val))
+            Ok(Value::GeoJson(val))
         }
 
         _ => Err(MsgpackError::UnrecognizedCode(vtype)),

@@ -28,18 +28,18 @@ pub fn pack_value(buf: &mut Option<&mut Buffer>, val: &Value) -> usize {
     match *val {
         Value::Nil => pack_nil(buf),
         Value::Int(ref val) => pack_integer(buf, *val),
-        Value::UInt(ref val) => pack_u64(buf, *val),
+        Value::Uint(ref val) => pack_u64(buf, *val),
         Value::Bool(ref val) => pack_bool(buf, *val),
         Value::String(ref val) => pack_string(buf, val),
         Value::Float(ref val) => match *val {
             FloatValue::F64(val) => pack_f64(buf, f64::from_bits(val)),
             FloatValue::F32(val) => pack_f32(buf, f32::from_bits(val)),
         },
-        Value::Blob(ref val) | Value::HLL(ref val) => pack_blob(buf, val),
+        Value::Blob(ref val) | Value::Hll(ref val) => pack_blob(buf, val),
         Value::List(ref val) => pack_array(buf, val),
         Value::HashMap(ref val) => pack_map(buf, val),
         Value::OrderedMap(_) => panic!("Ordered maps are not supported in this encoder."),
-        Value::GeoJSON(ref val) => pack_geo_json(buf, val),
+        Value::GeoJson(ref val) => pack_geo_json(buf, val),
     }
 }
 
@@ -260,7 +260,7 @@ pub fn pack_blob(buf: &mut Option<&mut Buffer>, value: &[u8]) -> usize {
 
     size += pack_byte_array_begin(buf, size);
     if let Some(ref mut buf) = *buf {
-        buf.write_u8(ParticleType::BLOB as u8);
+        buf.write_u8(ParticleType::Blob as u8);
         buf.write_bytes(value);
     }
 
@@ -272,7 +272,7 @@ pub fn pack_string(buf: &mut Option<&mut Buffer>, value: &str) -> usize {
 
     size += pack_byte_array_begin(buf, size);
     if let Some(ref mut buf) = *buf {
-        buf.write_u8(ParticleType::STRING as u8);
+        buf.write_u8(ParticleType::String as u8);
         buf.write_str(value);
     }
 
@@ -284,7 +284,7 @@ fn pack_geo_json(buf: &mut Option<&mut Buffer>, value: &str) -> usize {
 
     size += pack_byte_array_begin(buf, size);
     if let Some(ref mut buf) = *buf {
-        buf.write_u8(ParticleType::GEOJSON as u8);
+        buf.write_u8(ParticleType::GeoJson as u8);
         buf.write_str(value);
     }
 

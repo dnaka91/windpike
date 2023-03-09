@@ -41,56 +41,54 @@ use crate::{
     Value,
 };
 
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) enum CdtListOpType {
     SetType = 0,
-    Append = 1,
-    AppendItems = 2,
-    Insert = 3,
-    InsertItems = 4,
-    Pop = 5,
-    PopRange = 6,
-    Remove = 7,
-    RemoveRange = 8,
-    Set = 9,
-    Trim = 10,
-    Clear = 11,
-    Increment = 12,
-    Sort = 13,
+    Append,
+    AppendItems,
+    Insert,
+    InsertItems,
+    Pop,
+    PopRange,
+    Remove,
+    RemoveRange,
+    Set,
+    Trim,
+    Clear,
+    Increment,
+    Sort,
     Size = 16,
-    Get = 17,
-    GetRange = 18,
-    GetByIndex = 19,
+    Get,
+    GetRange,
+    GetByIndex,
     GetByRank = 21,
-    GetByValue = 22,
-    GetByValueList = 23,
-    GetByIndexRange = 24,
-    GetByValueInterval = 25,
-    GetByRankRange = 26,
-    GetByValueRelRankRange = 27,
+    GetByValue,
+    GetByValueList,
+    GetByIndexRange,
+    GetByValueInterval,
+    GetByRankRange,
+    GetByValueRelRankRange,
     RemoveByIndex = 32,
     RemoveByRank = 34,
-    RemoveByValue = 35,
-    RemoveByValueList = 36,
-    RemoveByIndexRange = 37,
-    RemoveByValueInterval = 38,
-    RemoveByRankRange = 39,
-    RemoveByValueRelRankRange = 40,
+    RemoveByValue,
+    RemoveByValueList,
+    RemoveByIndexRange,
+    RemoveByValueInterval,
+    RemoveByRankRange,
+    RemoveByValueRelRankRange,
 }
 
 /// List storage order.
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
 pub enum ListOrderType {
     /// List is not ordered. This is the default.
     Unordered = 0,
     /// List is ordered.
-    Ordered = 1,
+    Ordered,
 }
 
 /// `CdtListReturnType` determines the returned values in CDT List operations.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ListReturnType {
     /// Do not return a result.
     None = 0,
@@ -98,23 +96,23 @@ pub enum ListReturnType {
     /// 0 = first key
     /// N = Nth key
     /// -1 = last key
-    Index = 1,
+    Index,
     /// Return reverse index offset order.
     /// 0 = last key
     /// -1 = first key
-    ReverseIndex = 2,
+    ReverseIndex,
     /// Return value order.
     /// 0 = smallest value
     /// N = Nth smallest value
     /// -1 = largest value
-    Rank = 3,
+    Rank,
     /// Return reserve value order.
     /// 0 = largest value
     /// N = Nth largest value
     /// -1 = smallest value
-    ReverseRank = 4,
+    ReverseRank,
     /// Return count of items selected.
-    Count = 5,
+    Count,
     /// Return value for single key read and value list for range read.
     Values = 7,
     /// Invert meaning of list command and return values.
@@ -126,20 +124,18 @@ pub enum ListReturnType {
 }
 
 /// `CdtListSortFlags` determines sort flags for CDT lists
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
 pub enum ListSortFlags {
     /// Default is the default sort flag for CDT lists, and sort in Ascending order.
     Default = 0,
     /// Descending will sort the contents of the list in descending order.
-    Descending = 1,
+    Descending,
     /// DropDuplicates will drop duplicate values in the results of the CDT list operation.
-    DropDuplicates = 2,
+    DropDuplicates,
 }
 
 /// `CdtListWriteFlags` determines write flags for CDT lists
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
 pub enum ListWriteFlags {
     /// Default is the default behavior. It means:  Allow duplicate values and insertions at any
     /// index.
@@ -157,7 +153,7 @@ pub enum ListWriteFlags {
 }
 
 /// `ListPolicy` directives when creating a list and writing list items.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Debug)]
 pub struct ListPolicy {
     /// CdtListOrderType
     pub attributes: ListOrderType,

@@ -27,8 +27,8 @@ use crate::{
 };
 
 /// `HLLWriteFlags` determines write flags for HLL
-#[derive(Debug, Clone, Copy)]
-pub enum HLLWriteFlags {
+#[derive(Clone, Copy, Debug)]
+pub enum HllWriteFlags {
     /// Default.  Allow create or update.
     Default = 0,
     /// If the bin already exists, the operation will be denied.
@@ -47,46 +47,46 @@ pub enum HLLWriteFlags {
 
 /// `HLLPolicy` operation policy.
 #[derive(Debug, Clone, Copy)]
-pub struct HLLPolicy {
+pub struct HllPolicy {
     /// CdtListWriteFlags
-    pub flags: HLLWriteFlags,
+    pub flags: HllWriteFlags,
 }
 
-impl HLLPolicy {
+impl HllPolicy {
     /// Use specified `HLLWriteFlags` when performing `HLL` operations
     #[must_use]
-    pub const fn new(write_flags: HLLWriteFlags) -> Self {
+    pub const fn new(write_flags: HllWriteFlags) -> Self {
         Self { flags: write_flags }
     }
 }
 
-impl Default for HLLPolicy {
+impl Default for HllPolicy {
     /// Returns the default policy for HLL operations.
     fn default() -> Self {
-        Self::new(HLLWriteFlags::Default)
+        Self::new(HllWriteFlags::Default)
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum HLLOpType {
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum HllOpType {
     Init = 0,
-    Add = 1,
-    SetUnion = 2,
-    SetCount = 3,
-    Fold = 4,
+    Add,
+    SetUnion,
+    SetCount,
+    Fold,
     Count = 50,
-    Union = 51,
-    UnionCount = 52,
-    IntersectCount = 53,
-    Similarity = 54,
-    Describe = 55,
+    Union,
+    UnionCount,
+    IntersectCount,
+    Similarity,
+    Describe,
 }
 
 /// Create HLL init operation.
 /// Server creates a new HLL or resets an existing HLL.
 /// Server does not return a value.
 #[must_use]
-pub fn init<'a>(policy: &HLLPolicy, bin: &'a str, index_bit_count: i64) -> Operation<'a> {
+pub fn init<'a>(policy: &HllPolicy, bin: &'a str, index_bit_count: i64) -> Operation<'a> {
     init_with_min_hash(policy, bin, index_bit_count, -1)
 }
 
@@ -94,13 +94,13 @@ pub fn init<'a>(policy: &HLLPolicy, bin: &'a str, index_bit_count: i64) -> Opera
 /// Server creates a new HLL or resets an existing HLL.
 /// Server does not return a value.
 pub fn init_with_min_hash<'a>(
-    policy: &HLLPolicy,
+    policy: &HllPolicy,
     bin: &'a str,
     index_bit_count: i64,
     min_hash_bit_count: i64,
 ) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::Init as u8,
+        op: HllOpType::Init as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![
             CdtArgument::Int(index_bit_count),
@@ -112,7 +112,7 @@ pub fn init_with_min_hash<'a>(
         op: OperationType::HllWrite,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -120,7 +120,7 @@ pub fn init_with_min_hash<'a>(
 /// Server adds values to the HLL set.
 /// Server returns number of entries that caused HLL to update a register.
 #[must_use]
-pub fn add<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Operation<'a> {
+pub fn add<'a>(policy: &HllPolicy, bin: &'a str, list: &'a [Value]) -> Operation<'a> {
     add_with_index_and_min_hash(policy, bin, list, -1, -1)
 }
 
@@ -129,7 +129,7 @@ pub fn add<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Operation
 /// Server returns number of entries that caused HLL to update a register.
 #[must_use]
 pub fn add_with_index<'a>(
-    policy: &HLLPolicy,
+    policy: &HllPolicy,
     bin: &'a str,
     list: &'a [Value],
     index_bit_count: i64,
@@ -142,14 +142,14 @@ pub fn add_with_index<'a>(
 /// `minHashBitCount` to create HLL bin. Server returns number of entries that caused HLL to update
 /// a register.
 pub fn add_with_index_and_min_hash<'a>(
-    policy: &HLLPolicy,
+    policy: &HllPolicy,
     bin: &'a str,
     list: &'a [Value],
     index_bit_count: i64,
     min_hash_bit_count: i64,
 ) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::Add as u8,
+        op: HllOpType::Add as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![
             CdtArgument::List(list),
@@ -162,16 +162,16 @@ pub fn add_with_index_and_min_hash<'a>(
         op: OperationType::HllWrite,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
 /// Create HLL set union operation.
 /// Server sets union of specified HLL objects with HLL bin.
 /// Server does not return a value.
-pub fn set_union<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Operation<'a> {
+pub fn set_union<'a>(policy: &HllPolicy, bin: &'a str, list: &'a [Value]) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::SetUnion as u8,
+        op: HllOpType::SetUnion as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![
             CdtArgument::List(list),
@@ -182,7 +182,7 @@ pub fn set_union<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Ope
         op: OperationType::HllWrite,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -190,7 +190,7 @@ pub fn set_union<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Ope
 /// Server updates the cached count (if stale) and returns the count.
 pub fn refresh_count(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::SetCount as u8,
+        op: HllOpType::SetCount as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![],
     };
@@ -198,7 +198,7 @@ pub fn refresh_count(bin: &str) -> Operation<'_> {
         op: OperationType::HllWrite,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -208,7 +208,7 @@ pub fn refresh_count(bin: &str) -> Operation<'_> {
 /// Server does not return a value.
 pub fn fold(bin: &str, index_bit_count: i64) -> Operation<'_> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::Fold as u8,
+        op: HllOpType::Fold as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![CdtArgument::Int(index_bit_count)],
     };
@@ -216,7 +216,7 @@ pub fn fold(bin: &str, index_bit_count: i64) -> Operation<'_> {
         op: OperationType::HllWrite,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -224,7 +224,7 @@ pub fn fold(bin: &str, index_bit_count: i64) -> Operation<'_> {
 /// Server returns estimated number of elements in the HLL bin.
 pub fn get_count(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::Count as u8,
+        op: HllOpType::Count as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![],
     };
@@ -232,7 +232,7 @@ pub fn get_count(bin: &str) -> Operation<'_> {
         op: OperationType::HllRead,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -241,7 +241,7 @@ pub fn get_count(bin: &str) -> Operation<'_> {
 /// with the HLL bin.
 pub fn get_union<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::Union as u8,
+        op: HllOpType::Union as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![CdtArgument::List(list)],
     };
@@ -249,7 +249,7 @@ pub fn get_union<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
         op: OperationType::HllRead,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -258,7 +258,7 @@ pub fn get_union<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
 /// HLL objects.
 pub fn get_union_count<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::UnionCount as u8,
+        op: HllOpType::UnionCount as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![CdtArgument::List(list)],
     };
@@ -266,7 +266,7 @@ pub fn get_union_count<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
         op: OperationType::HllRead,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -275,7 +275,7 @@ pub fn get_union_count<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
 /// these HLL objects.
 pub fn get_intersect_count<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::IntersectCount as u8,
+        op: HllOpType::IntersectCount as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![CdtArgument::List(list)],
     };
@@ -283,7 +283,7 @@ pub fn get_intersect_count<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a>
         op: OperationType::HllRead,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -291,7 +291,7 @@ pub fn get_intersect_count<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a>
 /// Server returns estimated similarity of these HLL objects. Return type is a double.
 pub fn get_similarity<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::Similarity as u8,
+        op: HllOpType::Similarity as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![CdtArgument::List(list)],
     };
@@ -299,7 +299,7 @@ pub fn get_similarity<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
         op: OperationType::HllRead,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }
 
@@ -308,7 +308,7 @@ pub fn get_similarity<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
 /// The list size is 2.
 pub fn describe(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
-        op: HLLOpType::Describe as u8,
+        op: HllOpType::Describe as u8,
         encoder: Box::new(pack_hll_op),
         args: vec![],
     };
@@ -316,6 +316,6 @@ pub fn describe(bin: &str) -> Operation<'_> {
         op: OperationType::HllRead,
         ctx: DEFAULT_CTX,
         bin: OperationBin::Name(bin),
-        data: OperationData::HLLOp(cdt_op),
+        data: OperationData::HllOp(cdt_op),
     }
 }

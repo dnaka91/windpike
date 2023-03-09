@@ -38,20 +38,20 @@ use crate::{
 #[derive(Clone, Copy)]
 pub(crate) enum OperationType {
     Read = 1,
-    Write = 2,
-    CdtRead = 3,
-    CdtWrite = 4,
-    Incr = 5,
+    Write,
+    CdtRead,
+    CdtWrite,
+    Incr,
     ExpRead = 7,
-    ExpWrite = 8,
-    Append = 9,
-    Prepend = 10,
-    Touch = 11,
-    BitRead = 12,
-    BitWrite = 13,
-    Delete = 14,
-    HllRead = 15,
-    HllWrite = 16,
+    ExpWrite,
+    Append,
+    Prepend,
+    Touch,
+    BitRead,
+    BitWrite,
+    Delete,
+    HllRead,
+    HllWrite,
 }
 
 pub(crate) enum OperationData<'a> {
@@ -60,7 +60,7 @@ pub(crate) enum OperationData<'a> {
     CdtListOp(CdtOperation<'a>),
     CdtMapOp(CdtOperation<'a>),
     CdtBitOp(CdtOperation<'a>),
-    HLLOp(CdtOperation<'a>),
+    HllOp(CdtOperation<'a>),
 }
 
 pub(crate) enum OperationBin<'a> {
@@ -95,7 +95,7 @@ impl<'a> Operation<'a> {
             OperationData::CdtListOp(ref cdt_op)
             | OperationData::CdtMapOp(ref cdt_op)
             | OperationData::CdtBitOp(ref cdt_op)
-            | OperationData::HLLOp(ref cdt_op) => cdt_op.estimate_size(self.ctx),
+            | OperationData::HllOp(ref cdt_op) => cdt_op.estimate_size(self.ctx),
         };
 
         size
@@ -113,7 +113,7 @@ impl<'a> Operation<'a> {
 
         match self.data {
             OperationData::None => {
-                size += self.write_op_header_to(buffer, ParticleType::NULL as u8);
+                size += self.write_op_header_to(buffer, ParticleType::Null as u8);
             }
             OperationData::Value(value) => {
                 size += self.write_op_header_to(buffer, value.particle_type() as u8);
@@ -122,8 +122,8 @@ impl<'a> Operation<'a> {
             OperationData::CdtListOp(ref cdt_op)
             | OperationData::CdtMapOp(ref cdt_op)
             | OperationData::CdtBitOp(ref cdt_op)
-            | OperationData::HLLOp(ref cdt_op) => {
-                size += self.write_op_header_to(buffer, cdt_op.particle_type() as u8);
+            | OperationData::HllOp(ref cdt_op) => {
+                size += self.write_op_header_to(buffer, CdtOperation::particle_type() as u8);
                 size += cdt_op.write_to(buffer, self.ctx);
             }
         };

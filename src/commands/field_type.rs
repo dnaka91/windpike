@@ -16,6 +16,7 @@
 // FieldType signifies the database operation error codes.
 // The positive numbers align with the server side file proto.h.
 
+#[derive(Clone, Copy, Debug)]
 pub enum FieldType {
     Namespace = 0,
     Table = 1,
@@ -27,7 +28,7 @@ pub enum FieldType {
     TranId = 7, // user supplied transaction id, which is simply passed back,
     // ScanOptions = 8,
     ScanTimeout = 9,
-    PIDArray = 11,
+    PidArray = 11,
     // IndexName = 21,
     // IndexRange = 22,
     // IndexFilter = 23,

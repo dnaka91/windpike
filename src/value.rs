@@ -37,7 +37,7 @@ use crate::{
 };
 
 /// Container for floating point bin values stored in the Aerospike database.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum FloatValue {
     /// Container for single precision float values.
     F32(u32),
@@ -86,7 +86,7 @@ impl<'a> From<&'a f32> for FloatValue {
 }
 
 impl fmt::Display for FloatValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::F32(val) => {
                 let val: f32 = f32::from_bits(val);
@@ -101,7 +101,7 @@ impl fmt::Display for FloatValue {
 }
 
 /// Container for bin values stored in the Aerospike database.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Value {
     /// Empty value.
     Nil,
@@ -120,7 +120,7 @@ pub enum Value {
     ///
     /// Attempting to store an `u64` value as a record bin value will cause a panic. Use casting to
     /// store and retrieve `u64` values.
-    UInt(u64),
+    Uint(u64),
 
     /// Floating point value. All floating point values are stored in 64-bit IEEE-754 format in
     /// Aerospike. Aerospike server v3.6.0 and later support double data type.
@@ -147,10 +147,10 @@ pub enum Value {
     OrderedMap(Vec<(Value, Value)>),
 
     /// GeoJSON data type are JSON formatted strings to encode geospatial information.
-    GeoJSON(String),
+    GeoJson(String),
 
     /// HLL value
-    HLL(Vec<u8>),
+    Hll(Vec<u8>),
 }
 
 #[allow(clippy::derive_hash_xor_eq)]
@@ -162,10 +162,10 @@ impl Hash for Value {
             }
             Self::Bool(ref val) => val.hash(state),
             Self::Int(ref val) => val.hash(state),
-            Self::UInt(ref val) => val.hash(state),
+            Self::Uint(ref val) => val.hash(state),
             Self::Float(ref val) => val.hash(state),
-            Self::String(ref val) | Self::GeoJSON(ref val) => val.hash(state),
-            Self::Blob(ref val) | Self::HLL(ref val) => val.hash(state),
+            Self::String(ref val) | Self::GeoJson(ref val) => val.hash(state),
+            Self::Blob(ref val) | Self::Hll(ref val) => val.hash(state),
             Self::List(ref val) => val.hash(state),
             Self::HashMap(_) => panic!("HashMaps cannot be used as map keys."),
             Self::OrderedMap(_) => panic!("OrderedMaps cannot be used as map keys."),
@@ -185,37 +185,20 @@ impl Value {
     #[must_use]
     pub(crate) fn particle_type(&self) -> ParticleType {
         match *self {
-            Self::Nil => ParticleType::NULL,
-            Self::Int(_) | Self::Bool(_) => ParticleType::INTEGER,
-            Self::UInt(_) => panic!(
+            Self::Nil => ParticleType::Null,
+            Self::Int(_) | Self::Bool(_) => ParticleType::Integer,
+            Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Self::Float(_) => ParticleType::FLOAT,
-            Self::String(_) => ParticleType::STRING,
-            Self::Blob(_) => ParticleType::BLOB,
-            Self::List(_) => ParticleType::LIST,
-            Self::HashMap(_) => ParticleType::MAP,
+            Self::Float(_) => ParticleType::Float,
+            Self::String(_) => ParticleType::String,
+            Self::Blob(_) => ParticleType::Blob,
+            Self::List(_) => ParticleType::List,
+            Self::HashMap(_) => ParticleType::Map,
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Self::GeoJSON(_) => ParticleType::GEOJSON,
-            Self::HLL(_) => ParticleType::HLL,
-        }
-    }
-
-    /// Returns a string representation of the value.
-    #[must_use]
-    pub fn to_string(&self) -> String {
-        match *self {
-            Self::Nil => "<null>".to_string(),
-            Self::Int(ref val) => val.to_string(),
-            Self::UInt(ref val) => val.to_string(),
-            Self::Bool(ref val) => val.to_string(),
-            Self::Float(ref val) => val.to_string(),
-            Self::String(ref val) | Self::GeoJSON(ref val) => val.to_string(),
-            Self::Blob(ref val) | Self::HLL(ref val) => format!("{val:?}"),
-            Self::List(ref val) => format!("{val:?}"),
-            Self::HashMap(ref val) => format!("{val:?}"),
-            Self::OrderedMap(ref val) => format!("{val:?}"),
+            Self::GeoJson(_) => ParticleType::GeoJson,
+            Self::Hll(_) => ParticleType::Hll,
         }
     }
 
@@ -233,7 +216,7 @@ impl Value {
         match *self {
             Self::Nil => 0,
             Self::Int(_) | Self::Bool(_) | Self::Float(_) => 8,
-            Self::UInt(_) => panic!(
+            Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
@@ -241,8 +224,8 @@ impl Value {
             Self::Blob(ref b) => b.len(),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut None, self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Self::GeoJSON(ref s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
-            Self::HLL(ref h) => h.len(),
+            Self::GeoJson(ref s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
+            Self::Hll(ref h) => h.len(),
         }
     }
 
@@ -252,7 +235,7 @@ impl Value {
         match *self {
             Self::Nil => 0,
             Self::Int(ref val) => buf.write_i64(*val),
-            Self::UInt(_) => panic!(
+            Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
@@ -262,10 +245,10 @@ impl Value {
                 FloatValue::F64(val) => f64::from_bits(val),
             }),
             Self::String(ref val) => buf.write_str(val),
-            Self::Blob(ref val) | Self::HLL(ref val) => buf.write_bytes(val),
+            Self::Blob(ref val) | Self::Hll(ref val) => buf.write_bytes(val),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut Some(buf), self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Self::GeoJSON(ref val) => buf.write_geo(val),
+            Self::GeoJson(ref val) => buf.write_geo(val),
         }
     }
 
@@ -292,7 +275,18 @@ impl Value {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
-        write!(f, "{}", self.to_string())
+        match self {
+            Self::Nil => f.write_str("<null>"),
+            Self::Int(val) => val.fmt(f),
+            Self::Uint(val) => val.fmt(f),
+            Self::Bool(val) => val.fmt(f),
+            Self::Float(val) => val.fmt(f),
+            Self::String(val) | Self::GeoJson(val) => val.fmt(f),
+            Self::Blob(val) | Self::Hll(val) => write!(f, "{val:?}"),
+            Self::List(val) => write!(f, "{val:?}"),
+            Self::HashMap(val) => write!(f, "{val:?}"),
+            Self::OrderedMap(val) => write!(f, "{val:?}"),
+        }
     }
 }
 
@@ -418,7 +412,7 @@ impl From<i64> for Value {
 
 impl From<u64> for Value {
     fn from(val: u64) -> Self {
-        Self::UInt(val)
+        Self::Uint(val)
     }
 }
 
@@ -430,7 +424,7 @@ impl From<isize> for Value {
 
 impl From<usize> for Value {
     fn from(val: usize) -> Self {
-        Self::UInt(val as u64)
+        Self::Uint(val as u64)
     }
 }
 
@@ -478,7 +472,7 @@ impl<'a> From<&'a i64> for Value {
 
 impl<'a> From<&'a u64> for Value {
     fn from(val: &'a u64) -> Self {
-        Self::UInt(*val)
+        Self::Uint(*val)
     }
 }
 
@@ -490,7 +484,7 @@ impl<'a> From<&'a isize> for Value {
 
 impl<'a> From<&'a usize> for Value {
     fn from(val: &'a usize) -> Self {
-        Self::UInt(*val as u64)
+        Self::Uint(*val as u64)
     }
 }
 
@@ -516,25 +510,25 @@ pub(crate) fn bytes_to_particle(
     len: usize,
 ) -> Result<Value, ParticleError> {
     match ParticleType::try_from(ptype)? {
-        ParticleType::NULL => Ok(Value::Nil),
-        ParticleType::INTEGER => Ok(Value::Int(buf.read_i64(None))),
-        ParticleType::FLOAT => Ok(Value::Float(buf.read_f64(None).into())),
-        ParticleType::STRING => Ok(Value::String(buf.read_str(len)?)),
-        ParticleType::GEOJSON => {
+        ParticleType::Null => Ok(Value::Nil),
+        ParticleType::Integer => Ok(Value::Int(buf.read_i64(None))),
+        ParticleType::Float => Ok(Value::Float(buf.read_f64(None).into())),
+        ParticleType::String => Ok(Value::String(buf.read_str(len)?)),
+        ParticleType::GeoJson => {
             buf.skip(1);
             let ncells = buf.read_u16(None) as usize;
             let header_size = ncells * 8;
 
             buf.skip(header_size);
             let val = buf.read_str(len - header_size - 3)?;
-            Ok(Value::GeoJSON(val))
+            Ok(Value::GeoJson(val))
         }
-        ParticleType::BLOB => Ok(Value::Blob(buf.read_blob(len))),
-        ParticleType::LIST => Ok(decoder::unpack_value_list(buf)?),
-        ParticleType::MAP => Ok(decoder::unpack_value_map(buf)?),
-        ParticleType::DIGEST => Ok(Value::from("A DIGEST, NOT IMPLEMENTED YET!")),
-        ParticleType::LDT => Ok(Value::from("A LDT, NOT IMPLEMENTED YET!")),
-        ParticleType::HLL => Ok(Value::HLL(buf.read_blob(len))),
+        ParticleType::Blob => Ok(Value::Blob(buf.read_blob(len))),
+        ParticleType::List => Ok(decoder::unpack_value_list(buf)?),
+        ParticleType::Map => Ok(decoder::unpack_value_map(buf)?),
+        ParticleType::Digest => Ok(Value::from("A DIGEST, NOT IMPLEMENTED YET!")),
+        ParticleType::Ldt => Ok(Value::from("A LDT, NOT IMPLEMENTED YET!")),
+        ParticleType::Hll => Ok(Value::Hll(buf.read_blob(len))),
     }
 }
 
@@ -550,7 +544,7 @@ macro_rules! as_val {
 #[macro_export]
 macro_rules! as_geo {
     ($val:expr) => {{
-        $crate::Value::GeoJSON($val.to_owned())
+        $crate::Value::GeoJson($val.to_owned())
     }};
 }
 
@@ -663,13 +657,13 @@ impl Serialize for Value {
             Self::Nil => serializer.serialize_none(),
             Self::Bool(b) => serializer.serialize_bool(*b),
             Self::Int(i) => serializer.serialize_i64(*i),
-            Self::UInt(u) => serializer.serialize_u64(*u),
+            Self::Uint(u) => serializer.serialize_u64(*u),
             Self::Float(f) => match f {
                 FloatValue::F32(u) => serializer.serialize_f32(f32::from_bits(*u)),
                 FloatValue::F64(u) => serializer.serialize_f64(f64::from_bits(*u)),
             },
-            Self::String(s) | Self::GeoJSON(s) => serializer.serialize_str(s),
-            Self::Blob(b) | Self::HLL(b) => serializer.serialize_bytes(&b[..]),
+            Self::String(s) | Self::GeoJson(s) => serializer.serialize_str(s),
+            Self::Blob(b) | Self::Hll(b) => serializer.serialize_bytes(&b[..]),
             Self::List(l) => {
                 let mut seq = serializer.serialize_seq(Some(l.len()))?;
                 for elem in l {
@@ -704,7 +698,7 @@ mod tests {
         assert_eq!(Value::Nil.to_string(), String::from("<null>"));
         assert_eq!(Value::Int(42).to_string(), String::from("42"));
         assert_eq!(
-            Value::UInt(9_223_372_036_854_775_808).to_string(),
+            Value::Uint(9_223_372_036_854_775_808).to_string(),
             String::from("9223372036854775808")
         );
         assert_eq!(Value::Bool(true).to_string(), String::from("true"));

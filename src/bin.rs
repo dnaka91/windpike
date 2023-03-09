@@ -16,7 +16,7 @@
 use std::convert::From;
 
 #[cfg(feature = "serialization")]
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::value::Value;
 
@@ -56,31 +56,15 @@ macro_rules! as_bin {
 }
 
 /// Specify which, if any, bins to return in read operations.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serialization", derive(Serialize))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serialization", derive(Deserialize, Serialize))]
 pub enum Bins {
     /// Read all bins.
     All,
-
     /// Read record header (generation, expiration) only.
     None,
-
     /// Read specified bin names only.
     Some(Vec<String>),
-}
-
-impl Bins {
-    /// Returns `true` if the bins selector is an `All` value.
-    #[must_use]
-    pub const fn is_all(&self) -> bool {
-        matches!(*self, Self::All)
-    }
-
-    /// Returns `true` if the bins selector is a `None` value.
-    #[must_use]
-    pub const fn is_none(&self) -> bool {
-        matches!(*self, Self::None)
-    }
 }
 
 impl<'a> From<&'a [&'a str]> for Bins {
