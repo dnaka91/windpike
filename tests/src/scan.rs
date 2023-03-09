@@ -13,14 +13,13 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
 };
 
 use aerospike::*;
+use tokio::sync::Mutex;
 
 use crate::common;
 
@@ -51,12 +50,12 @@ async fn scan_single_consumer() {
     let set_name = create_test_set(&client, EXPECTED).await;
 
     let spolicy = ScanPolicy::default();
-    let rs = client
+    let mut rs = client
         .scan(&spolicy, namespace, &set_name, Bins::All)
         .await
         .unwrap();
 
-    let count = (&*rs).filter(Result::is_ok).count();
+    let count = count_results(&mut rs).await;
     assert_eq!(count, EXPECTED);
 
     client.close().await.unwrap();
@@ -78,6 +77,7 @@ async fn scan_multi_consumer() {
         .scan(&spolicy, namespace, &set_name, Bins::All)
         .await
         .unwrap();
+    let rs = Arc::new(Mutex::new(rs));
 
     let count = Arc::new(AtomicUsize::new(0));
     let mut threads = vec![];
@@ -85,8 +85,8 @@ async fn scan_multi_consumer() {
     for _ in 0..8 {
         let count = count.clone();
         let rs = rs.clone();
-        threads.push(tokio::task::spawn_blocking(move || {
-            let ok = (&*rs).filter(Result::is_ok).count();
+        threads.push(tokio::spawn(async move {
+            let ok = count_results(&mut *rs.lock().await).await;
             count.fetch_add(ok, Ordering::Relaxed);
         }));
     }
@@ -117,11 +117,11 @@ async fn scan_node() {
         let set_name = set_name.clone();
         threads.push(tokio::spawn(async move {
             let spolicy = ScanPolicy::default();
-            let rs = client
+            let mut rs = client
                 .scan_node(&spolicy, node, namespace, &set_name, Bins::All)
                 .await
                 .unwrap();
-            let ok = (&*rs).filter(Result::is_ok).count();
+            let ok = count_results(&mut rs).await;
             count.fetch_add(ok, Ordering::Relaxed);
         }));
     }
@@ -133,4 +133,13 @@ async fn scan_node() {
     assert_eq!(count.load(Ordering::Relaxed), EXPECTED);
 
     client.close().await.unwrap();
+}
+
+async fn count_results(rs: &mut Recordset) -> usize {
+    let mut count = 0;
+    while let Some(Ok(_)) = rs.next().await {
+        count += 1;
+    }
+
+    count
 }

@@ -13,96 +13,35 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{
-    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
-    thread,
-};
-
-use crossbeam_queue::SegQueue;
 use rand::Rng;
+use tokio::sync::mpsc;
 
-use crate::{errors::Result, Record};
+use crate::{commands::CommandError, errors::Result, Record};
 
 /// Virtual collection of records retrieved through queries and scans. During a query/scan,
 /// multiple threads will retrieve records from the server nodes and put these records on an
 /// internal queue managed by the recordset. The single user thread consumes these records from the
 /// queue.
 pub struct Recordset {
-    instances: AtomicUsize,
-    record_queue_count: AtomicUsize,
-    record_queue_size: AtomicUsize,
-    record_queue: SegQueue<Result<Record>>,
-    active: AtomicBool,
-    task_id: AtomicUsize,
+    queue: mpsc::Receiver<Result<Record, CommandError>>,
+    task_id: u64,
 }
 
 impl Recordset {
-    #[doc(hidden)]
     #[must_use]
-    pub fn new(rec_queue_size: usize, nodes: usize) -> Self {
-        let mut rng = rand::thread_rng();
-        let task_id = rng.gen::<usize>();
-
+    pub(crate) fn new(queue: mpsc::Receiver<Result<Record, CommandError>>) -> Self {
         Self {
-            instances: AtomicUsize::new(nodes),
-            record_queue_size: AtomicUsize::new(rec_queue_size),
-            record_queue_count: AtomicUsize::new(0),
-            record_queue: SegQueue::new(),
-            active: AtomicBool::new(true),
-            task_id: AtomicUsize::new(task_id),
+            queue,
+            task_id: rand::thread_rng().gen(),
         }
-    }
-
-    /// Close the query.
-    pub fn close(&self) {
-        self.active.store(false, Ordering::Relaxed);
-    }
-
-    /// Check whether the query is still active.
-    pub fn is_active(&self) -> bool {
-        self.active.load(Ordering::Relaxed)
-    }
-
-    #[doc(hidden)]
-    pub fn push(&self, record: Result<Record>) -> Option<Result<Record>> {
-        if self.record_queue_count.fetch_add(1, Ordering::Relaxed)
-            < self.record_queue_size.load(Ordering::Relaxed)
-        {
-            self.record_queue.push(record);
-            return None;
-        }
-        self.record_queue_count.fetch_sub(1, Ordering::Relaxed);
-        Some(record)
     }
 
     /// Returns the task ID for the scan/query.
-    pub fn task_id(&self) -> u64 {
-        self.task_id.load(Ordering::Relaxed) as u64
+    pub(crate) fn task_id(&self) -> u64 {
+        self.task_id
     }
 
-    #[doc(hidden)]
-    pub fn signal_end(&self) {
-        if self.instances.fetch_sub(1, Ordering::Relaxed) == 1 {
-            self.close();
-        };
-    }
-}
-
-impl<'a> Iterator for &'a Recordset {
-    type Item = Result<Record>;
-
-    fn next(&mut self) -> Option<Result<Record>> {
-        loop {
-            if self.is_active() || !self.record_queue.is_empty() {
-                let result = self.record_queue.pop();
-                if result.is_some() {
-                    self.record_queue_count.fetch_sub(1, Ordering::Relaxed);
-                    return result;
-                }
-                thread::yield_now();
-                continue;
-            }
-            return None;
-        }
+    pub async fn next(&mut self) -> Option<Result<Record, CommandError>> {
+        self.queue.recv().await
     }
 }

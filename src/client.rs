@@ -15,6 +15,8 @@
 
 use std::{str, sync::Arc, vec::Vec};
 
+use tokio::sync::mpsc;
+
 use crate::{
     batch::BatchExecutor,
     cluster::{Cluster, Node},
@@ -511,9 +513,9 @@ impl Client {
     ///         .scan(&ScanPolicy::default(), "test", "demo", Bins::All)
     ///         .await
     ///     {
-    ///         Ok(records) => {
+    ///         Ok(mut records) => {
     ///             let mut count = 0;
-    ///             for record in &*records {
+    ///             while let Some(record) = records.next().await {
     ///                 match record {
     ///                     Ok(record) => count += 1,
     ///                     Err(err) => panic!("Error executing scan: {}", err),
@@ -534,25 +536,28 @@ impl Client {
         namespace: &str,
         set_name: &str,
         bins: T,
-    ) -> Result<Arc<Recordset>>
+    ) -> Result<Recordset>
     where
         T: Into<Bins> + Send + Sync + 'static,
     {
         let bins = bins.into();
         let nodes = self.cluster.nodes().await;
-        let recordset = Arc::new(Recordset::new(policy.record_queue_size, nodes.len()));
+        let (queue_tx, queue_rx) = mpsc::channel(policy.record_queue_size);
+        let recordset = Recordset::new(queue_rx);
+        let task_id = recordset.task_id();
+
         for node in nodes {
             let partitions = self.cluster.node_partitions(node.as_ref(), namespace).await;
             let node = node.clone();
-            let recordset = recordset.clone();
             let policy = policy.clone();
             let namespace = namespace.to_owned();
             let set_name = set_name.to_owned();
             let bins = bins.clone();
+            let queue_tx = queue_tx.clone();
 
             tokio::spawn(async move {
                 let mut command = ScanCommand::new(
-                    &policy, node, &namespace, &set_name, bins, recordset, partitions,
+                    &policy, node, &namespace, &set_name, bins, queue_tx, task_id, partitions,
                 );
                 command.execute().await.unwrap();
             })
@@ -577,27 +582,22 @@ impl Client {
         namespace: &str,
         set_name: &str,
         bins: T,
-    ) -> Result<Arc<Recordset>>
+    ) -> Result<Recordset>
     where
         T: Into<Bins> + Send + Sync + 'static,
     {
         let partitions = self.cluster.node_partitions(node.as_ref(), namespace).await;
         let bins = bins.into();
-        let recordset = Arc::new(Recordset::new(policy.record_queue_size, 1));
-        let t_recordset = recordset.clone();
+        let (queue_tx, queue_rx) = mpsc::channel(policy.record_queue_size);
+        let recordset = Recordset::new(queue_rx);
         let policy = policy.clone();
         let namespace = namespace.to_owned();
         let set_name = set_name.to_owned();
+        let task_id = recordset.task_id();
 
         tokio::spawn(async move {
             let mut command = ScanCommand::new(
-                &policy,
-                node,
-                &namespace,
-                &set_name,
-                bins,
-                t_recordset,
-                partitions,
+                &policy, node, &namespace, &set_name, bins, queue_tx, task_id, partitions,
             );
             command.execute().await.unwrap();
         })

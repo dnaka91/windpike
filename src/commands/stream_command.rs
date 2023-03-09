@@ -14,29 +14,23 @@
 
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
+use tokio::sync::mpsc;
 use tracing::warn;
 
 use super::{buffer, field_type::FieldType, Command, CommandError, Result};
 use crate::{
-    cluster::Node, net::Connection, query::Recordset, value::bytes_to_particle, Key, Record,
-    ResultCode, Value,
+    cluster::Node, net::Connection, value::bytes_to_particle, Key, Record, ResultCode, Value,
 };
 
 pub struct StreamCommand {
     node: Arc<Node>,
-    pub recordset: Arc<Recordset>,
-}
-
-impl Drop for StreamCommand {
-    fn drop(&mut self) {
-        // signal_end
-        self.recordset.signal_end();
-    }
+    tx: mpsc::Sender<Result<Record>>,
+    task_id: u64,
 }
 
 impl StreamCommand {
-    pub fn new(node: Arc<Node>, recordset: Arc<Recordset>) -> Self {
-        Self { node, recordset }
+    pub fn new(node: Arc<Node>, tx: mpsc::Sender<Result<Record>>, task_id: u64) -> Self {
+        Self { node, tx, task_id }
     }
 
     async fn parse_record(conn: &mut Connection, size: usize) -> Result<(Option<Record>, bool)> {
@@ -97,7 +91,7 @@ impl StreamCommand {
     }
 
     async fn parse_stream(&mut self, conn: &mut Connection, size: usize) -> Result<bool> {
-        while self.recordset.is_active() && conn.bytes_read() < size {
+        while !self.tx.is_closed() && conn.bytes_read() < size {
             // Read header.
             if let Err(err) = conn
                 .read_buffer(buffer::MSG_REMAINING_HEADER_SIZE as usize)
@@ -109,19 +103,14 @@ impl StreamCommand {
 
             let res = Self::parse_record(conn, size).await;
             match res {
-                Ok((Some(mut rec), _)) => loop {
-                    let result = self.recordset.push(Ok(rec));
-                    match result {
-                        None => break,
-                        Some(returned) => {
-                            rec = returned.map_err(|e| CommandError::Other(Box::new(e)))?;
-                            tokio::task::yield_now().await;
-                        }
+                Ok((Some(rec), _)) => {
+                    if self.tx.send(Ok(rec)).await.is_err() {
+                        break;
                     }
-                },
+                }
                 Ok((None, cont)) => return Ok(cont),
                 Err(err) => {
-                    self.recordset.push(Err(err.into()));
+                    self.tx.send(Err(err)).await.ok();
                     return Ok(false);
                 }
             };
@@ -171,6 +160,10 @@ impl StreamCommand {
             user_key: orig_key,
             digest,
         })
+    }
+
+    pub(super) fn task_id(&self) -> u64 {
+        self.task_id
     }
 }
 

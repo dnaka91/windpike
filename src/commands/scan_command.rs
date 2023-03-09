@@ -14,8 +14,10 @@
 
 use std::{str, sync::Arc, time::Duration};
 
+use tokio::sync::mpsc;
+
 use super::{Command, CommandError, Result, SingleCommand, StreamCommand};
-use crate::{cluster::Node, net::Connection, policy::ScanPolicy, Bins, Recordset};
+use crate::{cluster::Node, net::Connection, policy::ScanPolicy, Bins, Record};
 
 pub struct ScanCommand<'a> {
     stream_command: StreamCommand,
@@ -33,11 +35,12 @@ impl<'a> ScanCommand<'a> {
         namespace: &'a str,
         set_name: &'a str,
         bins: Bins,
-        recordset: Arc<Recordset>,
+        tx: mpsc::Sender<Result<Record>>,
+        task_id: u64,
         partitions: Vec<u16>,
     ) -> Self {
         ScanCommand {
-            stream_command: StreamCommand::new(node, recordset),
+            stream_command: StreamCommand::new(node, tx, task_id),
             policy,
             namespace,
             set_name,
@@ -73,7 +76,7 @@ impl<'a> Command for ScanCommand<'a> {
                 self.namespace,
                 self.set_name,
                 &self.bins,
-                self.stream_command.recordset.task_id(),
+                self.stream_command.task_id(),
                 &self.partitions,
             )
             .map_err(Into::into)
