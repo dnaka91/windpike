@@ -10,15 +10,15 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [dependencies]
-async-trait = "0.1.64"
+async-trait = "0.1.66"
 base64 = "0.21.0"
 bcrypt = "0.14.0"
 once_cell = "1.17.1"
 rand = "0.8.5"
 ripemd = "0.1.3"
-serde = { version = "1.0.152", features = ["derive"], optional = true }
-thiserror = "1.0.38"
-tokio = { version = "1.25.0", features = ["fs", "io-util", "net", "rt", "sync", "time"] }
+serde = { version = "1.0.154", features = ["derive"], optional = true }
+thiserror = "1.0.39"
+tokio = { version = "1.26.0", features = ["fs", "io-util", "net", "rt", "sync", "time"] }
 tracing = "0.1.37"
 
 [features]
@@ -26,6 +26,6 @@ default = []
 serialization = ["dep:serde"]
 
 [dev-dependencies]
-serde_json = "1.0.93"
-tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread"] }
+serde_json = "1.0.94"
+tokio = { version = "1.26.0", features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
