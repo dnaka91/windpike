@@ -162,16 +162,6 @@ impl<'a> Command for ReadCommand<'a> {
                 self.record = Some(record);
                 Ok(())
             }
-            ResultCode::UdfBadResponse => {
-                // record bin "FAILURE" contains details about the UDF error
-                let record =
-                    Self::parse_record(conn, op_count, field_count, generation, expiration)?;
-                let reason = record
-                    .bins
-                    .get("FAILURE")
-                    .map_or_else(|| "UDF Error".to_owned(), ToString::to_string);
-                Err(CommandError::UdfBadResponse(reason))
-            }
             rc => Err(CommandError::ServerError(rc)),
         }
     }

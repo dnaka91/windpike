@@ -48,8 +48,6 @@
 
 #![allow(missing_docs)]
 
-use std::collections::HashMap;
-
 use crate::result_code::ResultCode;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -106,25 +104,4 @@ pub enum Error {
     Msgpack(#[from] crate::msgpack::MsgpackError),
     #[error("Failed parsing host value")]
     ParseHost(#[from] crate::net::ParseHostError),
-    #[error("UDF error")]
-    Udf(#[from] UdfError),
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum UdfError {
-    #[error("UDF registration failed: {error}, file: {file}, line: {line}, message: {message}",
-        error = .error.as_deref().unwrap_or("-"),
-        file = .file.as_deref().unwrap_or("-"),
-        line = .line.as_deref().unwrap_or("-"),
-    )]
-    RegistrationFailed {
-        error: Option<String>,
-        file: Option<String>,
-        line: Option<String>,
-        message: String,
-    },
-    #[error("UDF remove failed: {0:?}")]
-    RemoveFailed(HashMap<String, String>),
-    #[error("Invalid UDF return value: {0:?}")]
-    InvalidReturnValue(Option<String>),
 }

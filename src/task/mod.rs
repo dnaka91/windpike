@@ -18,11 +18,9 @@
 
 pub use self::{
     index_task::IndexTask,
-    register_task::RegisterTask,
     task::{Status, Task},
 };
 
 mod index_task;
-mod register_task;
 #[allow(clippy::module_inception)]
 mod task;

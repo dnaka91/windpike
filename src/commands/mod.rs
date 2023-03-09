@@ -16,12 +16,10 @@ pub mod admin_command;
 pub mod batch_read_command;
 pub mod buffer;
 pub mod delete_command;
-pub mod execute_udf_command;
 pub mod exists_command;
 pub mod info_command;
 pub mod operate_command;
 pub mod particle_type;
-pub mod query_command;
 pub mod read_command;
 pub mod scan_command;
 pub mod single_command;
@@ -35,10 +33,10 @@ use std::{sync::Arc, time::Duration};
 
 pub use self::{
     batch_read_command::BatchReadCommand, delete_command::DeleteCommand,
-    execute_udf_command::ExecuteUDFCommand, exists_command::ExistsCommand, info_command::Message,
-    operate_command::OperateCommand, particle_type::ParticleType, query_command::QueryCommand,
-    read_command::ReadCommand, scan_command::ScanCommand, single_command::SingleCommand,
-    stream_command::StreamCommand, touch_command::TouchCommand, write_command::WriteCommand,
+    exists_command::ExistsCommand, info_command::Message, operate_command::OperateCommand,
+    particle_type::ParticleType, read_command::ReadCommand, scan_command::ScanCommand,
+    single_command::SingleCommand, stream_command::StreamCommand, touch_command::TouchCommand,
+    write_command::WriteCommand,
 };
 use crate::{cluster::Node, net::Connection, ResultCode};
 
@@ -70,9 +68,6 @@ pub enum CommandError {
     Particle(#[from] crate::value::ParticleError),
     #[error("No connections available")]
     NoConnection,
-    /// Error returned when executing a User-Defined Function (UDF) resulted in an error.
-    #[error("Bad UDF response: {0}")]
-    UdfBadResponse(String),
     #[error("Parsing failed: {0}")]
     Parse(&'static str),
     #[error("Other error")]

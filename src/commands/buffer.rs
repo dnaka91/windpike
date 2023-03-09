@@ -22,14 +22,12 @@ use std::{str, time::Duration};
 
 use crate::{
     commands::field_type::FieldType,
-    expressions::FilterExpression,
-    msgpack::encoder,
     operations::{Operation, OperationBin, OperationData, OperationType},
     policy::{
-        BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy, QueryPolicy, ReadPolicy,
+        BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy, ReadPolicy,
         RecordExistsAction, ScanPolicy, WritePolicy,
     },
-    BatchRead, Bin, Bins, CollectionIndexType, Key, Statement, Value,
+    BatchRead, Bin, Bins, Key, Value,
 };
 
 // Contains a read operation.
@@ -179,11 +177,7 @@ impl Buffer {
         bins: &[A],
     ) -> Result<()> {
         self.begin();
-        let mut field_count = self.estimate_key_size(key, policy.send_key);
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
+        let field_count = self.estimate_key_size(key, policy.send_key);
 
         for bin in bins {
             self.estimate_operation_size_for_bin(bin.as_ref());
@@ -193,9 +187,6 @@ impl Buffer {
         self.write_header_with_policy(policy, 0, INFO2_WRITE, field_count, bins.len() as u16);
         self.write_key(key, policy.send_key);
 
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
         for bin in bins {
             self.write_operation_for_bin(bin.as_ref(), op_type);
         }
@@ -207,19 +198,11 @@ impl Buffer {
     // Writes the command for write operations
     pub fn set_delete(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
         self.begin();
-        let mut field_count = self.estimate_key_size(key, false);
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
+        let field_count = self.estimate_key_size(key, false);
 
         self.size_buffer()?;
         self.write_header_with_policy(policy, 0, INFO2_WRITE | INFO2_DELETE, field_count, 0);
         self.write_key(key, false);
-
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
 
         self.end();
         Ok(())
@@ -228,19 +211,11 @@ impl Buffer {
     // Writes the command for touch operations
     pub fn set_touch(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
         self.begin();
-        let mut field_count = self.estimate_key_size(key, policy.send_key);
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
+        let field_count = self.estimate_key_size(key, policy.send_key);
         self.estimate_operation_size();
         self.size_buffer()?;
         self.write_header_with_policy(policy, 0, INFO2_WRITE, field_count, 1);
         self.write_key(key, policy.send_key);
-
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
 
         self.write_operation_for_operation_type(OperationType::Touch);
         self.end();
@@ -250,11 +225,7 @@ impl Buffer {
     // Writes the command for exist operations
     pub fn set_exists(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
         self.begin();
-        let mut field_count = self.estimate_key_size(key, false);
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
+        let field_count = self.estimate_key_size(key, false);
 
         self.size_buffer()?;
         self.write_header(
@@ -265,10 +236,6 @@ impl Buffer {
             0,
         );
         self.write_key(key, false);
-
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
 
         self.end();
         Ok(())
@@ -281,11 +248,7 @@ impl Buffer {
             Bins::All => self.set_read_for_key_only(policy, key),
             Bins::Some(ref bin_names) => {
                 self.begin();
-                let mut field_count = self.estimate_key_size(key, false);
-                let filter_size = self.estimate_filter_size(policy.filter_expression());
-                if filter_size > 0 {
-                    field_count += 1;
-                }
+                let field_count = self.estimate_key_size(key, false);
                 for bin_name in bin_names {
                     self.estimate_operation_size_for_bin_name(bin_name);
                 }
@@ -293,10 +256,6 @@ impl Buffer {
                 self.size_buffer()?;
                 self.write_header(policy, INFO1_READ, 0, field_count, bin_names.len() as u16);
                 self.write_key(key, false);
-
-                if let Some(filter) = policy.filter_expression() {
-                    self.write_filter_expression(filter, filter_size);
-                }
 
                 for bin_name in bin_names {
                     self.write_operation_for_bin_name(bin_name, OperationType::Read);
@@ -311,20 +270,12 @@ impl Buffer {
     // Writes the command for getting metadata operations
     pub fn set_read_header(&mut self, policy: &ReadPolicy, key: &Key) -> Result<()> {
         self.begin();
-        let mut field_count = self.estimate_key_size(key, false);
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
+        let field_count = self.estimate_key_size(key, false);
 
         self.estimate_operation_size_for_bin_name("");
         self.size_buffer()?;
         self.write_header(policy, INFO1_READ | INFO1_NOBINDATA, 0, field_count, 1);
         self.write_key(key, false);
-
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
 
         self.write_operation_for_bin_name("", OperationType::Read);
         self.end();
@@ -334,19 +285,11 @@ impl Buffer {
     pub fn set_read_for_key_only(&mut self, policy: &ReadPolicy, key: &Key) -> Result<()> {
         self.begin();
 
-        let mut field_count = self.estimate_key_size(key, false);
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
+        let field_count = self.estimate_key_size(key, false);
 
         self.size_buffer()?;
         self.write_header(policy, INFO1_READ | INFO1_GET_ALL, 0, field_count, 0);
         self.write_key(key, false);
-
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
 
         self.end();
         Ok(())
@@ -361,13 +304,8 @@ impl Buffer {
         let field_count_row = if policy.send_set_name { 2 } else { 1 };
 
         self.begin();
-        let mut field_count = 1;
+        let field_count = 1;
         self.data_offset += FIELD_HEADER_SIZE as usize + 5;
-
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
 
         let mut prev: Option<&BatchRead> = None;
         for batch_read in batch_reads {
@@ -400,10 +338,6 @@ impl Buffer {
             field_count,
             0,
         );
-
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
 
         let field_size_offset = self.data_offset;
         let field_type = if policy.send_set_name {
@@ -509,10 +443,7 @@ impl Buffer {
 
             let each_op = matches!(
                 operation.data,
-                OperationData::CdtMapOp(_)
-                    | OperationData::CdtBitOp(_)
-                    | OperationData::HLLOp(_)
-                    | OperationData::EXPOp(_)
+                OperationData::CdtMapOp(_) | OperationData::CdtBitOp(_) | OperationData::HLLOp(_)
             );
 
             if policy.respond_per_each_op || each_op {
@@ -522,11 +453,7 @@ impl Buffer {
             self.data_offset += operation.estimate_size() + OPERATION_HEADER_SIZE as usize;
         }
 
-        let mut field_count = self.estimate_key_size(key, policy.send_key && write_attr != 0);
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
+        let field_count = self.estimate_key_size(key, policy.send_key && write_attr != 0);
         self.size_buffer()?;
 
         if write_attr == 0 {
@@ -548,45 +475,9 @@ impl Buffer {
         }
         self.write_key(key, policy.send_key && write_attr != 0);
 
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
-
         for operation in operations {
             operation.write_to(self);
         }
-        self.end();
-        Ok(())
-    }
-
-    pub fn set_udf(
-        &mut self,
-        policy: &WritePolicy,
-        key: &Key,
-        package_name: &str,
-        function_name: &str,
-        args: Option<&[Value]>,
-    ) -> Result<()> {
-        self.begin();
-
-        let mut field_count = self.estimate_key_size(key, policy.send_key);
-        field_count += self.estimate_udf_size(package_name, function_name, args) as u16;
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
-        self.size_buffer()?;
-
-        self.write_header(&policy.base_policy, 0, INFO2_WRITE, field_count, 0);
-        self.write_key(key, policy.send_key);
-
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
-
-        self.write_field_string(package_name, FieldType::UdfPackageName);
-        self.write_field_string(function_name, FieldType::UdfFunction);
-        self.write_args(args, FieldType::UdfArgList);
         self.end();
         Ok(())
     }
@@ -603,10 +494,6 @@ impl Buffer {
         self.begin();
 
         let mut field_count = 0;
-        let filter_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_size > 0 {
-            field_count += 1;
-        }
 
         if !namespace.is_empty() {
             self.data_offset += namespace.len() + FIELD_HEADER_SIZE as usize;
@@ -672,10 +559,6 @@ impl Buffer {
             self.write_u16_little_endian(*pid);
         }
 
-        if let Some(filter) = policy.filter_expression() {
-            self.write_filter_expression(filter, filter_size);
-        }
-
         // self.write_field_header(2, FieldType::ScanOptions);
 
         // let mut priority: u8 = policy.base_policy.priority.clone() as u8;
@@ -705,219 +588,6 @@ impl Buffer {
         Ok(())
     }
 
-    #[allow(clippy::cognitive_complexity)]
-    pub fn set_query(
-        &mut self,
-        policy: &QueryPolicy,
-        statement: &Statement,
-        write: bool,
-        task_id: u64,
-        partitions: &[u16],
-    ) -> Result<()> {
-        let filter = statement.filters.as_ref().map(|filters| &filters[0]);
-
-        self.begin();
-
-        let mut field_count = 0;
-        let mut filter_size = 0;
-        let mut bin_name_size = 0;
-
-        if !statement.namespace.is_empty() {
-            self.data_offset += statement.namespace.len() + FIELD_HEADER_SIZE as usize;
-            field_count += 1;
-        }
-
-        if !statement.set_name.is_empty() {
-            self.data_offset += statement.set_name.len() + FIELD_HEADER_SIZE as usize;
-            field_count += 1;
-        }
-
-        if let Some(ref index_name) = statement.index_name {
-            if !index_name.is_empty() {
-                self.data_offset += index_name.len() + FIELD_HEADER_SIZE as usize;
-                field_count += 1;
-            }
-        }
-
-        // Allocate space for TaskId field.
-        self.data_offset += 8 + FIELD_HEADER_SIZE as usize;
-        field_count += 1;
-
-        if let Some(filter) = filter {
-            let idx_type = filter.collection_index_type();
-            if idx_type != CollectionIndexType::Default {
-                self.data_offset += 1 + FIELD_HEADER_SIZE as usize;
-                field_count += 1;
-            }
-
-            filter_size = 1 + filter.estimate_size();
-            self.data_offset += filter_size + FIELD_HEADER_SIZE as usize;
-            field_count += 1;
-
-            if let Bins::Some(ref bin_names) = statement.bins {
-                self.data_offset += FIELD_HEADER_SIZE as usize;
-                bin_name_size += 1;
-
-                for bin_name in bin_names {
-                    bin_name_size += bin_name.len() + 1;
-                }
-
-                self.data_offset += bin_name_size;
-                field_count += 1;
-            }
-        } else {
-            // Calling query with no filters is more efficiently handled by a primary index scan.
-            // Estimate scan options size.
-            // self.data_offset += 2 + FIELD_HEADER_SIZE as usize;
-            // field_count += 1;
-            // Estimate pid size
-            self.data_offset += partitions.len() * 2 + FIELD_HEADER_SIZE as usize;
-            field_count += 1;
-        }
-        let filter_exp_size = self.estimate_filter_size(policy.filter_expression());
-        if filter_exp_size > 0 {
-            field_count += 1;
-        }
-        if let Some(ref aggregation) = statement.aggregation {
-            self.data_offset += 1 + FIELD_HEADER_SIZE as usize; // udf type
-            self.data_offset += aggregation.package_name.len() + FIELD_HEADER_SIZE as usize;
-            self.data_offset += aggregation.function_name.len() + FIELD_HEADER_SIZE as usize;
-
-            if let Some(ref args) = aggregation.function_args {
-                self.estimate_args_size(Some(args));
-            } else {
-                self.estimate_args_size(None);
-            }
-            field_count += 4;
-        }
-
-        if statement.is_scan() {
-            if let Bins::Some(ref bin_names) = statement.bins {
-                for bin_name in bin_names {
-                    self.estimate_operation_size_for_bin_name(bin_name);
-                }
-            }
-        }
-
-        self.size_buffer()?;
-
-        let mut operation_count: usize = 0;
-        if statement.is_scan() {
-            if let Bins::Some(ref bin_names) = statement.bins {
-                operation_count += bin_names.len();
-            }
-        }
-
-        let info1 = if statement.bins.is_none() {
-            INFO1_READ | INFO1_NOBINDATA
-        } else {
-            INFO1_READ
-        };
-        let info2 = if write { INFO2_WRITE } else { 0 };
-
-        self.write_header(
-            &policy.base_policy,
-            info1,
-            info2,
-            field_count,
-            operation_count as u16,
-        );
-
-        if !statement.namespace.is_empty() {
-            self.write_field_string(&statement.namespace, FieldType::Namespace);
-        }
-
-        if let Some(ref index_name) = statement.index_name {
-            if !index_name.is_empty() {
-                self.write_field_string(index_name, FieldType::IndexName);
-            }
-        }
-
-        if !statement.set_name.is_empty() {
-            self.write_field_string(&statement.set_name, FieldType::Table);
-        }
-
-        self.write_field_header(8, FieldType::TranId);
-        self.write_u64(task_id);
-
-        if let Some(filter) = filter {
-            let idx_type = filter.collection_index_type();
-
-            if idx_type != CollectionIndexType::Default {
-                self.write_field_header(1, FieldType::IndexType);
-                self.write_u8(idx_type as u8);
-            }
-
-            self.write_field_header(filter_size, FieldType::IndexRange);
-            self.write_u8(1);
-
-            filter.write(self);
-
-            if let Bins::Some(ref bin_names) = statement.bins {
-                if !bin_names.is_empty() {
-                    self.write_field_header(bin_name_size, FieldType::QueryBinList);
-                    self.write_u8(bin_names.len() as u8);
-
-                    for bin_name in bin_names {
-                        self.write_u8(bin_name.len() as u8);
-                        self.write_str(bin_name);
-                    }
-                }
-            }
-        } else {
-            // // Calling query with no filters is more efficiently handled by a primary index scan.
-            // self.write_field_header(2, FieldType::ScanOptions);
-            // let priority: u8 = (policy.base_policy.priority.clone() as u8) << 4;
-            // self.write_u8(priority);
-            // self.write_u8(100);
-            self.write_field_header(partitions.len() * 2, FieldType::PIDArray);
-            for pid in partitions {
-                self.write_u16_little_endian(*pid);
-            }
-        }
-
-        if let Some(filter_exp) = policy.filter_expression() {
-            self.write_filter_expression(filter_exp, filter_exp_size);
-        }
-
-        if let Some(ref aggregation) = statement.aggregation {
-            self.write_field_header(1, FieldType::UdfOp);
-            if statement.bins.is_none() {
-                self.write_u8(2);
-            } else {
-                self.write_u8(1);
-            }
-
-            self.write_field_string(&aggregation.package_name, FieldType::UdfPackageName);
-            self.write_field_string(&aggregation.function_name, FieldType::UdfFunction);
-            if let Some(ref args) = aggregation.function_args {
-                self.write_args(Some(args), FieldType::UdfArgList);
-            } else {
-                self.write_args(None, FieldType::UdfArgList);
-            }
-        }
-
-        // scan binNames come last
-        if statement.is_scan() {
-            if let Bins::Some(ref bin_names) = statement.bins {
-                for bin_name in bin_names {
-                    self.write_operation_for_bin_name(bin_name, OperationType::Read);
-                }
-            }
-        }
-
-        self.end();
-        Ok(())
-    }
-
-    fn estimate_filter_size(&mut self, filter: &Option<FilterExpression>) -> usize {
-        filter.clone().map_or(0, |filter| {
-            let filter_size = filter.pack(&mut None);
-            self.data_offset += filter_size + FIELD_HEADER_SIZE as usize;
-            filter_size
-        })
-    }
-
     fn estimate_key_size(&mut self, key: &Key, send_key: bool) -> u16 {
         let mut field_count: u16 = 0;
 
@@ -943,27 +613,6 @@ impl Buffer {
         }
 
         field_count
-    }
-
-    fn estimate_args_size(&mut self, args: Option<&[Value]>) {
-        if let Some(args) = args {
-            self.data_offset += encoder::pack_array(&mut None, args) + FIELD_HEADER_SIZE as usize;
-        } else {
-            self.data_offset +=
-                encoder::pack_empty_args_array(&mut None) + FIELD_HEADER_SIZE as usize;
-        }
-    }
-
-    fn estimate_udf_size(
-        &mut self,
-        package_name: &str,
-        function_name: &str,
-        args: Option<&[Value]>,
-    ) -> usize {
-        self.data_offset += package_name.len() + FIELD_HEADER_SIZE as usize;
-        self.data_offset += function_name.len() + FIELD_HEADER_SIZE as usize;
-        self.estimate_args_size(args);
-        3
     }
 
     fn estimate_operation_size_for_bin(&mut self, bin: &Bin<'_>) {
@@ -1098,11 +747,6 @@ impl Buffer {
         }
     }
 
-    fn write_filter_expression(&mut self, filter: &FilterExpression, size: usize) {
-        self.write_field_header(size, FieldType::FilterExp);
-        filter.pack(&mut Some(self));
-    }
-
     fn write_field_header(&mut self, size: usize, ftype: FieldType) {
         self.write_i32(size as i32 + 1);
         self.write_u8(ftype as u8);
@@ -1122,16 +766,6 @@ impl Buffer {
         self.write_field_header(value.estimate_size() + 1, ftype);
         self.write_u8(value.particle_type() as u8);
         value.write_to(self);
-    }
-
-    fn write_args(&mut self, args: Option<&[Value]>, ftype: FieldType) {
-        if let Some(args) = args {
-            self.write_field_header(encoder::pack_array(&mut None, args), ftype);
-            encoder::pack_array(&mut Some(self), args);
-        } else {
-            self.write_field_header(encoder::pack_empty_args_array(&mut None), ftype);
-            encoder::pack_empty_args_array(&mut Some(self));
-        }
     }
 
     fn write_operation_for_bin(&mut self, bin: &Bin<'_>, op_type: OperationType) {

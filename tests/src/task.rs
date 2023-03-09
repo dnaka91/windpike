@@ -13,59 +13,13 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{thread, time::Duration};
-
 use aerospike::{
     as_bin,
-    errors::Error,
     task::{Status, Task},
-    IndexType, Key, UDFLang, WritePolicy,
+    IndexType, Key, WritePolicy,
 };
 
 use crate::common;
-
-// If registering udf is successful, querying RegisterTask will return Status::Complete
-// If udf does not exist, querying RegisterTask will return error
-#[tokio::test]
-async fn register_task_test() {
-    let client = common::client().await;
-
-    let code = r#"
-    local function putBin(r,name,value)
-        if not aerospike:exists(r) then aerospike:create(r) end
-        r[name] = value
-        aerospike:update(r)
-    end
-    function writeBin(r,name,value)
-        putBin(r,name,value)
-    end
-    "#;
-
-    let udf_name = common::rand_str(10);
-    let udf_file_name = udf_name.clone() + ".LUA";
-
-    let register_task = client
-        .register_udf(code.as_bytes(), &udf_file_name, UDFLang::Lua)
-        .await
-        .unwrap();
-
-    assert!(matches!(
-        register_task.wait_till_complete(None).await,
-        Ok(Status::Complete)
-    ));
-
-    client.remove_udf(&udf_name, UDFLang::Lua).await.unwrap();
-    // Wait for some time to ensure UDF has been unregistered on all nodes.
-    thread::sleep(Duration::from_secs(2));
-
-    let timeout = Duration::from_millis(100);
-    assert!(matches!(
-        register_task.wait_till_complete(Some(timeout)).await,
-        Err(Error::Timeout(_))
-    ));
-
-    client.close().await.unwrap();
-}
 
 // If creating index is successful, querying IndexTask will return Status::Complete
 #[tokio::test]

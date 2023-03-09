@@ -602,30 +602,6 @@ macro_rules! as_list {
 }
 
 /// Constructs a vector of Values from a list of one or more native data types.
-///
-/// # Examples
-///
-/// Execute a user-defined function (UDF) with some arguments.
-///
-/// ```rust,should_panic
-/// use aerospike::{as_val, as_values, Client, ClientPolicy, Key, WritePolicy};
-///
-/// #[tokio::main]
-/// async fn main() {
-///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
-///         .await
-///         .unwrap();
-///
-///     let key = Key::new("test", "test", "mykey").unwrap();
-///     let module = "myUDF";
-///     let func = "myFunction";
-///     let args = as_values!("a", "b", "c");
-///     client
-///         .execute_udf(&WritePolicy::default(), &key, &module, &func, Some(&args))
-///         .await
-///         .unwrap();
-/// }
-/// ```
 #[macro_export]
 macro_rules! as_values {
     ( $( $v:expr),* ) => {

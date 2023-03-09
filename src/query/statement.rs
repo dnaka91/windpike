@@ -15,16 +15,8 @@
 
 use crate::{
     errors::{Error, Result},
-    query::Filter,
-    Bins, Value,
+    Bins,
 };
-
-#[derive(Clone)]
-pub struct Aggregation {
-    pub package_name: String,
-    pub function_name: String,
-    pub function_args: Option<Vec<Value>>,
-}
 
 /// Query statement parameters.
 pub struct Statement {
@@ -39,13 +31,6 @@ pub struct Statement {
 
     /// Optional list of bin names to return in query.
     pub bins: Bins,
-
-    /// Optional list of query filters. Currently, only one filter is allowed by the server on a
-    /// secondary index lookup.
-    pub filters: Option<Vec<Filter>>,
-
-    /// Optional Lua aggregation function parameters.
-    pub aggregation: Option<Aggregation>,
 }
 
 impl Statement {
@@ -69,64 +54,11 @@ impl Statement {
             set_name: set_name.to_owned(),
             bins,
             index_name: None,
-            aggregation: None,
-            filters: None,
         }
-    }
-
-    /// Add a query filter to the statement. Currently, only one filter is allowed by the server on
-    /// a secondary index lookup.
-    ///
-    /// # Example
-    ///
-    /// This example uses a numeric index on bin _baz_ in namespace _foo_ within set _bar_ to find
-    /// all records using a filter with the range 0 to 100 inclusive:
-    ///
-    /// ```rust
-    /// use aerospike::*;
-    ///
-    /// let mut stmt = Statement::new("foo", "bar", Bins::from(["name", "age"]));
-    /// stmt.add_filter(as_range!("baz", 0, 100));
-    /// ```
-    pub fn add_filter(&mut self, filter: Filter) {
-        if let Some(ref mut filters) = self.filters {
-            filters.push(filter);
-        } else {
-            let filters = vec![filter];
-            self.filters = Some(filters);
-        }
-    }
-
-    /// Set Lua aggregation function parameters.
-    pub fn set_aggregate_function(
-        &mut self,
-        package_name: &str,
-        function_name: &str,
-        function_args: Option<&[Value]>,
-    ) {
-        let agg = Aggregation {
-            package_name: package_name.to_owned(),
-            function_name: function_name.to_owned(),
-            function_args: function_args.map(<[Value]>::to_vec),
-        };
-        self.aggregation = Some(agg);
-    }
-
-    #[doc(hidden)]
-    pub fn is_scan(&self) -> bool {
-        self.filters.as_ref().map_or(true, Vec::is_empty)
     }
 
     #[doc(hidden)]
     pub fn validate(&self) -> Result<()> {
-        if let Some(ref filters) = self.filters {
-            if filters.len() > 1 {
-                return Err(Error::InvalidArgument(
-                    "Too many filter expressions".to_string(),
-                ));
-            }
-        }
-
         if self.set_name.is_empty() {
             return Err(Error::InvalidArgument("Empty set name".to_string()));
         }
@@ -134,18 +66,6 @@ impl Statement {
         if let Some(ref index_name) = self.index_name {
             if index_name.is_empty() {
                 return Err(Error::InvalidArgument("Empty index name".to_string()));
-            }
-        }
-
-        if let Some(ref agg) = self.aggregation {
-            if agg.package_name.is_empty() {
-                return Err(Error::InvalidArgument("Empty UDF package name".to_string()));
-            }
-
-            if agg.function_name.is_empty() {
-                return Err(Error::InvalidArgument(
-                    "Empty UDF function name".to_string(),
-                ));
             }
         }
 

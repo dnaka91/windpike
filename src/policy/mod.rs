@@ -42,7 +42,6 @@ pub use self::{
     query_policy::QueryPolicy, read_policy::ReadPolicy, record_exists_action::RecordExistsAction,
     scan_policy::ScanPolicy, write_policy::WritePolicy,
 };
-use crate::expressions::FilterExpression;
 
 /// Trait implemented by most policy types; policies that implement this trait typically encompass
 /// an instance of `BasePolicy`.
@@ -139,9 +138,6 @@ pub struct BasePolicy {
     /// SleepBetweenReplies determines duration to sleep between retries if a
     /// transaction fails and the timeout was not exceeded.  Enter zero to skip sleep.
     pub sleep_between_retries: Option<Duration>,
-
-    /// Optional FilterExpression
-    pub filter_expression: Option<FilterExpression>,
 }
 
 impl Policy for BasePolicy {

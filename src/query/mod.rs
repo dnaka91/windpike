@@ -17,15 +17,11 @@
 #![allow(clippy::missing_errors_doc)]
 
 pub use self::{
-    filter::Filter,
     index_types::{CollectionIndexType, IndexType},
     recordset::Recordset,
     statement::Statement,
-    udf::UDFLang,
 };
 
-mod filter;
 mod index_types;
 mod recordset;
 mod statement;
-mod udf;

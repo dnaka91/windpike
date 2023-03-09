@@ -13,25 +13,21 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{path::Path, str, sync::Arc, vec::Vec};
-
-use base64::engine::{general_purpose, Engine};
-use tokio::{fs::File, io::AsyncReadExt};
+use std::{str, sync::Arc, vec::Vec};
 
 use crate::{
     batch::BatchExecutor,
     cluster::{Cluster, Node},
     commands::{
-        CommandError, DeleteCommand, ExecuteUDFCommand, ExistsCommand, OperateCommand,
-        QueryCommand, ReadCommand, ScanCommand, TouchCommand, WriteCommand,
+        CommandError, DeleteCommand, ExistsCommand, OperateCommand, ReadCommand, ScanCommand,
+        TouchCommand, WriteCommand,
     },
-    errors::{Error, Result, UdfError},
+    errors::{Error, Result},
     net::ToHosts,
     operations::{Operation, OperationType},
-    policy::{BatchPolicy, ClientPolicy, QueryPolicy, ReadPolicy, ScanPolicy, WritePolicy},
-    task::{IndexTask, RegisterTask},
+    policy::{BatchPolicy, ClientPolicy, ReadPolicy, ScanPolicy, WritePolicy},
+    task::IndexTask,
     BatchRead, Bin, Bins, CollectionIndexType, IndexType, Key, Record, Recordset, ResultCode,
-    Statement, UDFLang, Value,
 };
 
 /// Instantiate a Client instance to access an Aerospike database cluster and perform database
@@ -51,9 +47,6 @@ use crate::{
 pub struct Client {
     cluster: Arc<Cluster>,
 }
-
-unsafe impl Send for Client {}
-unsafe impl Sync for Client {}
 
 impl Client {
     /// Initializes Aerospike client with suitable hosts to seed the cluster map. The client policy
@@ -497,165 +490,6 @@ impl Client {
         Ok(command.read_command.record.unwrap())
     }
 
-    /// Register a package containing user-defined functions (UDF) with the cluster. This
-    /// asynchronous server call will return before the command is complete. The client registers
-    /// the UDF package with a single, random cluster node; from there a copy will get distributed
-    /// to all other cluster nodes automatically.
-    ///
-    /// Lua is the only supported scripting laungauge for UDFs at the moment.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use aerospike::{Client, ClientPolicy, UDFLang};
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
-    ///         .await
-    ///         .unwrap();
-    ///
-    ///     let code = r#"
-    /// -- Validate value before writing.
-    /// function writeWithValidation(r,name,value)
-    ///   if (value >= 1 and value <= 10) then
-    ///     if not aerospike:exists(r) then
-    ///       aerospike:create(r)
-    ///     end
-    ///     r[name] = value
-    ///     aerospike:update(r)
-    ///   else
-    ///       error("1000:Invalid value")
-    ///   end
-    /// end
-    ///
-    /// -- Set a particular bin only if record does not already exist.
-    /// function writeUnique(r,name,value)
-    ///   if not aerospike:exists(r) then
-    ///     aerospike:create(r)
-    ///     r[name] = value
-    ///     aerospike:update(r)
-    ///   end
-    /// end
-    /// "#;
-    ///
-    ///     client
-    ///         .register_udf(code.as_bytes(), "example.lua", UDFLang::Lua)
-    ///         .await
-    ///         .unwrap();
-    /// }
-    /// ```
-    pub async fn register_udf(
-        &self,
-        udf_body: &[u8],
-        udf_name: &str,
-        language: UDFLang,
-    ) -> Result<RegisterTask> {
-        let udf_body = general_purpose::STANDARD.encode(udf_body);
-
-        let cmd = format!(
-            "udf-put:filename={udf_name};content={udf_body};content-len={udf_len};\
-             udf-type={language};",
-            udf_len = udf_body.len(),
-        );
-        let node = self.cluster.get_random_node().await.ok_or(Error::NoNodes)?;
-        let mut response = node.info(&[&cmd]).await?;
-
-        if let Some(msg) = response.get("error") {
-            let msg = general_purpose::STANDARD
-                .decode(msg)
-                .map_err(Error::Base64)?;
-            let msg = str::from_utf8(&msg).map_err(Error::InvalidUtf8)?;
-            return Err(UdfError::RegistrationFailed {
-                error: response.remove("error"),
-                file: response.remove("file"),
-                line: response.remove("line"),
-                message: msg.to_owned(),
-            }
-            .into());
-        }
-
-        Ok(RegisterTask::new(
-            Arc::clone(&self.cluster),
-            udf_name.to_string(),
-        ))
-    }
-
-    /// Register a package containing user-defined functions (UDF) with the cluster. This
-    /// asynchronous server call will return before the command is complete. The client registers
-    /// the UDF package with a single, random cluster node; from there a copy will get distributed
-    /// to all other cluster nodes automatically.
-    ///
-    /// Lua is the only supported scripting laungauge for UDFs at the moment.
-    pub async fn register_udf_from_file(
-        &self,
-        client_path: &str,
-        udf_name: &str,
-        language: UDFLang,
-    ) -> Result<RegisterTask> {
-        let path = Path::new(client_path);
-        let mut file = File::open(&path).await.map_err(Error::Io)?;
-        let mut udf_body: Vec<u8> = vec![];
-        file.read_to_end(&mut udf_body).await.map_err(Error::Io)?;
-
-        self.register_udf(&udf_body, udf_name, language).await
-    }
-
-    /// Remove a user-defined function (UDF) module from the server.
-    pub async fn remove_udf(&self, udf_name: &str, language: UDFLang) -> Result<()> {
-        let cmd = format!("udf-remove:filename={udf_name}.{language};");
-        let node = self.cluster.get_random_node().await.ok_or(Error::NoNodes)?;
-        // Sample response: {"udf-remove:filename=file_name.LUA;": "ok"}
-        let response = node.info(&[&cmd]).await?;
-
-        match response.get(&cmd).map(String::as_str) {
-            Some("ok") => Ok(()),
-            _ => Err(UdfError::RemoveFailed(response).into()),
-        }
-    }
-
-    /// Execute a user-defined function on the server and return the results. The function operates
-    /// on a single record. The UDF package name is required to locate the UDF.
-    ///
-    /// # Panics
-    /// Panics if the return is invalid
-    pub async fn execute_udf(
-        &self,
-        policy: &WritePolicy,
-        key: &Key,
-        udf_name: &str,
-        function_name: &str,
-        args: Option<&[Value]>,
-    ) -> Result<Option<Value>> {
-        let mut command = ExecuteUDFCommand::new(
-            policy,
-            self.cluster.clone(),
-            key,
-            udf_name,
-            function_name,
-            args,
-        );
-
-        command.execute().await?;
-
-        let record = command.read_command.record.unwrap();
-
-        // User defined functions don't have to return a value.
-        if record.bins.is_empty() {
-            return Ok(None);
-        }
-
-        for (key, value) in &record.bins {
-            if key.contains("SUCCESS") {
-                return Ok(Some(value.clone()));
-            } else if key.contains("FAILURE") {
-                return Err(UdfError::InvalidReturnValue(Some(format!("{value:?}"))).into());
-            }
-        }
-
-        Err(UdfError::InvalidReturnValue(None).into())
-    }
-
     /// Read all records in the specified namespace and set and return a record iterator. The scan
     /// executor puts records on a queue in separate threads. The calling thread concurrently pops
     /// records off the queue through the record iterator. Up to `policy.max_concurrent_nodes`
@@ -765,98 +599,6 @@ impl Client {
                 t_recordset,
                 partitions,
             );
-            command.execute().await.unwrap();
-        })
-        .await
-        .unwrap();
-
-        Ok(recordset)
-    }
-
-    /// Execute a query on all server nodes and return a record iterator. The query executor puts
-    /// records on a queue in separate threads. The calling thread concurrently pops records off
-    /// the queue through the record iterator.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use aerospike::{Bins, Client, ClientPolicy, QueryPolicy, Statement};
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
-    ///         .await
-    ///         .unwrap();
-    ///
-    ///     let stmt = Statement::new("test", "test", Bins::All);
-    ///     match client.query(&QueryPolicy::default(), stmt).await {
-    ///         Ok(records) => {
-    ///             for record in &*records {
-    ///                 // .. process record
-    ///             }
-    ///         }
-    ///         Err(err) => println!("Error fetching record: {}", err),
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// # Panics
-    /// Panics if the async block fails
-    pub async fn query(
-        &self,
-        policy: &QueryPolicy,
-        statement: Statement,
-    ) -> Result<Arc<Recordset>> {
-        statement.validate()?;
-        let statement = Arc::new(statement);
-
-        let nodes = self.cluster.nodes().await;
-        let recordset = Arc::new(Recordset::new(policy.record_queue_size, nodes.len()));
-        for node in nodes {
-            let partitions = self
-                .cluster
-                .node_partitions(node.as_ref(), &statement.namespace)
-                .await;
-            let node = node.clone();
-            let t_recordset = recordset.clone();
-            let policy = policy.clone();
-            let statement = statement.clone();
-            tokio::spawn(async move {
-                let mut command =
-                    QueryCommand::new(&policy, node, statement, t_recordset, partitions);
-                command.execute().await.unwrap();
-            })
-            .await
-            .unwrap();
-        }
-        Ok(recordset)
-    }
-
-    /// Execute a query on a single server node and return a record iterator. The query executor
-    /// puts records on a queue in separate threads. The calling thread concurrently pops records
-    /// off the queue through the record iterator.
-    ///
-    /// # Panics
-    /// Panics when the async block fails
-    pub async fn query_node(
-        &self,
-        policy: &QueryPolicy,
-        node: Arc<Node>,
-        statement: Statement,
-    ) -> Result<Arc<Recordset>> {
-        statement.validate()?;
-
-        let recordset = Arc::new(Recordset::new(policy.record_queue_size, 1));
-        let t_recordset = recordset.clone();
-        let policy = policy.clone();
-        let statement = Arc::new(statement);
-        let partitions = self
-            .cluster
-            .node_partitions(node.as_ref(), &statement.namespace)
-            .await;
-
-        tokio::spawn(async move {
-            let mut command = QueryCommand::new(&policy, node, statement, t_recordset, partitions);
             command.execute().await.unwrap();
         })
         .await

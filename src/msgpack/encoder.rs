@@ -45,14 +45,6 @@ pub fn pack_value(buf: &mut Option<&mut Buffer>, val: &Value) -> usize {
 }
 
 #[doc(hidden)]
-pub fn pack_empty_args_array(buf: &mut Option<&mut Buffer>) -> usize {
-    let mut size = 0;
-    size += pack_array_begin(buf, 0);
-
-    size
-}
-
-#[doc(hidden)]
 pub fn pack_cdt_op(
     buf: &mut Option<&mut Buffer>,
     cdt_op: &CdtOperation<'_>,
@@ -297,18 +289,6 @@ pub fn pack_string(buf: &mut Option<&mut Buffer>, value: &str) -> usize {
     size += pack_byte_array_begin(buf, size);
     if let Some(ref mut buf) = *buf {
         buf.write_u8(ParticleType::STRING as u8);
-        buf.write_str(value);
-    }
-
-    size
-}
-
-#[doc(hidden)]
-pub fn pack_raw_string(buf: &mut Option<&mut Buffer>, value: &str) -> usize {
-    let mut size = value.len();
-
-    size += pack_byte_array_begin(buf, size);
-    if let Some(ref mut buf) = *buf {
         buf.write_str(value);
     }
 

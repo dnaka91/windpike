@@ -109,19 +109,17 @@ pub use client::Client;
 pub use cluster::Node;
 pub use commands::particle_type::ParticleType;
 pub use errors::{Error, Result};
-pub use expressions::regex_flag::RegexFlag;
 pub use key::Key;
 pub use net::{Host, ToHosts};
 pub use operations::{MapPolicy, MapReturnType, MapWriteMode};
 pub use policy::{
     BatchPolicy, ClientPolicy, CommitLevel, Concurrency, ConsistencyLevel, Expiration,
-    GenerationPolicy, Policy, Priority, QueryPolicy, ReadPolicy, RecordExistsAction, ScanPolicy,
-    WritePolicy,
+    GenerationPolicy, Policy, Priority, ReadPolicy, RecordExistsAction, ScanPolicy, WritePolicy,
 };
-pub use query::{CollectionIndexType, IndexType, Recordset, Statement, UDFLang};
+pub use query::{CollectionIndexType, IndexType, Recordset, Statement};
 pub use record::Record;
 pub use result_code::ResultCode;
-pub use task::{IndexTask, RegisterTask, Task};
+pub use task::{IndexTask, Task};
 pub use user::User;
 pub use value::{FloatValue, Value};
 
@@ -137,7 +135,6 @@ mod batch;
 mod client;
 pub mod cluster;
 pub mod commands;
-pub mod expressions;
 mod msgpack;
 mod net;
 pub mod operations;
