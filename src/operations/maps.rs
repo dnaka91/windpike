@@ -54,6 +54,7 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[doc(hidden)]
+#[repr(u8)]
 pub enum CdtMapOpType {
     SetType = 64,
     Add = 65,
@@ -93,6 +94,7 @@ pub enum CdtMapOpType {
 }
 /// Map storage order.
 #[derive(Debug, Clone, Copy)]
+#[repr(u8)]
 pub enum MapOrder {
     /// Map is not ordered. This is the default.
     Unordered = 0,
@@ -185,14 +187,15 @@ pub struct MapPolicy {
 
 impl MapPolicy {
     /// Create a new map policy given the ordering for the map and the write mode.
+    #[must_use]
     pub const fn new(order: MapOrder, write_mode: MapWriteMode) -> Self {
-        MapPolicy { order, write_mode }
+        Self { order, write_mode }
     }
 }
 
 impl Default for MapPolicy {
     fn default() -> Self {
-        MapPolicy::new(MapOrder::Unordered, MapWriteMode::Update)
+        Self::new(MapOrder::Unordered, MapWriteMode::Update)
     }
 }
 
@@ -225,7 +228,7 @@ pub(crate) const fn map_write_op(policy: &MapPolicy, multi: bool) -> CdtMapOpTyp
     }
 }
 #[allow(clippy::trivially_copy_pass_by_ref)]
-const fn map_order_arg(policy: &MapPolicy) -> Option<CdtArgument> {
+const fn map_order_arg(policy: &MapPolicy) -> Option<CdtArgument<'_>> {
     match policy.write_mode {
         MapWriteMode::UpdateOnly => None,
         _ => Some(CdtArgument::Byte(policy.order as u8)),
@@ -233,6 +236,7 @@ const fn map_order_arg(policy: &MapPolicy) -> Option<CdtArgument> {
 }
 
 #[doc(hidden)]
+#[must_use]
 pub const fn map_order_flag(order: MapOrder) -> u8 {
     match order {
         MapOrder::KeyOrdered => 0x80,
@@ -245,7 +249,7 @@ pub const fn map_order_flag(order: MapOrder) -> u8 {
 /// return a result.
 ///
 /// The required map policy attributes can be changed after the map has been created.
-pub fn set_order(bin: &str, map_order: MapOrder) -> Operation {
+pub fn set_order(bin: &str, map_order: MapOrder) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::SetType as u8,
         encoder: Box::new(pack_cdt_op),
@@ -382,7 +386,7 @@ pub fn decrement_value<'a>(
 
 /// Create map clear operation. Server removes all items in the map. Server does not return a
 /// result.
-pub fn clear(bin: &str) -> Operation {
+pub fn clear(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::Clear as u8,
         encoder: Box::new(pack_cdt_op),
@@ -550,7 +554,7 @@ pub fn remove_by_value_range<'a>(
 
 /// Create map remove operation. Server removes the map item identified by the index and return
 /// the removed data specified by `return_type`.
-pub fn remove_by_index(bin: &str, index: i64, return_type: MapReturnType) -> Operation {
+pub fn remove_by_index(bin: &str, index: i64, return_type: MapReturnType) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::RemoveByIndex as u8,
         encoder: Box::new(pack_cdt_op),
@@ -574,7 +578,7 @@ pub fn remove_by_index_range(
     index: i64,
     count: i64,
     return_type: MapReturnType,
-) -> Operation {
+) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::RemoveByIndexRange as u8,
         encoder: Box::new(pack_cdt_op),
@@ -594,7 +598,11 @@ pub fn remove_by_index_range(
 
 /// Create map remove operation. Server removes the map items starting at the specified index
 /// to the end of the map and returns the removed data specified by `return_type`.
-pub fn remove_by_index_range_from(bin: &str, index: i64, return_type: MapReturnType) -> Operation {
+pub fn remove_by_index_range_from(
+    bin: &str,
+    index: i64,
+    return_type: MapReturnType,
+) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::RemoveByIndexRange as u8,
         encoder: Box::new(pack_cdt_op),
@@ -613,7 +621,7 @@ pub fn remove_by_index_range_from(bin: &str, index: i64, return_type: MapReturnT
 
 /// Create map remove operation. Server removes the map item identified by rank and returns the
 /// removed data specified by `return_type`.
-pub fn remove_by_rank(bin: &str, rank: i64, return_type: MapReturnType) -> Operation {
+pub fn remove_by_rank(bin: &str, rank: i64, return_type: MapReturnType) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::RemoveByRank as u8,
         encoder: Box::new(pack_cdt_op),
@@ -634,7 +642,7 @@ pub fn remove_by_rank_range(
     rank: i64,
     count: i64,
     return_type: MapReturnType,
-) -> Operation {
+) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::RemoveByRankRange as u8,
         encoder: Box::new(pack_cdt_op),
@@ -654,7 +662,11 @@ pub fn remove_by_rank_range(
 
 /// Create map remove operation. Server removes the map items starting at the specified rank to
 /// the last ranked item and returns the removed data specified by `return_type`.
-pub fn remove_by_rank_range_from(bin: &str, rank: i64, return_type: MapReturnType) -> Operation {
+pub fn remove_by_rank_range_from(
+    bin: &str,
+    rank: i64,
+    return_type: MapReturnType,
+) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::RemoveByRankRange as u8,
         encoder: Box::new(pack_cdt_op),
@@ -669,7 +681,7 @@ pub fn remove_by_rank_range_from(bin: &str, rank: i64, return_type: MapReturnTyp
 }
 
 /// Create map size operation. Server returns the size of the map.
-pub fn size(bin: &str) -> Operation {
+pub fn size(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::Size as u8,
         encoder: Box::new(pack_cdt_op),
@@ -787,7 +799,7 @@ pub fn get_by_value_range<'a>(
 
 /// Create map get by index operation. Server selects the map item identified by index and
 /// returns the selected data specified by `return_type`.
-pub fn get_by_index(bin: &str, index: i64, return_type: MapReturnType) -> Operation {
+pub fn get_by_index(bin: &str, index: i64, return_type: MapReturnType) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::GetByIndex as u8,
         encoder: Box::new(pack_cdt_op),
@@ -811,7 +823,7 @@ pub fn get_by_index_range(
     index: i64,
     count: i64,
     return_type: MapReturnType,
-) -> Operation {
+) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::GetByIndexRange as u8,
         encoder: Box::new(pack_cdt_op),
@@ -832,7 +844,7 @@ pub fn get_by_index_range(
 /// Create map get by index range operation. Server selects the map items starting at the
 /// specified index to the end of the map and returns the selected data specified by
 /// `return_type`.
-pub fn get_by_index_range_from(bin: &str, index: i64, return_type: MapReturnType) -> Operation {
+pub fn get_by_index_range_from(bin: &str, index: i64, return_type: MapReturnType) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::GetByIndexRange as u8,
         encoder: Box::new(pack_cdt_op),
@@ -851,7 +863,7 @@ pub fn get_by_index_range_from(bin: &str, index: i64, return_type: MapReturnType
 
 /// Create map get by rank operation. Server selects the map item identified by rank and
 /// returns the selected data specified by `return_type`.
-pub fn get_by_rank(bin: &str, rank: i64, return_type: MapReturnType) -> Operation {
+pub fn get_by_rank(bin: &str, rank: i64, return_type: MapReturnType) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::GetByRank as u8,
         encoder: Box::new(pack_cdt_op),
@@ -872,7 +884,7 @@ pub fn get_by_rank_range(
     rank: i64,
     count: i64,
     return_type: MapReturnType,
-) -> Operation {
+) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::GetByRankRange as u8,
         encoder: Box::new(pack_cdt_op),
@@ -893,7 +905,7 @@ pub fn get_by_rank_range(
 /// Create map get by rank range operation. Server selects the map items starting at the
 /// specified rank to the last ranked item and returns the selected data specified by
 /// `return_type`.
-pub fn get_by_rank_range_from(bin: &str, rank: i64, return_type: MapReturnType) -> Operation {
+pub fn get_by_rank_range_from(bin: &str, rank: i64, return_type: MapReturnType) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtMapOpType::GetByRankRange as u8,
         encoder: Box::new(pack_cdt_op),

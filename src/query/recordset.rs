@@ -38,11 +38,12 @@ pub struct Recordset {
 
 impl Recordset {
     #[doc(hidden)]
+    #[must_use]
     pub fn new(rec_queue_size: usize, nodes: usize) -> Self {
         let mut rng = rand::thread_rng();
         let task_id = rng.gen::<usize>();
 
-        Recordset {
+        Self {
             instances: AtomicUsize::new(nodes),
             record_queue_size: AtomicUsize::new(rec_queue_size),
             record_queue_count: AtomicUsize::new(0),

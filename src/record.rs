@@ -50,13 +50,14 @@ pub struct Record {
 impl Record {
     /// Construct a new Record. For internal use only.
     #[doc(hidden)]
+    #[must_use]
     pub const fn new(
         key: Option<Key>,
         bins: HashMap<String, Value>,
         generation: u32,
         expiration: u32,
     ) -> Self {
-        Record {
+        Self {
             key,
             bins,
             generation,
@@ -66,6 +67,7 @@ impl Record {
 
     /// Returns the remaining time-to-live (TTL, a.k.a. expiration time) for the record or `None`
     /// if the record never expires.
+    #[must_use]
     pub fn time_to_live(&self) -> Option<Duration> {
         match self.expiration {
             0 => None,
@@ -83,7 +85,7 @@ impl Record {
 }
 
 impl fmt::Display for Record {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "key: {:?}", self.key)?;
         write!(f, ", bins: {{")?;
         for (i, (k, v)) in self.bins.iter().enumerate() {

@@ -54,7 +54,6 @@ impl<'a> ReadCommand<'a> {
     }
 
     fn parse_record(
-        &mut self,
         conn: &mut Connection,
         op_count: usize,
         field_count: usize,
@@ -158,7 +157,7 @@ impl<'a> Command for ReadCommand<'a> {
                 let record = if self.bins.is_none() {
                     Record::new(None, HashMap::new(), generation, expiration)
                 } else {
-                    self.parse_record(conn, op_count, field_count, generation, expiration)?
+                    Self::parse_record(conn, op_count, field_count, generation, expiration)?
                 };
                 self.record = Some(record);
                 Ok(())
@@ -166,7 +165,7 @@ impl<'a> Command for ReadCommand<'a> {
             ResultCode::UdfBadResponse => {
                 // record bin "FAILURE" contains details about the UDF error
                 let record =
-                    self.parse_record(conn, op_count, field_count, generation, expiration)?;
+                    Self::parse_record(conn, op_count, field_count, generation, expiration)?;
                 let reason = record
                     .bins
                     .get("FAILURE")

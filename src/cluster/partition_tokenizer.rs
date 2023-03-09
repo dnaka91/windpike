@@ -42,7 +42,7 @@ impl PartitionTokenizer {
     pub async fn new(conn: &mut Connection) -> Result<Self> {
         let info_map = Message::info(conn, &[REPLICAS_NAME]).await?;
         if let Some(buf) = info_map.get(REPLICAS_NAME) {
-            return Ok(PartitionTokenizer {
+            return Ok(Self {
                 _length: info_map.len(),
                 buffer: buf.as_bytes().to_owned(),
                 _offset: 0,

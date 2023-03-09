@@ -28,7 +28,7 @@ pub enum GenerationPolicy {
 }
 
 impl Default for GenerationPolicy {
-    fn default() -> GenerationPolicy {
-        GenerationPolicy::None
+    fn default() -> Self {
+        Self::None
     }
 }

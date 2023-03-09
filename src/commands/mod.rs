@@ -93,6 +93,7 @@ pub trait Command {
     async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()>;
 }
 
+#[must_use]
 pub const fn keep_connection(err: &CommandError) -> bool {
     matches!(err, CommandError::ServerError(ResultCode::KeyNotFoundError))
 }

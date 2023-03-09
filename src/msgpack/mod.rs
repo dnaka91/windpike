@@ -13,6 +13,12 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss
+)]
+
 use crate::commands::particle_type::ParseParticleError;
 
 pub mod decoder;

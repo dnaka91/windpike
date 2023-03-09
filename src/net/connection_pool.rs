@@ -60,7 +60,7 @@ impl Queue {
             host,
             policy,
         };
-        Queue(Arc::new(shared))
+        Self(Arc::new(shared))
     }
 
     pub async fn get(&self) -> Result<PooledConnection> {
@@ -140,7 +140,7 @@ impl Queue {
 
 impl Clone for Queue {
     fn clone(&self) -> Self {
-        Queue(self.0.clone())
+        Self(self.0.clone())
     }
 }
 
@@ -152,11 +152,11 @@ pub struct ConnectionPool {
 }
 
 impl ConnectionPool {
-    pub fn new(host: Host, policy: ClientPolicy) -> Self {
+    pub fn new(host: &Host, policy: &ClientPolicy) -> Self {
         let num_conns = policy.max_conns_per_node;
         let num_queues = policy.conn_pools_per_node;
-        let queues = ConnectionPool::initialize_queues(num_conns, num_queues, host, policy);
-        ConnectionPool {
+        let queues = Self::initialize_queues(num_conns, num_queues, host, policy);
+        Self {
             num_queues,
             queues,
             queue_counter: AtomicUsize::default(),
@@ -166,8 +166,8 @@ impl ConnectionPool {
     fn initialize_queues(
         num_conns: usize,
         num_queues: usize,
-        host: Host,
-        policy: ClientPolicy,
+        host: &Host,
+        policy: &ClientPolicy,
     ) -> Vec<Queue> {
         let max = num_conns / num_queues;
         let mut rem = num_conns % num_queues;

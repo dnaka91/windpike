@@ -39,7 +39,7 @@ pub struct BatchReadCommand {
 
 impl BatchReadCommand {
     pub fn new(policy: &BatchPolicy, node: Arc<Node>, batch_reads: Vec<BatchRead>) -> Self {
-        BatchReadCommand {
+        Self {
             policy: policy.clone(),
             node,
             batch_reads,
@@ -213,7 +213,7 @@ impl Command for BatchReadCommand {
 
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer
-            .set_batch_read(&self.policy, self.batch_reads.clone())
+            .set_batch_read(&self.policy, &self.batch_reads)
             .map_err(Into::into)
     }
 

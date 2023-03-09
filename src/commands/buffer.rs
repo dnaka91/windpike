@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss
+)]
+
 use std::{str, time::Duration};
 
 use crate::{
@@ -112,8 +118,9 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    #[must_use]
     pub fn new(reclaim_threshold: usize) -> Self {
-        Buffer {
+        Self {
             data_buffer: Vec::with_capacity(1024),
             data_offset: 0,
             reclaim_threshold,
@@ -349,7 +356,7 @@ impl Buffer {
     pub fn set_batch_read(
         &mut self,
         policy: &BatchPolicy,
-        batch_reads: Vec<BatchRead>,
+        batch_reads: &[BatchRead],
     ) -> Result<()> {
         let field_count_row = if policy.send_set_name { 2 } else { 1 };
 
@@ -363,7 +370,7 @@ impl Buffer {
         }
 
         let mut prev: Option<&BatchRead> = None;
-        for batch_read in &batch_reads {
+        for batch_read in batch_reads {
             self.data_offset += batch_read.key.digest.len() + 4;
             match prev {
                 Some(prev) if batch_read.match_header(prev, policy.send_set_name) => {
@@ -959,7 +966,7 @@ impl Buffer {
         3
     }
 
-    fn estimate_operation_size_for_bin(&mut self, bin: &Bin) {
+    fn estimate_operation_size_for_bin(&mut self, bin: &Bin<'_>) {
         self.data_offset += bin.name.len() + OPERATION_HEADER_SIZE as usize;
         self.data_offset += bin.value.estimate_size();
     }
@@ -1127,7 +1134,7 @@ impl Buffer {
         }
     }
 
-    fn write_operation_for_bin(&mut self, bin: &Bin, op_type: OperationType) {
+    fn write_operation_for_bin(&mut self, bin: &Bin<'_>, op_type: OperationType) {
         let name_length = bin.name.len();
         let value_length = bin.value.estimate_size();
 
@@ -1159,6 +1166,7 @@ impl Buffer {
 
     // Data buffer implementations
 
+    #[must_use]
     pub const fn data_offset(&self) -> usize {
         self.data_offset
     }
@@ -1171,6 +1179,7 @@ impl Buffer {
         self.data_offset += count;
     }
 
+    #[must_use]
     pub fn peek(&self) -> u8 {
         self.data_buffer[self.data_offset]
     }

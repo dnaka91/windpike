@@ -33,14 +33,16 @@ pub struct Host {
 
 impl Host {
     /// Create a new host instance given a hostname/IP and a port number.
+    #[must_use]
     pub fn new(name: &str, port: u16) -> Self {
-        Host {
+        Self {
             name: name.to_string(),
             port,
         }
     }
 
     /// Returns a string representation of the host's address.
+    #[must_use]
     pub fn address(&self) -> String {
         format!("{}:{}", self.name, self.port)
     }
@@ -55,7 +57,7 @@ impl ToSocketAddrs for Host {
 }
 
 impl fmt::Display for Host {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}:{}", self.name, self.port)
     }
 }

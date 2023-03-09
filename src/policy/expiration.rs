@@ -38,7 +38,7 @@ pub enum Expiration {
 }
 
 impl From<Expiration> for u32 {
-    fn from(exp: Expiration) -> u32 {
+    fn from(exp: Expiration) -> Self {
         match exp {
             Expiration::Seconds(secs) => secs,
             Expiration::NamespaceDefault => NAMESPACE_DEFAULT,

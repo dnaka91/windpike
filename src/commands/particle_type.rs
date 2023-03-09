@@ -53,13 +53,13 @@ impl TryFrom<u8> for ParticleType {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
-            0 => ParticleType::NULL,
-            1 => ParticleType::INTEGER,
-            2 => ParticleType::FLOAT,
-            3 => ParticleType::STRING,
-            4 => ParticleType::BLOB,
+            0 => Self::NULL,
+            1 => Self::INTEGER,
+            2 => Self::FLOAT,
+            3 => Self::STRING,
+            4 => Self::BLOB,
             // 5 => ParticleType::TIMESTAMP      ,
-            6 => ParticleType::DIGEST,
+            6 => Self::DIGEST,
             // 7 => ParticleType::JBLOB ,
             // 8 => ParticleType::CSHARP_BLOB    ,
             // 9 => ParticleType::PYTHON_BLOB    ,
@@ -72,11 +72,11 @@ impl TryFrom<u8> for ParticleType {
             // 16 => ParticleType::RTA_APPEND_DICT,
             // 17 => ParticleType::RTA_APPEND_LIST,
             // 18 => ParticleType::LUA_BLOB       ,
-            18 => ParticleType::HLL,
-            19 => ParticleType::MAP,
-            20 => ParticleType::LIST,
-            21 => ParticleType::LDT,
-            23 => ParticleType::GEOJSON,
+            18 => Self::HLL,
+            19 => Self::MAP,
+            20 => Self::LIST,
+            21 => Self::LDT,
+            23 => Self::GEOJSON,
             _ => return Err(ParseParticleError(value)),
         })
     }

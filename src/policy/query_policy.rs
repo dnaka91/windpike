@@ -44,11 +44,13 @@ pub struct QueryPolicy {
 
 impl QueryPolicy {
     /// Create a new query policy instance with default parameters.
+    #[must_use]
     pub fn new() -> Self {
-        QueryPolicy::default()
+        Self::default()
     }
 
     /// Get the current Filter Expression
+    #[must_use]
     pub const fn filter_expression(&self) -> &Option<FilterExpression> {
         &self.filter_expression
     }
@@ -56,7 +58,7 @@ impl QueryPolicy {
 
 impl Default for QueryPolicy {
     fn default() -> Self {
-        QueryPolicy {
+        Self {
             base_policy: BasePolicy::default(),
             max_concurrent_nodes: 0,
             record_queue_size: 1024,

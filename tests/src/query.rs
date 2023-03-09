@@ -89,7 +89,7 @@ async fn query_single_consumer() {
         match res {
             Ok(rec) => {
                 count += 1;
-                let v: i64 = rec.bins["bin"].clone().into();
+                let v = rec.bins["bin"].as_i64().unwrap();
                 assert!(v >= 0);
                 assert!(v < 10);
             }
@@ -155,7 +155,7 @@ async fn query_multi_consumer() {
                 match res {
                     Ok(rec) => {
                         count.fetch_add(1, Ordering::Relaxed);
-                        let v: i64 = rec.bins["bin"].clone().into();
+                        let v = rec.bins["bin"].as_i64().unwrap();
                         assert!(v >= 0);
                         assert!(v < 10);
                     }

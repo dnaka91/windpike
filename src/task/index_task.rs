@@ -37,14 +37,14 @@ static DELMITER: &str = ";";
 impl IndexTask {
     /// Initializes `IndexTask` from client, creation should only be expose to Client
     pub fn new(cluster: Arc<Cluster>, namespace: String, index_name: String) -> Self {
-        IndexTask {
+        Self {
             cluster,
             namespace,
             index_name,
         }
     }
 
-    fn build_command(namespace: String, index_name: String) -> String {
+    fn build_command(namespace: &str, index_name: &str) -> String {
         format!("sindex/{namespace}/{index_name}")
     }
 
@@ -94,15 +94,14 @@ impl Task for IndexTask {
         }
 
         for node in &nodes {
-            let command =
-                &IndexTask::build_command(self.namespace.clone(), self.index_name.clone());
+            let command = &Self::build_command(&self.namespace, &self.index_name);
             let response = node.info(&[&command[..]]).await?;
 
             if !response.contains_key(command) {
                 return Ok(Status::NotFound);
             }
 
-            match IndexTask::parse_response(&response[command]) {
+            match Self::parse_response(&response[command]) {
                 Ok(Status::Complete) => {}
                 in_progress_or_error => return in_progress_or_error,
             }

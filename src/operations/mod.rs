@@ -95,6 +95,7 @@ pub struct Operation<'a> {
 
 impl<'a> Operation<'a> {
     #[doc(hidden)]
+    #[must_use]
     pub fn estimate_size(&self) -> usize {
         let mut size: usize = 0;
         size += match self.bin {

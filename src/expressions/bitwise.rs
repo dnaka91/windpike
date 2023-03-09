@@ -76,6 +76,7 @@ pub enum BitExpOp {
 /// );
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn resize(
     policy: &BitPolicy,
     byte_size: FilterExpression,
@@ -110,6 +111,7 @@ pub fn resize(
 ///   int_val(2));
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn insert(
     policy: &BitPolicy,
     byte_offset: FilterExpression,
@@ -156,6 +158,7 @@ pub fn insert(
 /// );
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn remove(
     policy: &BitPolicy,
     byte_offset: FilterExpression,
@@ -204,6 +207,7 @@ pub fn remove(
 /// );
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn set(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -232,6 +236,7 @@ pub fn set(
 /// bin result = [0b00000001, 0b01000010, 0b01010111, 0b00000100, 0b00000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn or(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -260,6 +265,7 @@ pub fn or(
 /// bin result = [0b00000001, 0b01000010, 0b01010101, 0b00000100, 0b00000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn xor(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -288,6 +294,7 @@ pub fn xor(
 /// bin result = [0b00000001, 0b01000010, 0b00000010, 0b00000000, 0b00000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn and(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -314,6 +321,7 @@ pub fn and(
 /// bin result = [0b00000001, 0b01000010, 0b00000011, 0b01111010, 0b00000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn not(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -340,6 +348,7 @@ pub fn not(
 /// bin result = [0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00101000]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn lshift(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -368,6 +377,7 @@ pub fn lshift(
 /// bin result = [0b00000000, 0b11000010, 0b00000011, 0b00000100, 0b00000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn rshift(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -398,6 +408,7 @@ pub fn rshift(
 /// bin result = [0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b10000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn add(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -435,6 +446,7 @@ pub fn add(
 /// bin result = [0b00000001, 0b01000010, 0b00000011, 0b0000011, 0b10000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn subtract(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -470,6 +482,7 @@ pub fn subtract(
 /// bin result = [0b00111111, 0b11000010, 0b00000011, 0b0000100, 0b00000101]
 /// ```
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn set_int(
     policy: &BitPolicy,
     bit_offset: FilterExpression,
@@ -502,6 +515,7 @@ pub fn set_int(
 ///     blob_val(vec![0b10000000]),
 /// );
 /// ```
+#[must_use]
 pub fn get(
     bit_offset: FilterExpression,
     bit_size: FilterExpression,
@@ -531,6 +545,7 @@ pub fn get(
 ///     int_val(2),
 /// );
 /// ```
+#[must_use]
 pub fn count(
     bit_offset: FilterExpression,
     bit_size: FilterExpression,
@@ -565,6 +580,7 @@ pub fn count(
 ///     int_val(5),
 /// );
 /// ```
+#[must_use]
 pub fn lscan(
     bit_offset: FilterExpression,
     bit_size: FilterExpression,
@@ -603,6 +619,7 @@ pub fn lscan(
 ///     int_val(7),
 /// );
 /// ```
+#[must_use]
 pub fn rscan(
     bit_offset: FilterExpression,
     bit_size: FilterExpression,
@@ -634,6 +651,7 @@ pub fn rscan(
 ///     int_val(16899),
 /// );
 /// ```
+#[must_use]
 pub fn get_int(
     bit_offset: FilterExpression,
     bit_size: FilterExpression,

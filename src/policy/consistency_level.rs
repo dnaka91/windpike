@@ -27,7 +27,7 @@ pub enum ConsistencyLevel {
 }
 
 impl Default for ConsistencyLevel {
-    fn default() -> ConsistencyLevel {
-        ConsistencyLevel::ConsistencyOne
+    fn default() -> Self {
+        Self::ConsistencyOne
     }
 }

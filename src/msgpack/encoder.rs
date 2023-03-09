@@ -33,8 +33,8 @@ pub fn pack_value(buf: &mut Option<&mut Buffer>, val: &Value) -> usize {
         Value::Bool(ref val) => pack_bool(buf, *val),
         Value::String(ref val) => pack_string(buf, val),
         Value::Float(ref val) => match *val {
-            FloatValue::F64(_) => pack_f64(buf, f64::from(val)),
-            FloatValue::F32(_) => pack_f32(buf, f32::from(val)),
+            FloatValue::F64(val) => pack_f64(buf, f64::from_bits(val)),
+            FloatValue::F32(val) => pack_f32(buf, f32::from_bits(val)),
         },
         Value::Blob(ref val) | Value::HLL(ref val) => pack_blob(buf, val),
         Value::List(ref val) => pack_array(buf, val),
@@ -55,7 +55,7 @@ pub fn pack_empty_args_array(buf: &mut Option<&mut Buffer>) -> usize {
 #[doc(hidden)]
 pub fn pack_cdt_op(
     buf: &mut Option<&mut Buffer>,
-    cdt_op: &CdtOperation,
+    cdt_op: &CdtOperation<'_>,
     ctx: &[CdtContext],
 ) -> usize {
     let mut size: usize = 0;
@@ -101,7 +101,7 @@ pub fn pack_cdt_op(
 #[doc(hidden)]
 pub fn pack_hll_op(
     buf: &mut Option<&mut Buffer>,
-    hll_op: &CdtOperation,
+    hll_op: &CdtOperation<'_>,
     _ctx: &[CdtContext],
 ) -> usize {
     let mut size: usize = 0;
@@ -125,7 +125,7 @@ pub fn pack_hll_op(
 #[doc(hidden)]
 pub fn pack_cdt_bit_op(
     buf: &mut Option<&mut Buffer>,
-    cdt_op: &CdtOperation,
+    cdt_op: &CdtOperation<'_>,
     ctx: &[CdtContext],
 ) -> usize {
     let mut size: usize = 0;
@@ -390,7 +390,7 @@ pub fn pack_i64(buf: &mut Option<&mut Buffer>, marker: u8, value: i64) -> usize 
 
 #[doc(hidden)]
 pub fn pack_u64(buf: &mut Option<&mut Buffer>, value: u64) -> usize {
-    if value <= i64::max_value() as u64 {
+    if i64::try_from(value).is_ok() {
         return pack_integer(buf, value as i64);
     }
 

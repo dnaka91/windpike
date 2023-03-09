@@ -62,8 +62,9 @@ impl Statement {
     ///
     /// let stmt = Statement::new("foo", "bar", Bins::from(["name", "age"]));
     /// ```
+    #[must_use]
     pub fn new(namespace: &str, set_name: &str, bins: Bins) -> Self {
-        Statement {
+        Self {
             namespace: namespace.to_owned(),
             set_name: set_name.to_owned(),
             bins,

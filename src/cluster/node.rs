@@ -65,16 +65,17 @@ pub struct Node {
 
 impl Node {
     #![allow(missing_docs)]
-    pub fn new(client_policy: ClientPolicy, nv: Arc<NodeValidator>) -> Self {
-        Node {
-            client_policy: client_policy.clone(),
+    #[must_use]
+    pub fn new(client_policy: ClientPolicy, nv: &NodeValidator) -> Self {
+        Self {
+            connection_pool: ConnectionPool::new(&nv.aliases[0], &client_policy),
+            client_policy,
             name: nv.name.clone(),
             aliases: RwLock::new(nv.aliases.clone()),
             address: nv.address.clone(),
             _use_new_info: nv.use_new_info,
 
             host: nv.aliases[0].clone(),
-            connection_pool: ConnectionPool::new(nv.aliases[0].clone(), client_policy),
             failures: AtomicUsize::new(0),
             partition_generation: AtomicIsize::new(-1),
             refresh_count: AtomicUsize::new(0),
@@ -126,7 +127,7 @@ impl Node {
     // Refresh the node
     pub async fn refresh(
         &self,
-        current_aliases: HashMap<Host, Arc<Node>>,
+        current_aliases: &HashMap<Host, Arc<Self>>,
     ) -> Result<Vec<Host>, NodeRefreshError> {
         self.reference_count.store(0, Ordering::Relaxed);
         self.responded.store(false, Ordering::Relaxed);
@@ -201,7 +202,7 @@ impl Node {
 
     fn add_friends(
         &self,
-        current_aliases: HashMap<Host, Arc<Node>>,
+        current_aliases: &HashMap<Host, Arc<Self>>,
         info_map: &HashMap<String, String>,
     ) -> Result<Vec<Host>> {
         let mut friends: Vec<Host> = vec![];
@@ -325,7 +326,7 @@ impl Hash for Node {
 }
 
 impl PartialEq for Node {
-    fn eq(&self, other: &Node) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }
 }
@@ -333,7 +334,7 @@ impl PartialEq for Node {
 impl Eq for Node {}
 
 impl fmt::Display for Node {
-    fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
         format!("{}: {}", self.name, self.host).fmt(f)
     }
 }

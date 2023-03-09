@@ -54,11 +54,13 @@ pub struct BatchPolicy {
 
 impl BatchPolicy {
     /// Create a new batch policy instance.
+    #[must_use]
     pub fn new() -> Self {
-        BatchPolicy::default()
+        Self::default()
     }
 
     /// Get the current Filter Expression
+    #[must_use]
     pub const fn filter_expression(&self) -> &Option<FilterExpression> {
         &self.filter_expression
     }
@@ -66,7 +68,7 @@ impl BatchPolicy {
 
 impl Default for BatchPolicy {
     fn default() -> Self {
-        BatchPolicy {
+        Self {
             base_policy: BasePolicy::default(),
             concurrency: Concurrency::Sequential,
             allow_inline: true,

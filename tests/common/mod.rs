@@ -41,7 +41,7 @@ pub fn client_policy() -> &'static ClientPolicy {
         let mut policy = ClientPolicy::default();
         if let Ok(user) = env::var("AEROSPIKE_USER") {
             let password = env::var("AEROSPIKE_PASSWORD").unwrap_or_default();
-            policy.set_user_password(user, password).unwrap();
+            policy.set_user_password(user, &password).unwrap();
         }
         policy.cluster_name = env::var("AEROSPIKE_CLUSTER").ok();
         policy

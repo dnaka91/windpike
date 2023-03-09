@@ -32,7 +32,7 @@ pub struct Message {
 impl Message {
     pub async fn info(conn: &mut Connection, commands: &[&str]) -> Result<HashMap<String, String>> {
         let cmd = commands.join("\n") + "\n";
-        let mut msg = Message::new(&cmd.into_bytes())?;
+        let mut msg = Self::new(&cmd.into_bytes())?;
 
         msg.send(conn).await?;
         msg.parse_response()
@@ -46,7 +46,7 @@ impl Message {
         buf.write_all(&len[2..8])?;
         buf.write_all(data)?;
 
-        Ok(Message { buf })
+        Ok(Self { buf })
     }
 
     fn data_len(&self) -> u64 {

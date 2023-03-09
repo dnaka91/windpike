@@ -21,6 +21,7 @@ use crate::{
 };
 
 /// Create read all record bins database operation.
+#[must_use]
 pub const fn get<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Read,
@@ -31,6 +32,7 @@ pub const fn get<'a>() -> Operation<'a> {
 }
 
 /// Create read record header database operation.
+#[must_use]
 pub const fn get_header<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Read,
@@ -41,7 +43,8 @@ pub const fn get_header<'a>() -> Operation<'a> {
 }
 
 /// Create read bin database operation.
-pub const fn get_bin(bin_name: &str) -> Operation {
+#[must_use]
+pub const fn get_bin(bin_name: &str) -> Operation<'_> {
     Operation {
         op: OperationType::Read,
         ctx: DEFAULT_CTX,
@@ -51,7 +54,8 @@ pub const fn get_bin(bin_name: &str) -> Operation {
 }
 
 /// Create set database operation.
-pub const fn put<'a>(bin: &'a Bin) -> Operation<'a> {
+#[must_use]
+pub const fn put<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Write,
         ctx: DEFAULT_CTX,
@@ -61,7 +65,8 @@ pub const fn put<'a>(bin: &'a Bin) -> Operation<'a> {
 }
 
 /// Create string append database operation.
-pub const fn append<'a>(bin: &'a Bin) -> Operation<'a> {
+#[must_use]
+pub const fn append<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Append,
         ctx: DEFAULT_CTX,
@@ -71,7 +76,8 @@ pub const fn append<'a>(bin: &'a Bin) -> Operation<'a> {
 }
 
 /// Create string prepend database operation.
-pub const fn prepend<'a>(bin: &'a Bin) -> Operation<'a> {
+#[must_use]
+pub const fn prepend<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Prepend,
         ctx: DEFAULT_CTX,
@@ -81,7 +87,8 @@ pub const fn prepend<'a>(bin: &'a Bin) -> Operation<'a> {
 }
 
 /// Create integer add database operation.
-pub const fn add<'a>(bin: &'a Bin) -> Operation<'a> {
+#[must_use]
+pub const fn add<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Incr,
         ctx: DEFAULT_CTX,
@@ -91,6 +98,7 @@ pub const fn add<'a>(bin: &'a Bin) -> Operation<'a> {
 }
 
 /// Create touch database operation.
+#[must_use]
 pub const fn touch<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Touch,
@@ -101,6 +109,7 @@ pub const fn touch<'a>() -> Operation<'a> {
 }
 
 /// Create delete database operation
+#[must_use]
 pub const fn delete<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Delete,

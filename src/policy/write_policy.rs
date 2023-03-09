@@ -73,15 +73,17 @@ pub struct WritePolicy {
 
 impl WritePolicy {
     /// Create a new write policy instance with the specified generation and expiration parameters.
+    #[must_use]
     pub fn new(gen: u32, exp: Expiration) -> Self {
         Self {
             generation: gen,
             expiration: exp,
-            ..WritePolicy::default()
+            ..Self::default()
         }
     }
 
     /// Get the current Filter expression
+    #[must_use]
     pub const fn filter_expression(&self) -> &Option<FilterExpression> {
         &self.filter_expression
     }
@@ -89,7 +91,7 @@ impl WritePolicy {
 
 impl Default for WritePolicy {
     fn default() -> Self {
-        WritePolicy {
+        Self {
             base_policy: BasePolicy::default(),
             record_exists_action: RecordExistsAction::Update,
             generation_policy: GenerationPolicy::None,

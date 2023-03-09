@@ -36,7 +36,7 @@ impl Drop for StreamCommand {
 
 impl StreamCommand {
     pub fn new(node: Arc<Node>, recordset: Arc<Recordset>) -> Self {
-        StreamCommand { node, recordset }
+        Self { node, recordset }
     }
 
     async fn parse_record(conn: &mut Connection, size: usize) -> Result<(Option<Record>, bool)> {
@@ -66,7 +66,7 @@ impl StreamCommand {
         let field_count = conn.buffer.read_u16(None) as usize; // almost certainly 0
         let op_count = conn.buffer.read_u16(None) as usize;
 
-        let key = StreamCommand::parse_key(conn, field_count).await?;
+        let key = Self::parse_key(conn, field_count).await?;
 
         // Partition is done, don't go further
         if info3 & buffer::_INFO3_PARTITION_DONE != 0 {
@@ -107,7 +107,7 @@ impl StreamCommand {
                 return Err(err.into());
             }
 
-            let res = StreamCommand::parse_record(conn, size).await;
+            let res = Self::parse_record(conn, size).await;
             match res {
                 Ok((Some(mut rec), _)) => loop {
                     let result = self.recordset.push(Ok(rec));

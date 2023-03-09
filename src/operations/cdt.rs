@@ -32,7 +32,10 @@ pub enum CdtArgument<'a> {
 }
 
 pub type OperationEncoder = Box<
-    dyn Fn(&mut Option<&mut Buffer>, &CdtOperation, &[CdtContext]) -> usize + Send + Sync + 'static,
+    dyn Fn(&mut Option<&mut Buffer>, &CdtOperation<'_>, &[CdtContext]) -> usize
+        + Send
+        + Sync
+        + 'static,
 >;
 
 #[doc(hidden)]
@@ -43,6 +46,7 @@ pub struct CdtOperation<'a> {
 }
 
 impl<'a> CdtOperation<'a> {
+    #[must_use]
     pub const fn particle_type(&self) -> ParticleType {
         ParticleType::BLOB
     }

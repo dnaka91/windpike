@@ -34,7 +34,7 @@ pub struct BatchExecutor {
 
 impl BatchExecutor {
     pub fn new(cluster: Arc<Cluster>) -> Self {
-        BatchExecutor { cluster }
+        Self { cluster }
     }
 
     pub async fn execute_batch_read(

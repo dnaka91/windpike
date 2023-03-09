@@ -54,15 +54,16 @@ pub struct HLLPolicy {
 
 impl HLLPolicy {
     /// Use specified `HLLWriteFlags` when performing `HLL` operations
+    #[must_use]
     pub const fn new(write_flags: HLLWriteFlags) -> Self {
-        HLLPolicy { flags: write_flags }
+        Self { flags: write_flags }
     }
 }
 
 impl Default for HLLPolicy {
     /// Returns the default policy for HLL operations.
     fn default() -> Self {
-        HLLPolicy::new(HLLWriteFlags::Default)
+        Self::new(HLLWriteFlags::Default)
     }
 }
 
@@ -85,6 +86,7 @@ pub enum HLLOpType {
 /// Create HLL init operation.
 /// Server creates a new HLL or resets an existing HLL.
 /// Server does not return a value.
+#[must_use]
 pub fn init<'a>(policy: &HLLPolicy, bin: &'a str, index_bit_count: i64) -> Operation<'a> {
     init_with_min_hash(policy, bin, index_bit_count, -1)
 }
@@ -118,6 +120,7 @@ pub fn init_with_min_hash<'a>(
 /// Create HLL add operation. This operation assumes HLL bin already exists.
 /// Server adds values to the HLL set.
 /// Server returns number of entries that caused HLL to update a register.
+#[must_use]
 pub fn add<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Operation<'a> {
     add_with_index_and_min_hash(policy, bin, list, -1, -1)
 }
@@ -125,6 +128,7 @@ pub fn add<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Operation
 /// Create HLL add operation.
 /// Server adds values to HLL set. If HLL bin does not exist, use `indexBitCount` to create HLL bin.
 /// Server returns number of entries that caused HLL to update a register.
+#[must_use]
 pub fn add_with_index<'a>(
     policy: &HLLPolicy,
     bin: &'a str,
@@ -185,7 +189,7 @@ pub fn set_union<'a>(policy: &HLLPolicy, bin: &'a str, list: &'a [Value]) -> Ope
 
 /// Create HLL refresh operation.
 /// Server updates the cached count (if stale) and returns the count.
-pub fn refresh_count(bin: &str) -> Operation {
+pub fn refresh_count(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: HLLOpType::SetCount as u8,
         encoder: Box::new(pack_hll_op),
@@ -203,7 +207,7 @@ pub fn refresh_count(bin: &str) -> Operation {
 /// Servers folds `indexBitCount` to the specified value.
 /// This can only be applied when `minHashBitCount` on the HLL bin is 0.
 /// Server does not return a value.
-pub fn fold(bin: &str, index_bit_count: i64) -> Operation {
+pub fn fold(bin: &str, index_bit_count: i64) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: HLLOpType::Fold as u8,
         encoder: Box::new(pack_hll_op),
@@ -219,7 +223,7 @@ pub fn fold(bin: &str, index_bit_count: i64) -> Operation {
 
 /// Create HLL getCount operation.
 /// Server returns estimated number of elements in the HLL bin.
-pub fn get_count(bin: &str) -> Operation {
+pub fn get_count(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: HLLOpType::Count as u8,
         encoder: Box::new(pack_hll_op),
@@ -303,7 +307,7 @@ pub fn get_similarity<'a>(bin: &'a str, list: &'a [Value]) -> Operation<'a> {
 /// Create HLL describe operation.
 /// Server returns `indexBitCount` and `minHashBitCount` used to create HLL bin in a list of longs.
 /// The list size is 2.
-pub fn describe(bin: &str) -> Operation {
+pub fn describe(bin: &str) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: HLLOpType::Describe as u8,
         encoder: Box::new(pack_hll_op),

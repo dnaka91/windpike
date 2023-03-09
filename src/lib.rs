@@ -13,43 +13,23 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#![warn(missing_docs)]
-#![doc(test(attr(
-    allow(unused_variables),
-    allow(unused_assignments),
-    allow(unused_mut),
-    allow(unused_attributes),
-    allow(dead_code),
-    deny(warnings)
-)))]
-#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![warn(rust_2018_idioms, clippy::all, clippy::pedantic)]
 #![allow(
     clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_sign_loss,
-    clippy::checked_conversions,
-    clippy::copy_iterator,
-    clippy::fallible_impl_from,
     clippy::module_name_repetitions,
-    clippy::must_use_candidate,
-    clippy::needless_pass_by_value,
     clippy::similar_names,
     clippy::too_many_lines,
-    unknown_lints,
-    clippy::unseparated_literal_suffix,
-    clippy::unused_self,
-    clippy::use_self,
     clippy::missing_errors_doc,
     clippy::manual_let_else,
     missing_docs
 )]
 
-//! A pure-rust client for the Aerospike NoSQL database.
+//! A pure-rust client for the Aerospike `NoSQL` database.
 //!
-//! Aerospike is an enterprise-class, NoSQL database solution for real-time operational
+//! Aerospike is an enterprise-class, `NoSQL` database solution for real-time operational
 //! applications, delivering predictable performance at scale, superior uptime, and high
-//! availability at the lowest TCO compared to first-generation NoSQL and relational databases. For
-//! more information please refer to https://www.aerospike.com/.
+//! availability at the lowest TCO compared to first-generation `NoSQL` and relational databases.
+//! For more information please refer to <https://www.aerospike.com/>.
 //!
 //! # Installation
 //!

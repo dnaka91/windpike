@@ -41,7 +41,7 @@ pub struct NodeValidator {
 // Generates a node validator
 impl NodeValidator {
     pub fn new(cluster: &Cluster) -> Self {
-        NodeValidator {
+        Self {
             name: String::new(),
             aliases: vec![],
             address: String::new(),
@@ -70,6 +70,7 @@ impl NodeValidator {
         last_err.map_or_else(|| unreachable!(), Err)
     }
 
+    #[must_use]
     pub fn aliases(&self) -> Vec<Host> {
         self.aliases.clone()
     }

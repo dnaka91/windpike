@@ -54,8 +54,9 @@ const QUERY_END: usize = 50;
 pub struct AdminCommand {}
 
 impl AdminCommand {
+    #[must_use]
     pub const fn new() -> Self {
-        AdminCommand {}
+        Self {}
     }
 
     async fn execute(mut conn: PooledConnection) -> Result<()> {
@@ -63,7 +64,7 @@ impl AdminCommand {
         conn.buffer.size_buffer()?;
         let size = conn.buffer.data_offset;
         conn.buffer.reset_offset();
-        AdminCommand::write_size(&mut conn, size as i64);
+        Self::write_size(&mut conn, size as i64);
 
         // Send command.
         if let Err(err) = conn.flush().await {
@@ -89,13 +90,13 @@ impl AdminCommand {
     pub async fn authenticate(conn: &mut Connection, user: &str, password: &str) -> Result<()> {
         conn.buffer.resize_buffer(1024)?;
         conn.buffer.reset_offset();
-        AdminCommand::write_header(conn, LOGIN, 2);
-        AdminCommand::write_field_str(conn, USER, user);
-        AdminCommand::write_field_bytes(conn, CREDENTIAL, password.as_bytes());
+        Self::write_header(conn, LOGIN, 2);
+        Self::write_field_str(conn, USER, user);
+        Self::write_field_bytes(conn, CREDENTIAL, password.as_bytes());
         conn.buffer.size_buffer()?;
         let size = conn.buffer.data_offset;
         conn.buffer.reset_offset();
-        AdminCommand::write_size(conn, size as i64);
+        Self::write_size(conn, size as i64);
 
         conn.flush().await?;
         conn.read_buffer(HEADER_SIZE).await?;
@@ -127,12 +128,12 @@ impl AdminCommand {
 
         conn.buffer.resize_buffer(1024)?;
         conn.buffer.reset_offset();
-        AdminCommand::write_header(&mut conn, CREATE_USER, 3);
-        AdminCommand::write_field_str(&mut conn, USER, user);
-        AdminCommand::write_field_str(&mut conn, PASSWORD, &AdminCommand::hash_password(password)?);
-        AdminCommand::write_roles(&mut conn, roles);
+        Self::write_header(&mut conn, CREATE_USER, 3);
+        Self::write_field_str(&mut conn, USER, user);
+        Self::write_field_str(&mut conn, PASSWORD, &Self::hash_password(password)?);
+        Self::write_roles(&mut conn, roles);
 
-        AdminCommand::execute(conn).await
+        Self::execute(conn).await
     }
 
     pub async fn drop_user(cluster: &Cluster, user: &str) -> Result<()> {
@@ -144,10 +145,10 @@ impl AdminCommand {
 
         conn.buffer.resize_buffer(1024)?;
         conn.buffer.reset_offset();
-        AdminCommand::write_header(&mut conn, DROP_USER, 1);
-        AdminCommand::write_field_str(&mut conn, USER, user);
+        Self::write_header(&mut conn, DROP_USER, 1);
+        Self::write_field_str(&mut conn, USER, user);
 
-        AdminCommand::execute(conn).await
+        Self::execute(conn).await
     }
 
     pub async fn set_password(cluster: &Cluster, user: &str, password: &str) -> Result<()> {
@@ -159,11 +160,11 @@ impl AdminCommand {
 
         conn.buffer.resize_buffer(1024)?;
         conn.buffer.reset_offset();
-        AdminCommand::write_header(&mut conn, SET_PASSWORD, 2);
-        AdminCommand::write_field_str(&mut conn, USER, user);
-        AdminCommand::write_field_str(&mut conn, PASSWORD, &AdminCommand::hash_password(password)?);
+        Self::write_header(&mut conn, SET_PASSWORD, 2);
+        Self::write_field_str(&mut conn, USER, user);
+        Self::write_field_str(&mut conn, PASSWORD, &Self::hash_password(password)?);
 
-        AdminCommand::execute(conn).await
+        Self::execute(conn).await
     }
 
     pub async fn change_password(cluster: &Cluster, user: &str, password: &str) -> Result<()> {
@@ -175,23 +176,19 @@ impl AdminCommand {
 
         conn.buffer.resize_buffer(1024)?;
         conn.buffer.reset_offset();
-        AdminCommand::write_header(&mut conn, CHANGE_PASSWORD, 3);
-        AdminCommand::write_field_str(&mut conn, USER, user);
+        Self::write_header(&mut conn, CHANGE_PASSWORD, 3);
+        Self::write_field_str(&mut conn, USER, user);
         match cluster.client_policy().user_password {
             Some((_, ref password)) => {
-                AdminCommand::write_field_str(
-                    &mut conn,
-                    OLD_PASSWORD,
-                    &AdminCommand::hash_password(password)?,
-                );
+                Self::write_field_str(&mut conn, OLD_PASSWORD, &Self::hash_password(password)?);
             }
 
-            None => AdminCommand::write_field_str(&mut conn, OLD_PASSWORD, ""),
+            None => Self::write_field_str(&mut conn, OLD_PASSWORD, ""),
         };
 
-        AdminCommand::write_field_str(&mut conn, PASSWORD, &AdminCommand::hash_password(password)?);
+        Self::write_field_str(&mut conn, PASSWORD, &Self::hash_password(password)?);
 
-        AdminCommand::execute(conn).await
+        Self::execute(conn).await
     }
 
     pub async fn grant_roles(cluster: &Cluster, user: &str, roles: &[&str]) -> Result<()> {
@@ -203,11 +200,11 @@ impl AdminCommand {
 
         conn.buffer.resize_buffer(1024)?;
         conn.buffer.reset_offset();
-        AdminCommand::write_header(&mut conn, GRANT_ROLES, 2);
-        AdminCommand::write_field_str(&mut conn, USER, user);
-        AdminCommand::write_roles(&mut conn, roles);
+        Self::write_header(&mut conn, GRANT_ROLES, 2);
+        Self::write_field_str(&mut conn, USER, user);
+        Self::write_roles(&mut conn, roles);
 
-        AdminCommand::execute(conn).await
+        Self::execute(conn).await
     }
 
     pub async fn revoke_roles(cluster: &Cluster, user: &str, roles: &[&str]) -> Result<()> {
@@ -219,11 +216,11 @@ impl AdminCommand {
 
         conn.buffer.resize_buffer(1024)?;
         conn.buffer.reset_offset();
-        AdminCommand::write_header(&mut conn, REVOKE_ROLES, 2);
-        AdminCommand::write_field_str(&mut conn, USER, user);
-        AdminCommand::write_roles(&mut conn, roles);
+        Self::write_header(&mut conn, REVOKE_ROLES, 2);
+        Self::write_field_str(&mut conn, USER, user);
+        Self::write_roles(&mut conn, roles);
 
-        AdminCommand::execute(conn).await
+        Self::execute(conn).await
     }
 
     // Utility methods
@@ -253,12 +250,12 @@ impl AdminCommand {
     }
 
     fn write_field_str(conn: &mut Connection, id: u8, s: &str) {
-        AdminCommand::write_field_header(conn, id, s.len());
+        Self::write_field_header(conn, id, s.len());
         conn.buffer.write_str(s);
     }
 
     fn write_field_bytes(conn: &mut Connection, id: u8, b: &[u8]) {
-        AdminCommand::write_field_header(conn, id, b.len());
+        Self::write_field_header(conn, id, b.len());
         conn.buffer.write_bytes(b);
     }
 
@@ -268,7 +265,7 @@ impl AdminCommand {
             size += role.len() + 1; // size + len
         }
 
-        AdminCommand::write_field_header(conn, ROLES, size);
+        Self::write_field_header(conn, ROLES, size);
         conn.buffer.write_u8(roles.len() as u8);
         for role in roles {
             conn.buffer.write_u8(role.len() as u8);

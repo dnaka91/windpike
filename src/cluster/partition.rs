@@ -27,6 +27,7 @@ pub struct Partition<'a> {
 }
 
 impl<'a> Partition<'a> {
+    #[must_use]
     pub const fn new(namespace: &'a str, partition_id: usize) -> Self {
         Partition {
             namespace,
@@ -34,6 +35,7 @@ impl<'a> Partition<'a> {
         }
     }
 
+    #[must_use]
     pub fn new_by_key(key: &'a Key) -> Self {
         let mut rdr = Cursor::new(&key.digest[0..4]);
 
@@ -54,13 +56,13 @@ impl<'a> Partition<'a> {
 }
 
 impl<'a> PartialEq for Partition<'a> {
-    fn eq(&self, other: &Partition) -> bool {
+    fn eq(&self, other: &Partition<'_>) -> bool {
         self.namespace == other.namespace && self.partition_id == other.partition_id
     }
 }
 
 impl<'a> fmt::Display for Partition<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         format!("Partition ({}: {})", self.namespace, self.partition_id).fmt(f)
     }
 }

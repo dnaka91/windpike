@@ -49,7 +49,7 @@ impl Connection {
         if stream.is_err() {
             return Err(NetError::FailedOpening);
         }
-        let mut conn = Connection {
+        let mut conn = Self {
             buffer: Buffer::new(policy.buffer_reclaim_threshold),
             bytes_read: 0,
             _timeout: policy.timeout,

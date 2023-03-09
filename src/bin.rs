@@ -32,6 +32,7 @@ pub struct Bin<'a> {
 
 impl<'a> Bin<'a> {
     /// Construct a new bin given a name and a value.
+    #[must_use]
     pub const fn new(name: &'a str, val: Value) -> Self {
         Bin { name, value: val }
     }
@@ -70,62 +71,64 @@ pub enum Bins {
 
 impl Bins {
     /// Returns `true` if the bins selector is an `All` value.
+    #[must_use]
     pub const fn is_all(&self) -> bool {
-        matches!(*self, Bins::All)
+        matches!(*self, Self::All)
     }
 
     /// Returns `true` if the bins selector is a `None` value.
+    #[must_use]
     pub const fn is_none(&self) -> bool {
-        matches!(*self, Bins::None)
+        matches!(*self, Self::None)
     }
 }
 
 impl<'a> From<&'a [&'a str]> for Bins {
     fn from(bins: &'a [&'a str]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
-        Bins::Some(bins)
+        Self::Some(bins)
     }
 }
 
 impl<'a> From<[&'a str; 1]> for Bins {
     fn from(bins: [&'a str; 1]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
-        Bins::Some(bins)
+        Self::Some(bins)
     }
 }
 
 impl<'a> From<[&'a str; 2]> for Bins {
     fn from(bins: [&'a str; 2]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
-        Bins::Some(bins)
+        Self::Some(bins)
     }
 }
 
 impl<'a> From<[&'a str; 3]> for Bins {
     fn from(bins: [&'a str; 3]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
-        Bins::Some(bins)
+        Self::Some(bins)
     }
 }
 
 impl<'a> From<[&'a str; 4]> for Bins {
     fn from(bins: [&'a str; 4]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
-        Bins::Some(bins)
+        Self::Some(bins)
     }
 }
 
 impl<'a> From<[&'a str; 5]> for Bins {
     fn from(bins: [&'a str; 5]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
-        Bins::Some(bins)
+        Self::Some(bins)
     }
 }
 
 impl<'a> From<[&'a str; 6]> for Bins {
     fn from(bins: [&'a str; 6]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
-        Bins::Some(bins)
+        Self::Some(bins)
     }
 }
 

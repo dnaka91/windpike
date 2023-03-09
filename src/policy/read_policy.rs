@@ -22,7 +22,7 @@ use crate::{expressions::FilterExpression, policy::BasePolicy, ConsistencyLevel,
 pub type ReadPolicy = BasePolicy;
 
 impl Default for ReadPolicy {
-    fn default() -> ReadPolicy {
+    fn default() -> Self {
         ReadPolicy {
             priority: Priority::Default,
             timeout: Some(Duration::new(30, 0)),
@@ -36,6 +36,7 @@ impl Default for ReadPolicy {
 
 impl ReadPolicy {
     /// Get the Optional Filter Expression
+    #[must_use]
     pub const fn filter_expression(&self) -> &Option<FilterExpression> {
         &self.filter_expression
     }

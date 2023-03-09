@@ -97,7 +97,7 @@ impl Client {
         let hosts = hosts.to_hosts()?;
         let cluster = Cluster::new(policy.clone(), &hosts).await?;
 
-        Ok(Client { cluster })
+        Ok(Self { cluster })
     }
 
     /// Closes the connection to the Aerospike cluster.

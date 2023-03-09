@@ -34,8 +34,9 @@ pub struct BatchRead {
 
 impl BatchRead {
     /// Create a new `BatchRead` instance for the given key and bin selector.
+    #[must_use]
     pub const fn new(key: Key, bins: Bins) -> Self {
-        BatchRead {
+        Self {
             key,
             bins,
             record: None,
@@ -43,7 +44,8 @@ impl BatchRead {
     }
 
     #[doc(hidden)]
-    pub fn match_header(&self, other: &BatchRead, match_set: bool) -> bool {
+    #[must_use]
+    pub fn match_header(&self, other: &Self, match_set: bool) -> bool {
         let key = &self.key;
         let other_key = &other.key;
         (key.namespace == other_key.namespace)

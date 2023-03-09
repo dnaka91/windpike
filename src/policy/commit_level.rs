@@ -25,7 +25,7 @@ pub enum CommitLevel {
 }
 
 impl Default for CommitLevel {
-    fn default() -> CommitLevel {
-        CommitLevel::CommitAll
+    fn default() -> Self {
+        Self::CommitAll
     }
 }

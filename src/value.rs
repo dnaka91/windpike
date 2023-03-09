@@ -46,96 +46,54 @@ pub enum FloatValue {
     F64(u64),
 }
 
-impl From<FloatValue> for f64 {
-    fn from(val: FloatValue) -> f64 {
-        match val {
-            FloatValue::F32(_) => panic!(
-                "This library does not automatically convert f32 -> f64 to be used in keys or \
-                 bins."
-            ),
-            FloatValue::F64(val) => f64::from_bits(val),
-        }
-    }
-}
-
-impl<'a> From<&'a FloatValue> for f64 {
-    fn from(val: &FloatValue) -> f64 {
-        match *val {
-            FloatValue::F32(_) => panic!(
-                "This library does not automatically convert f32 -> f64 to be used in keys or \
-                 bins."
-            ),
-            FloatValue::F64(val) => f64::from_bits(val),
-        }
-    }
-}
-
 impl From<f64> for FloatValue {
-    fn from(val: f64) -> FloatValue {
+    fn from(val: f64) -> Self {
         let mut val = val;
         if val.is_nan() {
             val = f64::NAN;
         } // make all NaNs have the same representation
-        FloatValue::F64(val.to_bits())
+        Self::F64(val.to_bits())
     }
 }
 
 impl<'a> From<&'a f64> for FloatValue {
-    fn from(val: &f64) -> FloatValue {
+    fn from(val: &f64) -> Self {
         let mut val = *val;
         if val.is_nan() {
             val = f64::NAN;
         } // make all NaNs have the same representation
-        FloatValue::F64(val.to_bits())
-    }
-}
-
-impl From<FloatValue> for f32 {
-    fn from(val: FloatValue) -> f32 {
-        match val {
-            FloatValue::F32(val) => f32::from_bits(val),
-            FloatValue::F64(val) => f32::from_bits(val as u32),
-        }
-    }
-}
-
-impl<'a> From<&'a FloatValue> for f32 {
-    fn from(val: &FloatValue) -> f32 {
-        match *val {
-            FloatValue::F32(val) => f32::from_bits(val),
-            FloatValue::F64(val) => f32::from_bits(val as u32),
-        }
+        Self::F64(val.to_bits())
     }
 }
 
 impl From<f32> for FloatValue {
-    fn from(val: f32) -> FloatValue {
+    fn from(val: f32) -> Self {
         let mut val = val;
         if val.is_nan() {
             val = f32::NAN;
         } // make all NaNs have the same representation
-        FloatValue::F32(val.to_bits())
+        Self::F32(val.to_bits())
     }
 }
 
 impl<'a> From<&'a f32> for FloatValue {
-    fn from(val: &f32) -> FloatValue {
+    fn from(val: &f32) -> Self {
         let mut val = *val;
         if val.is_nan() {
             val = f32::NAN;
         } // make all NaNs have the same representation
-        FloatValue::F32(val.to_bits())
+        Self::F32(val.to_bits())
     }
 }
 
 impl fmt::Display for FloatValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
         match *self {
-            FloatValue::F32(val) => {
+            Self::F32(val) => {
                 let val: f32 = f32::from_bits(val);
                 write!(f, "{val}")
             }
-            FloatValue::F64(val) => {
+            Self::F64(val) => {
                 let val: f64 = f64::from_bits(val);
                 write!(f, "{val}")
             }
@@ -200,63 +158,74 @@ pub enum Value {
 impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match *self {
-            Value::Nil => {
+            Self::Nil => {
                 Option::<u8>::None.hash(state);
             }
-            Value::Bool(ref val) => val.hash(state),
-            Value::Int(ref val) => val.hash(state),
-            Value::UInt(ref val) => val.hash(state),
-            Value::Float(ref val) => val.hash(state),
-            Value::String(ref val) | Value::GeoJSON(ref val) => val.hash(state),
-            Value::Blob(ref val) | Value::HLL(ref val) => val.hash(state),
-            Value::List(ref val) => val.hash(state),
-            Value::HashMap(_) => panic!("HashMaps cannot be used as map keys."),
-            Value::OrderedMap(_) => panic!("OrderedMaps cannot be used as map keys."),
+            Self::Bool(ref val) => val.hash(state),
+            Self::Int(ref val) => val.hash(state),
+            Self::UInt(ref val) => val.hash(state),
+            Self::Float(ref val) => val.hash(state),
+            Self::String(ref val) | Self::GeoJSON(ref val) => val.hash(state),
+            Self::Blob(ref val) | Self::HLL(ref val) => val.hash(state),
+            Self::List(ref val) => val.hash(state),
+            Self::HashMap(_) => panic!("HashMaps cannot be used as map keys."),
+            Self::OrderedMap(_) => panic!("OrderedMaps cannot be used as map keys."),
         }
     }
 }
 
 impl Value {
     /// Returns true if this value is the empty value (nil).
+    #[must_use]
     pub const fn is_nil(&self) -> bool {
-        matches!(*self, Value::Nil)
+        matches!(*self, Self::Nil)
     }
 
     /// Return the particle type for the value used in the wire protocol.
     /// For internal use only.
     #[doc(hidden)]
+    #[must_use]
     pub fn particle_type(&self) -> ParticleType {
         match *self {
-            Value::Nil => ParticleType::NULL,
-            Value::Int(_) | Value::Bool(_) => ParticleType::INTEGER,
-            Value::UInt(_) => panic!(
+            Self::Nil => ParticleType::NULL,
+            Self::Int(_) | Self::Bool(_) => ParticleType::INTEGER,
+            Self::UInt(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Value::Float(_) => ParticleType::FLOAT,
-            Value::String(_) => ParticleType::STRING,
-            Value::Blob(_) => ParticleType::BLOB,
-            Value::List(_) => ParticleType::LIST,
-            Value::HashMap(_) => ParticleType::MAP,
-            Value::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Value::GeoJSON(_) => ParticleType::GEOJSON,
-            Value::HLL(_) => ParticleType::HLL,
+            Self::Float(_) => ParticleType::FLOAT,
+            Self::String(_) => ParticleType::STRING,
+            Self::Blob(_) => ParticleType::BLOB,
+            Self::List(_) => ParticleType::LIST,
+            Self::HashMap(_) => ParticleType::MAP,
+            Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
+            Self::GeoJSON(_) => ParticleType::GEOJSON,
+            Self::HLL(_) => ParticleType::HLL,
         }
     }
 
     /// Returns a string representation of the value.
-    pub fn as_string(&self) -> String {
+    #[must_use]
+    pub fn to_string(&self) -> String {
         match *self {
-            Value::Nil => "<null>".to_string(),
-            Value::Int(ref val) => val.to_string(),
-            Value::UInt(ref val) => val.to_string(),
-            Value::Bool(ref val) => val.to_string(),
-            Value::Float(ref val) => val.to_string(),
-            Value::String(ref val) | Value::GeoJSON(ref val) => val.to_string(),
-            Value::Blob(ref val) | Value::HLL(ref val) => format!("{val:?}"),
-            Value::List(ref val) => format!("{val:?}"),
-            Value::HashMap(ref val) => format!("{val:?}"),
-            Value::OrderedMap(ref val) => format!("{val:?}"),
+            Self::Nil => "<null>".to_string(),
+            Self::Int(ref val) => val.to_string(),
+            Self::UInt(ref val) => val.to_string(),
+            Self::Bool(ref val) => val.to_string(),
+            Self::Float(ref val) => val.to_string(),
+            Self::String(ref val) | Self::GeoJSON(ref val) => val.to_string(),
+            Self::Blob(ref val) | Self::HLL(ref val) => format!("{val:?}"),
+            Self::List(ref val) => format!("{val:?}"),
+            Self::HashMap(ref val) => format!("{val:?}"),
+            Self::OrderedMap(ref val) => format!("{val:?}"),
+        }
+    }
+
+    #[must_use]
+    pub const fn as_i64(&self) -> Option<i64> {
+        match self {
+            Self::Int(val) => Some(*val),
+            _ => None,
         }
     }
 
@@ -265,18 +234,18 @@ impl Value {
     #[doc(hidden)]
     pub fn estimate_size(&self) -> usize {
         match *self {
-            Value::Nil => 0,
-            Value::Int(_) | Value::Bool(_) | Value::Float(_) => 8,
-            Value::UInt(_) => panic!(
+            Self::Nil => 0,
+            Self::Int(_) | Self::Bool(_) | Self::Float(_) => 8,
+            Self::UInt(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Value::String(ref s) => s.len(),
-            Value::Blob(ref b) => b.len(),
-            Value::List(_) | Value::HashMap(_) => encoder::pack_value(&mut None, self),
-            Value::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Value::GeoJSON(ref s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
-            Value::HLL(ref h) => h.len(),
+            Self::String(ref s) => s.len(),
+            Self::Blob(ref b) => b.len(),
+            Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut None, self),
+            Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
+            Self::GeoJSON(ref s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
+            Self::HLL(ref h) => h.len(),
         }
     }
 
@@ -285,19 +254,22 @@ impl Value {
     #[doc(hidden)]
     pub fn write_to(&self, buf: &mut Buffer) -> usize {
         match *self {
-            Value::Nil => 0,
-            Value::Int(ref val) => buf.write_i64(*val),
-            Value::UInt(_) => panic!(
+            Self::Nil => 0,
+            Self::Int(ref val) => buf.write_i64(*val),
+            Self::UInt(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Value::Bool(ref val) => buf.write_bool(*val),
-            Value::Float(ref val) => buf.write_f64(f64::from(val)),
-            Value::String(ref val) => buf.write_str(val),
-            Value::Blob(ref val) | Value::HLL(ref val) => buf.write_bytes(val),
-            Value::List(_) | Value::HashMap(_) => encoder::pack_value(&mut Some(buf), self),
-            Value::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Value::GeoJSON(ref val) => buf.write_geo(val),
+            Self::Bool(ref val) => buf.write_bool(*val),
+            Self::Float(ref val) => buf.write_f64(match *val {
+                FloatValue::F32(val) => f64::from(f32::from_bits(val)),
+                FloatValue::F64(val) => f64::from_bits(val),
+            }),
+            Self::String(ref val) => buf.write_str(val),
+            Self::Blob(ref val) | Self::HLL(ref val) => buf.write_bytes(val),
+            Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut Some(buf), self),
+            Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
+            Self::GeoJSON(ref val) => buf.write_geo(val),
         }
     }
 
@@ -306,15 +278,15 @@ impl Value {
     #[doc(hidden)]
     pub fn write_key_bytes(&self, h: &mut Ripemd160) -> Result<()> {
         match *self {
-            Value::Int(ref val) => {
+            Self::Int(ref val) => {
                 h.update(val.to_be_bytes());
                 Ok(())
             }
-            Value::String(ref val) => {
+            Self::String(ref val) => {
                 h.update(val.as_bytes());
                 Ok(())
             }
-            Value::Blob(ref val) => {
+            Self::Blob(ref val) => {
                 h.update(val);
                 Ok(())
             }
@@ -324,232 +296,212 @@ impl Value {
 }
 
 impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
-        write!(f, "{}", self.as_string())
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
+        write!(f, "{}", self.to_string())
     }
 }
 
 impl From<String> for Value {
-    fn from(val: String) -> Value {
-        Value::String(val)
+    fn from(val: String) -> Self {
+        Self::String(val)
     }
 }
 
 impl From<Vec<u8>> for Value {
-    fn from(val: Vec<u8>) -> Value {
-        Value::Blob(val)
+    fn from(val: Vec<u8>) -> Self {
+        Self::Blob(val)
     }
 }
 
-impl From<Vec<Value>> for Value {
-    fn from(val: Vec<Value>) -> Value {
-        Value::List(val)
+impl From<Vec<Self>> for Value {
+    fn from(val: Vec<Self>) -> Self {
+        Self::List(val)
     }
 }
 
-impl From<HashMap<Value, Value>> for Value {
-    fn from(val: HashMap<Value, Value>) -> Value {
-        Value::HashMap(val)
+impl From<HashMap<Self, Self>> for Value {
+    fn from(val: HashMap<Self, Self>) -> Self {
+        Self::HashMap(val)
     }
 }
 
 impl From<f32> for Value {
-    fn from(val: f32) -> Value {
-        Value::Float(FloatValue::from(val))
+    fn from(val: f32) -> Self {
+        Self::Float(FloatValue::from(val))
     }
 }
 
 impl From<f64> for Value {
-    fn from(val: f64) -> Value {
-        Value::Float(FloatValue::from(val))
+    fn from(val: f64) -> Self {
+        Self::Float(FloatValue::from(val))
     }
 }
 
 impl<'a> From<&'a f32> for Value {
-    fn from(val: &'a f32) -> Value {
-        Value::Float(FloatValue::from(*val))
+    fn from(val: &'a f32) -> Self {
+        Self::Float(FloatValue::from(*val))
     }
 }
 
 impl<'a> From<&'a f64> for Value {
-    fn from(val: &'a f64) -> Value {
-        Value::Float(FloatValue::from(*val))
+    fn from(val: &'a f64) -> Self {
+        Self::Float(FloatValue::from(*val))
     }
 }
 
 impl<'a> From<&'a String> for Value {
-    fn from(val: &'a String) -> Value {
-        Value::String(val.clone())
+    fn from(val: &'a String) -> Self {
+        Self::String(val.clone())
     }
 }
 
 impl<'a> From<&'a str> for Value {
-    fn from(val: &'a str) -> Value {
-        Value::String(val.to_string())
+    fn from(val: &'a str) -> Self {
+        Self::String(val.to_string())
     }
 }
 
 impl<'a> From<&'a Vec<u8>> for Value {
-    fn from(val: &'a Vec<u8>) -> Value {
-        Value::Blob(val.clone())
+    fn from(val: &'a Vec<u8>) -> Self {
+        Self::Blob(val.clone())
     }
 }
 
 impl<'a> From<&'a [u8]> for Value {
-    fn from(val: &'a [u8]) -> Value {
-        Value::Blob(val.to_vec())
+    fn from(val: &'a [u8]) -> Self {
+        Self::Blob(val.to_vec())
     }
 }
 
 impl From<bool> for Value {
-    fn from(val: bool) -> Value {
-        Value::Bool(val)
+    fn from(val: bool) -> Self {
+        Self::Bool(val)
     }
 }
 
 impl From<i8> for Value {
-    fn from(val: i8) -> Value {
-        Value::Int(i64::from(val))
+    fn from(val: i8) -> Self {
+        Self::Int(i64::from(val))
     }
 }
 
 impl From<u8> for Value {
-    fn from(val: u8) -> Value {
-        Value::Int(i64::from(val))
+    fn from(val: u8) -> Self {
+        Self::Int(i64::from(val))
     }
 }
 
 impl From<i16> for Value {
-    fn from(val: i16) -> Value {
-        Value::Int(i64::from(val))
+    fn from(val: i16) -> Self {
+        Self::Int(i64::from(val))
     }
 }
 
 impl From<u16> for Value {
-    fn from(val: u16) -> Value {
-        Value::Int(i64::from(val))
+    fn from(val: u16) -> Self {
+        Self::Int(i64::from(val))
     }
 }
 
 impl From<i32> for Value {
-    fn from(val: i32) -> Value {
-        Value::Int(i64::from(val))
+    fn from(val: i32) -> Self {
+        Self::Int(i64::from(val))
     }
 }
 
 impl From<u32> for Value {
-    fn from(val: u32) -> Value {
-        Value::Int(i64::from(val))
+    fn from(val: u32) -> Self {
+        Self::Int(i64::from(val))
     }
 }
 
 impl From<i64> for Value {
-    fn from(val: i64) -> Value {
-        Value::Int(val)
+    fn from(val: i64) -> Self {
+        Self::Int(val)
     }
 }
 
 impl From<u64> for Value {
-    fn from(val: u64) -> Value {
-        Value::UInt(val)
+    fn from(val: u64) -> Self {
+        Self::UInt(val)
     }
 }
 
 impl From<isize> for Value {
-    fn from(val: isize) -> Value {
-        Value::Int(val as i64)
+    fn from(val: isize) -> Self {
+        Self::Int(val as i64)
     }
 }
 
 impl From<usize> for Value {
-    fn from(val: usize) -> Value {
-        Value::UInt(val as u64)
+    fn from(val: usize) -> Self {
+        Self::UInt(val as u64)
     }
 }
 
 impl<'a> From<&'a i8> for Value {
-    fn from(val: &'a i8) -> Value {
-        Value::Int(i64::from(*val))
+    fn from(val: &'a i8) -> Self {
+        Self::Int(i64::from(*val))
     }
 }
 
 impl<'a> From<&'a u8> for Value {
-    fn from(val: &'a u8) -> Value {
-        Value::Int(i64::from(*val))
+    fn from(val: &'a u8) -> Self {
+        Self::Int(i64::from(*val))
     }
 }
 
 impl<'a> From<&'a i16> for Value {
-    fn from(val: &'a i16) -> Value {
-        Value::Int(i64::from(*val))
+    fn from(val: &'a i16) -> Self {
+        Self::Int(i64::from(*val))
     }
 }
 
 impl<'a> From<&'a u16> for Value {
-    fn from(val: &'a u16) -> Value {
-        Value::Int(i64::from(*val))
+    fn from(val: &'a u16) -> Self {
+        Self::Int(i64::from(*val))
     }
 }
 
 impl<'a> From<&'a i32> for Value {
-    fn from(val: &'a i32) -> Value {
-        Value::Int(i64::from(*val))
+    fn from(val: &'a i32) -> Self {
+        Self::Int(i64::from(*val))
     }
 }
 
 impl<'a> From<&'a u32> for Value {
-    fn from(val: &'a u32) -> Value {
-        Value::Int(i64::from(*val))
+    fn from(val: &'a u32) -> Self {
+        Self::Int(i64::from(*val))
     }
 }
 
 impl<'a> From<&'a i64> for Value {
-    fn from(val: &'a i64) -> Value {
-        Value::Int(*val)
+    fn from(val: &'a i64) -> Self {
+        Self::Int(*val)
     }
 }
 
 impl<'a> From<&'a u64> for Value {
-    fn from(val: &'a u64) -> Value {
-        Value::UInt(*val)
+    fn from(val: &'a u64) -> Self {
+        Self::UInt(*val)
     }
 }
 
 impl<'a> From<&'a isize> for Value {
-    fn from(val: &'a isize) -> Value {
-        Value::Int(*val as i64)
+    fn from(val: &'a isize) -> Self {
+        Self::Int(*val as i64)
     }
 }
 
 impl<'a> From<&'a usize> for Value {
-    fn from(val: &'a usize) -> Value {
-        Value::UInt(*val as u64)
+    fn from(val: &'a usize) -> Self {
+        Self::UInt(*val as u64)
     }
 }
 
 impl<'a> From<&'a bool> for Value {
-    fn from(val: &'a bool) -> Value {
-        Value::Bool(*val)
-    }
-}
-
-impl From<Value> for i64 {
-    fn from(val: Value) -> i64 {
-        match val {
-            Value::Int(val) => val,
-            Value::UInt(val) => val as i64,
-            _ => panic!("Value is not an integer to convert."),
-        }
-    }
-}
-
-impl<'a> From<&'a Value> for i64 {
-    fn from(val: &'a Value) -> i64 {
-        match *val {
-            Value::Int(val) => val,
-            Value::UInt(val) => val as i64,
-            _ => panic!("Value is not an integer to convert."),
-        }
+    fn from(val: &'a bool) -> Self {
+        Self::Bool(*val)
     }
 }
 
@@ -572,8 +524,8 @@ pub fn bytes_to_particle(ptype: u8, buf: &mut Buffer, len: usize) -> Result<Valu
         ParticleType::STRING => Ok(Value::String(buf.read_str(len)?)),
         ParticleType::GEOJSON => {
             buf.skip(1);
-            let ncells = buf.read_i16(None) as usize;
-            let header_size: usize = ncells * 8;
+            let ncells = buf.read_u16(None) as usize;
+            let header_size = ncells * 8;
 
             buf.skip(header_size);
             let val = buf.read_str(len - header_size - 3)?;
@@ -734,31 +686,31 @@ impl Serialize for Value {
         S: Serializer,
     {
         match &self {
-            Value::Nil => serializer.serialize_none(),
-            Value::Bool(b) => serializer.serialize_bool(*b),
-            Value::Int(i) => serializer.serialize_i64(*i),
-            Value::UInt(u) => serializer.serialize_u64(*u),
-            Value::Float(f) => match f {
+            Self::Nil => serializer.serialize_none(),
+            Self::Bool(b) => serializer.serialize_bool(*b),
+            Self::Int(i) => serializer.serialize_i64(*i),
+            Self::UInt(u) => serializer.serialize_u64(*u),
+            Self::Float(f) => match f {
                 FloatValue::F32(u) => serializer.serialize_f32(f32::from_bits(*u)),
                 FloatValue::F64(u) => serializer.serialize_f64(f64::from_bits(*u)),
             },
-            Value::String(s) | Value::GeoJSON(s) => serializer.serialize_str(s),
-            Value::Blob(b) | Value::HLL(b) => serializer.serialize_bytes(&b[..]),
-            Value::List(l) => {
+            Self::String(s) | Self::GeoJSON(s) => serializer.serialize_str(s),
+            Self::Blob(b) | Self::HLL(b) => serializer.serialize_bytes(&b[..]),
+            Self::List(l) => {
                 let mut seq = serializer.serialize_seq(Some(l.len()))?;
                 for elem in l {
                     seq.serialize_element(&elem)?;
                 }
                 seq.end()
             }
-            Value::HashMap(m) => {
+            Self::HashMap(m) => {
                 let mut map = serializer.serialize_map(Some(m.len()))?;
                 for (key, value) in m {
                     map.serialize_entry(&key, &value)?;
                 }
                 map.end()
             }
-            Value::OrderedMap(m) => {
+            Self::OrderedMap(m) => {
                 let mut map = serializer.serialize_map(Some(m.len()))?;
                 for (key, value) in m {
                     map.serialize_entry(&key, &value)?;
@@ -775,16 +727,16 @@ mod tests {
 
     #[test]
     fn as_string() {
-        assert_eq!(Value::Nil.as_string(), String::from("<null>"));
-        assert_eq!(Value::Int(42).as_string(), String::from("42"));
+        assert_eq!(Value::Nil.to_string(), String::from("<null>"));
+        assert_eq!(Value::Int(42).to_string(), String::from("42"));
         assert_eq!(
-            Value::UInt(9_223_372_036_854_775_808).as_string(),
+            Value::UInt(9_223_372_036_854_775_808).to_string(),
             String::from("9223372036854775808")
         );
-        assert_eq!(Value::Bool(true).as_string(), String::from("true"));
-        assert_eq!(Value::from(4.1416).as_string(), String::from("4.1416"));
+        assert_eq!(Value::Bool(true).to_string(), String::from("true"));
+        assert_eq!(Value::from(4.1416).to_string(), String::from("4.1416"));
         assert_eq!(
-            as_geo!(r#"{"type":"Point"}"#).as_string(),
+            as_geo!(r#"{"type":"Point"}"#).to_string(),
             String::from(r#"{"type":"Point"}"#)
         );
     }

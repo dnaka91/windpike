@@ -29,7 +29,7 @@ pub enum Priority {
 }
 
 impl Default for Priority {
-    fn default() -> Priority {
-        Priority::Default
+    fn default() -> Self {
+        Self::Default
     }
 }

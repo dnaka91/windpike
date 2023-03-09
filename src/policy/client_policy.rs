@@ -87,8 +87,8 @@ pub struct ClientPolicy {
 }
 
 impl Default for ClientPolicy {
-    fn default() -> ClientPolicy {
-        ClientPolicy {
+    fn default() -> Self {
+        Self {
             user_password: None,
             timeout: Some(Duration::new(30, 0)),
             idle_timeout: Some(Duration::new(5, 0)),
@@ -110,9 +110,9 @@ impl ClientPolicy {
     pub fn set_user_password(
         &mut self,
         username: String,
-        password: String,
+        password: &str,
     ) -> Result<(), CommandError> {
-        let password = AdminCommand::hash_password(&password)?;
+        let password = AdminCommand::hash_password(password)?;
         self.user_password = Some((username, password));
         Ok(())
     }

@@ -120,15 +120,16 @@ pub struct BitPolicy {
 
 impl BitPolicy {
     /// Creates a new `BitPolicy` with defined `CdtBitwiseWriteFlags`
+    #[must_use]
     pub const fn new(flags: u8) -> Self {
-        BitPolicy { flags }
+        Self { flags }
     }
 }
 
 impl Default for BitPolicy {
     /// Returns the default `BitPolicy`
     fn default() -> Self {
-        BitPolicy::new(BitwiseWriteFlags::Default as u8)
+        Self::new(BitwiseWriteFlags::Default as u8)
     }
 }
 
@@ -645,7 +646,7 @@ pub fn set_int<'a>(
 /// bitSize = 5
 /// returns [0b1000000]
 /// ```
-pub fn get(bin: &str, bit_offset: i64, bit_size: i64) -> Operation {
+pub fn get(bin: &str, bit_offset: i64, bit_size: i64) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtBitwiseOpType::Get as u8,
         encoder: Box::new(pack_cdt_bit_op),
@@ -670,7 +671,7 @@ pub fn get(bin: &str, bit_offset: i64, bit_size: i64) -> Operation {
 /// bitSize = 4
 /// returns 2
 /// ```
-pub fn count(bin: &str, bit_offset: i64, bit_size: i64) -> Operation {
+pub fn count(bin: &str, bit_offset: i64, bit_size: i64) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtBitwiseOpType::Count as u8,
         encoder: Box::new(pack_cdt_bit_op),
@@ -697,7 +698,7 @@ pub fn count(bin: &str, bit_offset: i64, bit_size: i64) -> Operation {
 /// value = true
 /// returns 5
 /// ```
-pub fn lscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operation {
+pub fn lscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtBitwiseOpType::LScan as u8,
         encoder: Box::new(pack_cdt_bit_op),
@@ -728,7 +729,7 @@ pub fn lscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operatio
 /// value = true
 /// returns 7
 /// ```
-pub fn rscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operation {
+pub fn rscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtBitwiseOpType::RScan as u8,
         encoder: Box::new(pack_cdt_bit_op),
@@ -759,7 +760,7 @@ pub fn rscan(bin: &str, bit_offset: i64, bit_size: i64, value: bool) -> Operatio
 /// signed = false
 /// returns 16899
 /// ```
-pub fn get_int(bin: &str, bit_offset: i64, bit_size: i64, signed: bool) -> Operation {
+pub fn get_int(bin: &str, bit_offset: i64, bit_size: i64, signed: bool) -> Operation<'_> {
     let mut args = vec![CdtArgument::Int(bit_offset), CdtArgument::Int(bit_size)];
     if signed {
         args.push(CdtArgument::Byte(1));

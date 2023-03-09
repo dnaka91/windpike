@@ -52,7 +52,7 @@ impl Key {
         S: Into<String>,
         K: Into<Value>,
     {
-        let mut key = Key {
+        let mut key = Self {
             namespace: namespace.into(),
             set_name: set_name.into(),
             digest: [0; 20],
@@ -79,7 +79,7 @@ impl Key {
 }
 
 impl fmt::Display for Key {
-    fn fmt(&self, f: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
         match self.user_key {
             Some(ref value) => write!(
                 f,

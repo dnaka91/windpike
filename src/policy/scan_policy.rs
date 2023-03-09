@@ -54,11 +54,13 @@ pub struct ScanPolicy {
 
 impl ScanPolicy {
     /// Create a new scan policy instance with default parameters.
+    #[must_use]
     pub fn new() -> Self {
-        ScanPolicy::default()
+        Self::default()
     }
 
     /// Get the current Filter Expression
+    #[must_use]
     pub const fn filter_expression(&self) -> &Option<FilterExpression> {
         &self.filter_expression
     }
@@ -66,7 +68,7 @@ impl ScanPolicy {
 
 impl Default for ScanPolicy {
     fn default() -> Self {
-        ScanPolicy {
+        Self {
             base_policy: BasePolicy::default(),
             scan_percent: 100,
             max_concurrent_nodes: 0,

@@ -48,6 +48,7 @@ impl Filter {
     /// Create a new filter instance. For internal use only. Applications should use one of the
     /// provided macros to create new filters.
     #[doc(hidden)]
+    #[must_use]
     pub fn new(
         bin_name: &str,
         collection_index_type: CollectionIndexType,
@@ -55,7 +56,7 @@ impl Filter {
         begin: Value,
         end: Value,
     ) -> Self {
-        Filter {
+        Self {
             bin_name: bin_name.to_owned(),
             collection_index_type,
             value_particle_type,
@@ -65,11 +66,13 @@ impl Filter {
     }
 
     #[doc(hidden)]
+    #[must_use]
     pub fn collection_index_type(&self) -> CollectionIndexType {
         self.collection_index_type.clone()
     }
 
     #[doc(hidden)]
+    #[must_use]
     pub fn estimate_size(&self) -> usize {
         // bin name size(1) + particle type size(1)
         //     + begin particle size(4) + end particle size(4) = 10

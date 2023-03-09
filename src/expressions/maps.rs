@@ -28,6 +28,7 @@ const MODULE: i64 = 0;
 
 /// Create expression that writes key/value item to map bin.
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn put(
     policy: &MapPolicy,
     key: FilterExpression,
@@ -57,6 +58,7 @@ pub fn put(
 
 /// Create expression that writes each map item to map bin.
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn put_items(
     policy: &MapPolicy,
     map: FilterExpression,
@@ -84,6 +86,7 @@ pub fn put_items(
 /// Create expression that increments values by incr for all items identified by key.
 /// Valid only for numbers.
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[must_use]
 pub fn increment(
     policy: &MapPolicy,
     key: FilterExpression,
@@ -102,6 +105,7 @@ pub fn increment(
 }
 
 /// Create expression that removes all items in map.
+#[must_use]
 pub fn clear(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
     let args = vec![
         ExpressionArgument::Value(Value::from(CdtMapOpType::Clear as u8)),
@@ -111,6 +115,7 @@ pub fn clear(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
 }
 
 /// Create expression that removes map item identified by key.
+#[must_use]
 pub fn remove_by_key(
     key: FilterExpression,
     bin: FilterExpression,
@@ -126,6 +131,7 @@ pub fn remove_by_key(
 }
 
 /// Create expression that removes map items identified by keys.
+#[must_use]
 pub fn remove_by_key_list(
     keys: FilterExpression,
     bin: FilterExpression,
@@ -143,6 +149,7 @@ pub fn remove_by_key_list(
 /// Create expression that removes map items identified by key range (keyBegin inclusive, keyEnd
 /// exclusive). If keyBegin is null, the range is less than keyEnd.
 /// If keyEnd is null, the range is greater than equal to keyBegin.
+#[must_use]
 pub fn remove_by_key_range(
     key_begin: Option<FilterExpression>,
     key_end: Option<FilterExpression>,
@@ -175,6 +182,7 @@ pub fn remove_by_key_range(
 /// * (5,-1) = [{4=2},{5=15},{9=10}]
 /// * (3,2) = [{9=10}]
 /// * (3,-2) = [{0=17},{4=2},{5=15},{9=10}]
+#[must_use]
 pub fn remove_by_key_relative_index_range(
     key: FilterExpression,
     index: FilterExpression,
@@ -201,6 +209,7 @@ pub fn remove_by_key_relative_index_range(
 /// * (5,-1,1) = [{4=2}]
 /// * (3,2,1) = [{9=10}]
 /// * (3,-2,2) = [{0=17}]
+#[must_use]
 pub fn remove_by_key_relative_index_range_count(
     key: FilterExpression,
     index: FilterExpression,
@@ -220,6 +229,7 @@ pub fn remove_by_key_relative_index_range_count(
 }
 
 /// Create expression that removes map items identified by value.
+#[must_use]
 pub fn remove_by_value(
     value: FilterExpression,
     bin: FilterExpression,
@@ -235,6 +245,7 @@ pub fn remove_by_value(
 }
 
 /// Create expression that removes map items identified by values.
+#[must_use]
 pub fn remove_by_value_list(
     values: FilterExpression,
     bin: FilterExpression,
@@ -252,6 +263,7 @@ pub fn remove_by_value_list(
 /// Create expression that removes map items identified by value range (valueBegin inclusive,
 /// valueEnd exclusive). If valueBegin is null, the range is less than valueEnd.
 /// If valueEnd is null, the range is greater than equal to valueBegin.
+#[must_use]
 pub fn remove_by_value_range(
     value_begin: Option<FilterExpression>,
     value_end: Option<FilterExpression>,
@@ -281,6 +293,7 @@ pub fn remove_by_value_range(
 /// * (value,rank) = [removed items]
 /// * (11,1) = [{0=17}]
 /// * (11,-1) = [{9=10},{5=15},{0=17}]
+#[must_use]
 pub fn remove_by_value_relative_rank_range(
     value: FilterExpression,
     rank: FilterExpression,
@@ -305,6 +318,7 @@ pub fn remove_by_value_relative_rank_range(
 /// * (value,rank,count) = [removed items]
 /// * (11,1,1) = [{0=17}]
 /// * (11,-1,1) = [{9=10}]
+#[must_use]
 pub fn remove_by_value_relative_rank_range_count(
     value: FilterExpression,
     rank: FilterExpression,
@@ -324,6 +338,7 @@ pub fn remove_by_value_relative_rank_range_count(
 }
 
 /// Create expression that removes map item identified by index.
+#[must_use]
 pub fn remove_by_index(
     index: FilterExpression,
     bin: FilterExpression,
@@ -339,6 +354,7 @@ pub fn remove_by_index(
 }
 
 /// Create expression that removes map items starting at specified index to the end of map.
+#[must_use]
 pub fn remove_by_index_range(
     index: FilterExpression,
     bin: FilterExpression,
@@ -354,6 +370,7 @@ pub fn remove_by_index_range(
 }
 
 /// Create expression that removes "count" map items starting at specified index.
+#[must_use]
 pub fn remove_by_index_range_count(
     index: FilterExpression,
     count: FilterExpression,
@@ -371,6 +388,7 @@ pub fn remove_by_index_range_count(
 }
 
 /// Create expression that removes map item identified by rank.
+#[must_use]
 pub fn remove_by_rank(
     rank: FilterExpression,
     bin: FilterExpression,
@@ -386,6 +404,7 @@ pub fn remove_by_rank(
 }
 
 /// Create expression that removes map items starting at specified rank to the last ranked item.
+#[must_use]
 pub fn remove_by_rank_range(
     rank: FilterExpression,
     bin: FilterExpression,
@@ -401,6 +420,7 @@ pub fn remove_by_rank_range(
 }
 
 /// Create expression that removes "count" map items starting at specified rank.
+#[must_use]
 pub fn remove_by_rank_range_count(
     rank: FilterExpression,
     count: FilterExpression,
@@ -425,6 +445,7 @@ pub fn remove_by_rank_range_count(
 ///
 /// gt(size(map_bin("a".to_string()), &[]), int_val(7));
 /// ```
+#[must_use]
 pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
     let args = vec![
         ExpressionArgument::Value(Value::from(CdtMapOpType::Size as u8)),
@@ -454,6 +475,7 @@ pub fn size(bin: FilterExpression, ctx: &[CdtContext]) -> FilterExpression {
 ///     int_val(0),
 /// );
 /// ```
+#[must_use]
 pub fn get_by_key(
     return_type: MapReturnType,
     value_type: ExpType,
@@ -474,6 +496,7 @@ pub fn get_by_key(
 /// exclusive). If keyBegin is null, the range is less than keyEnd.
 /// If keyEnd is null, the range is greater than equal to keyBegin.
 /// Expression returns selected data specified by returnType.
+#[must_use]
 pub fn get_by_key_range(
     return_type: MapReturnType,
     key_begin: Option<FilterExpression>,
@@ -499,6 +522,7 @@ pub fn get_by_key_range(
 
 /// Create expression that selects map items identified by keys and returns selected data specified
 /// by returnType
+#[must_use]
 pub fn get_by_key_list(
     return_type: MapReturnType,
     keys: FilterExpression,
@@ -525,6 +549,7 @@ pub fn get_by_key_list(
 /// * (5,-1) = [{4=2},{5=15},{9=10}]
 /// * (3,2) = [{9=10}]
 /// * (3,-2) = [{0=17},{4=2},{5=15},{9=10}]
+#[must_use]
 pub fn get_by_key_relative_index_range(
     return_type: MapReturnType,
     key: FilterExpression,
@@ -553,6 +578,7 @@ pub fn get_by_key_relative_index_range(
 /// * (5,-1,1) = [{4=2}]
 /// * (3,2,1) = [{9=10}]
 /// * (3,-2,2) = [{0=17}]
+#[must_use]
 pub fn get_by_key_relative_index_range_count(
     return_type: MapReturnType,
     key: FilterExpression,
@@ -592,6 +618,7 @@ pub fn get_by_key_relative_index_range_count(
 ///     int_val(0),
 /// );
 /// ```
+#[must_use]
 pub fn get_by_value(
     return_type: MapReturnType,
     value: FilterExpression,
@@ -612,6 +639,7 @@ pub fn get_by_value(
 /// If valueEnd is null, the range is greater than equal to valueBegin.
 ///
 /// Expression returns selected data specified by returnType.
+#[must_use]
 pub fn get_by_value_range(
     return_type: MapReturnType,
     value_begin: Option<FilterExpression>,
@@ -637,6 +665,7 @@ pub fn get_by_value_range(
 
 /// Create expression that selects map items identified by values and returns selected data
 /// specified by returnType.
+#[must_use]
 pub fn get_by_value_list(
     return_type: MapReturnType,
     values: FilterExpression,
@@ -660,6 +689,7 @@ pub fn get_by_value_list(
 /// * (value,rank) = [selected items]
 /// * (11,1) = [{0=17}]
 /// * (11,-1) = [{9=10},{5=15},{0=17}]
+#[must_use]
 pub fn get_by_value_relative_rank_range(
     return_type: MapReturnType,
     value: FilterExpression,
@@ -685,6 +715,7 @@ pub fn get_by_value_relative_rank_range(
 /// * (value,rank,count) = [selected items]
 /// * (11,1,1) = [{0=17}]
 /// * (11,-1,1) = [{9=10}]
+#[must_use]
 pub fn get_by_value_relative_rank_range_count(
     return_type: MapReturnType,
     value: FilterExpression,
@@ -706,6 +737,7 @@ pub fn get_by_value_relative_rank_range_count(
 
 /// Create expression that selects map item identified by index and returns selected data specified
 /// by returnType.
+#[must_use]
 pub fn get_by_index(
     return_type: MapReturnType,
     value_type: ExpType,
@@ -724,6 +756,7 @@ pub fn get_by_index(
 
 /// Create expression that selects map items starting at specified index to the end of map and
 /// returns selected data specified by returnType.
+#[must_use]
 pub fn get_by_index_range(
     return_type: MapReturnType,
     index: FilterExpression,
@@ -741,6 +774,7 @@ pub fn get_by_index_range(
 
 /// Create expression that selects "count" map items starting at specified index and returns
 /// selected data specified by returnType.
+#[must_use]
 pub fn get_by_index_range_count(
     return_type: MapReturnType,
     index: FilterExpression,
@@ -760,6 +794,7 @@ pub fn get_by_index_range_count(
 
 /// Create expression that selects map item identified by rank and returns selected data specified
 /// by returnType.
+#[must_use]
 pub fn get_by_rank(
     return_type: MapReturnType,
     value_type: ExpType,
@@ -778,6 +813,7 @@ pub fn get_by_rank(
 
 /// Create expression that selects map items starting at specified rank to the last ranked item and
 /// returns selected data specified by returnType.
+#[must_use]
 pub fn get_by_rank_range(
     return_type: MapReturnType,
     rank: FilterExpression,
@@ -795,6 +831,7 @@ pub fn get_by_rank_range(
 
 /// Create expression that selects "count" map items starting at specified rank and returns selected
 /// data specified by returnType.
+#[must_use]
 pub fn get_by_rank_range_count(
     return_type: MapReturnType,
     rank: FilterExpression,

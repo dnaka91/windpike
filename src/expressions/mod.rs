@@ -150,13 +150,13 @@ impl FilterExpression {
     fn new(
         cmd: Option<ExpOp>,
         val: Option<Value>,
-        bin: Option<FilterExpression>,
+        bin: Option<Self>,
         flags: Option<i64>,
         module: Option<ExpType>,
-        exps: Option<Vec<FilterExpression>>,
-    ) -> FilterExpression {
+        exps: Option<Vec<Self>>,
+    ) -> Self {
         let bin = bin.map(Box::new);
-        FilterExpression {
+        Self {
             cmd,
             val,
             bin,
@@ -167,7 +167,7 @@ impl FilterExpression {
         }
     }
 
-    fn pack_expression(&self, exps: &[FilterExpression], buf: &mut Option<&mut Buffer>) -> usize {
+    fn pack_expression(&self, exps: &[Self], buf: &mut Option<&mut Buffer>) -> usize {
         let mut size = 0;
         if let Some(val) = &self.val {
             // DEF expression
@@ -327,6 +327,7 @@ impl FilterExpression {
 /// // Integer record key >= 100000
 /// ge(key(ExpType::INT), int_val(10000));
 /// ```
+#[must_use]
 pub fn key(exp_type: ExpType) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Key),
@@ -345,6 +346,7 @@ pub fn key(exp_type: ExpType) -> FilterExpression {
 /// use aerospike::expressions::key_exists;
 /// key_exists();
 /// ```
+#[must_use]
 pub fn key_exists() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::KeyExists), None, None, None, None, None)
 }
@@ -355,6 +357,7 @@ pub fn key_exists() -> FilterExpression {
 /// use aerospike::expressions::{eq, int_bin, int_val};
 /// eq(int_bin("a".to_string()), int_val(500));
 /// ```
+#[must_use]
 pub fn int_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -372,6 +375,7 @@ pub fn int_bin(name: String) -> FilterExpression {
 /// use aerospike::expressions::{eq, string_bin, string_val};
 /// eq(string_bin("a".to_string()), string_val("views".to_string()));
 /// ```
+#[must_use]
 pub fn string_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -390,6 +394,7 @@ pub fn string_bin(name: String) -> FilterExpression {
 /// let blob: Vec<u8> = vec![1, 2, 3];
 /// eq(blob_bin("a".to_string()), blob_val(blob));
 /// ```
+#[must_use]
 pub fn blob_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -407,6 +412,7 @@ pub fn blob_bin(name: String) -> FilterExpression {
 /// // Integer bin "a" == 500.5
 /// eq(float_bin("a".to_string()), float_val(500.5));
 /// ```
+#[must_use]
 pub fn float_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -425,6 +431,7 @@ pub fn float_bin(name: String) -> FilterExpression {
 /// let region = "{ \"type\": \"AeroCircle\", \"coordinates\": [[-122.0, 37.5], 50000.0] }";
 /// eq(geo_bin("a".to_string()), string_val(region.to_string()));
 /// ```
+#[must_use]
 pub fn geo_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -454,6 +461,7 @@ pub fn geo_bin(name: String) -> FilterExpression {
 ///     int_val(3),
 /// );
 /// ```
+#[must_use]
 pub fn list_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -485,6 +493,7 @@ pub fn list_bin(name: String) -> FilterExpression {
 ///     string_val("value".to_string()),
 /// );
 /// ```
+#[must_use]
 pub fn map_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -516,6 +525,7 @@ pub fn map_bin(name: String) -> FilterExpression {
 ///     int_val(7),
 /// );
 /// ```
+#[must_use]
 pub fn hll_bin(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Bin),
@@ -533,6 +543,7 @@ pub fn hll_bin(name: String) -> FilterExpression {
 /// use aerospike::expressions::bin_exists;
 /// bin_exists("a".to_string());
 /// ```
+#[must_use]
 pub fn bin_exists(name: String) -> FilterExpression {
     ne(bin_type(name), int_val(ParticleType::NULL as i64))
 }
@@ -549,6 +560,7 @@ pub fn bin_exists(name: String) -> FilterExpression {
 ///     int_val(ParticleType::LIST as i64),
 /// );
 /// ```
+#[must_use]
 pub fn bin_type(name: String) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::BinType),
@@ -566,6 +578,7 @@ pub fn bin_type(name: String) -> FilterExpression {
 /// // Record set name == "myset
 /// eq(set_name(), string_val("myset".to_string()));
 /// ```
+#[must_use]
 pub fn set_name() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::SetName), None, None, None, None, None)
 }
@@ -577,6 +590,7 @@ pub fn set_name() -> FilterExpression {
 /// // Record device size >= 100 KB
 /// ge(device_size(), int_val(100 * 1024));
 /// ```
+#[must_use]
 pub fn device_size() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::DeviceSize), None, None, None, None, None)
 }
@@ -588,6 +602,7 @@ pub fn device_size() -> FilterExpression {
 /// use aerospike::expressions::{float_val, ge, last_update};
 /// ge(last_update(), float_val(1.5962E+18));
 /// ```
+#[must_use]
 pub fn last_update() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::LastUpdate), None, None, None, None, None)
 }
@@ -600,6 +615,7 @@ pub fn last_update() -> FilterExpression {
 /// use aerospike::expressions::{gt, int_val, since_update};
 /// gt(since_update(), int_val(2 * 60 * 60 * 1000));
 /// ```
+#[must_use]
 pub fn since_update() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::SinceUpdate), None, None, None, None, None)
 }
@@ -614,6 +630,7 @@ pub fn since_update() -> FilterExpression {
 ///     lt(last_update(), float_val(1.5963E+18)),
 /// ]);
 /// ```
+#[must_use]
 pub fn void_time() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::VoidTime), None, None, None, None, None)
 }
@@ -624,6 +641,7 @@ pub fn void_time() -> FilterExpression {
 /// use aerospike::expressions::{int_val, lt, ttl};
 /// lt(ttl(), int_val(60 * 60));
 /// ```
+#[must_use]
 pub fn ttl() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::TTL), None, None, None, None, None)
 }
@@ -636,6 +654,7 @@ pub fn ttl() -> FilterExpression {
 /// use aerospike::expressions::is_tombstone;
 /// is_tombstone();
 /// ```
+#[must_use]
 pub fn is_tombstone() -> FilterExpression {
     FilterExpression::new(Some(ExpOp::IsTombstone), None, None, None, None, None)
 }
@@ -645,6 +664,7 @@ pub fn is_tombstone() -> FilterExpression {
 /// use aerospike::expressions::{digest_modulo, eq, int_val};
 /// eq(digest_modulo(3), int_val(1));
 /// ```
+#[must_use]
 pub fn digest_modulo(modulo: i64) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::DigestModulo),
@@ -670,6 +690,7 @@ pub fn digest_modulo(modulo: i64) -> FilterExpression {
 ///     string_bin("a".to_string()),
 /// );
 /// ```
+#[must_use]
 pub fn regex_compare(regex: String, flags: i64, bin: FilterExpression) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Regex),
@@ -690,6 +711,7 @@ pub fn regex_compare(regex: String, flags: i64, bin: FilterExpression) -> Filter
 ///               38.080000], [-122.500000, 37.000000]] ] }";
 /// geo_compare(geo_bin("a".to_string()), geo_val(region.to_string()));
 /// ```
+#[must_use]
 pub fn geo_compare(left: FilterExpression, right: FilterExpression) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Geo),
@@ -702,31 +724,37 @@ pub fn geo_compare(left: FilterExpression, right: FilterExpression) -> FilterExp
 }
 
 /// Creates 64 bit integer value
+#[must_use]
 pub fn int_val(val: i64) -> FilterExpression {
     FilterExpression::new(None, Some(Value::from(val)), None, None, None, None)
 }
 
 /// Creates a Boolean value
+#[must_use]
 pub fn bool_val(val: bool) -> FilterExpression {
     FilterExpression::new(None, Some(Value::from(val)), None, None, None, None)
 }
 
 /// Creates String bin value
+#[must_use]
 pub fn string_val(val: String) -> FilterExpression {
     FilterExpression::new(None, Some(Value::from(val)), None, None, None, None)
 }
 
 /// Creates 64 bit float bin value
+#[must_use]
 pub fn float_val(val: f64) -> FilterExpression {
     FilterExpression::new(None, Some(Value::from(val)), None, None, None, None)
 }
 
 /// Creates Blob bin value
+#[must_use]
 pub fn blob_val(val: Vec<u8>) -> FilterExpression {
     FilterExpression::new(None, Some(Value::from(val)), None, None, None, None)
 }
 
 /// Create List bin Value
+#[must_use]
 pub fn list_val(val: Vec<Value>) -> FilterExpression {
     FilterExpression::new(
         Some(ExpOp::Quoted),
@@ -740,16 +768,19 @@ pub fn list_val(val: Vec<Value>) -> FilterExpression {
 
 /// Create Map bin Value
 #[allow(clippy::implicit_hasher)]
+#[must_use]
 pub fn map_val(val: HashMap<Value, Value>) -> FilterExpression {
     FilterExpression::new(None, Some(Value::from(val)), None, None, None, None)
 }
 
 /// Create geospatial json string value.
+#[must_use]
 pub fn geo_val(val: String) -> FilterExpression {
     FilterExpression::new(None, Some(Value::from(val)), None, None, None, None)
 }
 
 /// Create a Nil Value
+#[must_use]
 pub fn nil() -> FilterExpression {
     FilterExpression::new(None, Some(Value::Nil), None, None, None, None)
 }
@@ -762,6 +793,7 @@ pub fn nil() -> FilterExpression {
 ///     eq(int_bin("a".to_string()), int_val(10)),
 /// ]));
 /// ```
+#[must_use]
 pub fn not(exp: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Not),
@@ -786,6 +818,7 @@ pub fn not(exp: FilterExpression) -> FilterExpression {
 ///     lt(int_bin("b".to_string()), int_val(3)),
 /// ]);
 /// ```
+#[must_use]
 pub const fn and(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::And),
@@ -807,6 +840,7 @@ pub const fn and(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     eq(int_bin("b".to_string()), int_val(0)),
 /// ]);
 /// ```
+#[must_use]
 pub const fn or(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Or),
@@ -825,6 +859,7 @@ pub const fn or(exps: Vec<FilterExpression>) -> FilterExpression {
 /// use aerospike::expressions::{eq, int_bin, int_val};
 /// eq(int_bin("a".to_string()), int_val(11));
 /// ```
+#[must_use]
 pub fn eq(left: FilterExpression, right: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::EQ),
@@ -843,6 +878,7 @@ pub fn eq(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// use aerospike::expressions::{int_bin, int_val, ne};
 /// ne(int_bin("a".to_string()), int_val(13));
 /// ```
+#[must_use]
 pub fn ne(left: FilterExpression, right: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::NE),
@@ -861,6 +897,7 @@ pub fn ne(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// use aerospike::expressions::{gt, int_bin, int_val};
 /// gt(int_bin("a".to_string()), int_val(8));
 /// ```
+#[must_use]
 pub fn gt(left: FilterExpression, right: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::GT),
@@ -879,6 +916,7 @@ pub fn gt(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// // a >= 88
 /// ge(int_bin("a".to_string()), int_val(88));
 /// ```
+#[must_use]
 pub fn ge(left: FilterExpression, right: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::GE),
@@ -897,6 +935,7 @@ pub fn ge(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// use aerospike::expressions::{int_bin, int_val, lt};
 /// lt(int_bin("a".to_string()), int_val(1000));
 /// ```
+#[must_use]
 pub fn lt(left: FilterExpression, right: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::LT),
@@ -915,6 +954,7 @@ pub fn lt(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 /// // a <= 1
 /// le(int_bin("a".to_string()), int_val(1));
 /// ```
+#[must_use]
 pub fn le(left: FilterExpression, right: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::LE),
@@ -942,6 +982,7 @@ pub fn le(left: FilterExpression, right: FilterExpression) -> FilterExpression {
 ///     int_val(10),
 /// );
 /// ```
+#[must_use]
 pub const fn num_add(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Add),
@@ -971,6 +1012,7 @@ pub const fn num_add(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     int_val(10),
 /// );
 /// ```
+#[must_use]
 pub const fn num_sub(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Sub),
@@ -999,6 +1041,7 @@ pub const fn num_sub(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     int_val(100),
 /// );
 /// ```
+#[must_use]
 pub const fn num_mul(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Mul),
@@ -1028,6 +1071,7 @@ pub const fn num_mul(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     int_val(1),
 /// );
 /// ```
+#[must_use]
 pub const fn num_div(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Div),
@@ -1051,6 +1095,7 @@ pub const fn num_div(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     float_val(4.0),
 /// );
 /// ```
+#[must_use]
 pub fn num_pow(base: FilterExpression, exponent: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Pow),
@@ -1074,6 +1119,7 @@ pub fn num_pow(base: FilterExpression, exponent: FilterExpression) -> FilterExpr
 ///     float_val(4.0),
 /// );
 /// ```
+#[must_use]
 pub fn num_log(num: FilterExpression, base: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Log),
@@ -1094,6 +1140,7 @@ pub fn num_log(num: FilterExpression, base: FilterExpression) -> FilterExpressio
 /// use aerospike::expressions::{eq, int_bin, int_val, num_mod};
 /// eq(num_mod(int_bin("a".to_string()), int_val(10)), int_val(0));
 /// ```
+#[must_use]
 pub fn num_mod(numerator: FilterExpression, denominator: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Mod),
@@ -1114,6 +1161,7 @@ pub fn num_mod(numerator: FilterExpression, denominator: FilterExpression) -> Fi
 /// use aerospike::expressions::{eq, int_bin, int_val, num_abs};
 /// eq(num_abs(int_bin("a".to_string())), int_val(1));
 /// ```
+#[must_use]
 pub fn num_abs(value: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Abs),
@@ -1134,6 +1182,7 @@ pub fn num_abs(value: FilterExpression) -> FilterExpression {
 /// use aerospike::expressions::{eq, float_val, num_floor};
 /// eq(num_floor(float_val(2.95)), float_val(2.0));
 /// ```
+#[must_use]
 pub fn num_floor(num: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Floor),
@@ -1154,6 +1203,7 @@ pub fn num_floor(num: FilterExpression) -> FilterExpression {
 /// use aerospike::expressions::{float_val, ge, num_ceil};
 /// ge(num_ceil(float_val(2.15)), float_val(3.0));
 /// ```
+#[must_use]
 pub fn num_ceil(num: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Ceil),
@@ -1173,6 +1223,7 @@ pub fn num_ceil(num: FilterExpression) -> FilterExpression {
 /// use aerospike::expressions::{eq, float_val, int_val, to_int};
 /// eq(to_int(float_val(2.5)), int_val(2));
 /// ```
+#[must_use]
 pub fn to_int(num: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::ToInt),
@@ -1192,6 +1243,7 @@ pub fn to_int(num: FilterExpression) -> FilterExpression {
 /// use aerospike::expressions::{eq, float_val, int_val, to_float};
 /// eq(to_float(int_val(2)), float_val(2.0));
 /// ```
+#[must_use]
 pub fn to_float(num: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::ToFloat),
@@ -1215,6 +1267,7 @@ pub fn to_float(num: FilterExpression) -> FilterExpression {
 ///     int_val(0x11),
 /// );
 /// ```
+#[must_use]
 pub const fn int_and(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntAnd),
@@ -1238,6 +1291,7 @@ pub const fn int_and(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     int_val(16),
 /// );
 /// ```
+#[must_use]
 pub const fn int_xor(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntXor),
@@ -1257,6 +1311,7 @@ pub const fn int_xor(exps: Vec<FilterExpression>) -> FilterExpression {
 /// use aerospike::expressions::{eq, int_bin, int_not, int_val};
 /// eq(int_not(int_bin("a".to_string())), int_val(7));
 /// ```
+#[must_use]
 pub fn int_not(exp: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntNot),
@@ -1279,6 +1334,7 @@ pub fn int_not(exp: FilterExpression) -> FilterExpression {
 ///     int_val(0xff),
 /// );
 /// ```
+#[must_use]
 pub fn int_lshift(value: FilterExpression, shift: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntLshift),
@@ -1301,6 +1357,7 @@ pub fn int_lshift(value: FilterExpression, shift: FilterExpression) -> FilterExp
 ///     int_val(0xff),
 /// );
 /// ```
+#[must_use]
 pub fn int_rshift(value: FilterExpression, shift: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntRshift),
@@ -1324,6 +1381,7 @@ pub fn int_rshift(value: FilterExpression, shift: FilterExpression) -> FilterExp
 ///     int_val(0xff),
 /// );
 /// ```
+#[must_use]
 pub fn int_arshift(value: FilterExpression, shift: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntARshift),
@@ -1343,6 +1401,7 @@ pub fn int_arshift(value: FilterExpression, shift: FilterExpression) -> FilterEx
 /// use aerospike::expressions::{eq, int_bin, int_count, int_val};
 /// eq(int_count(int_bin("a".to_string())), int_val(4));
 /// ```
+#[must_use]
 pub fn int_count(exp: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntCount),
@@ -1369,6 +1428,7 @@ pub fn int_count(exp: FilterExpression) -> FilterExpression {
 ///     int_val(4),
 /// );
 /// ```
+#[must_use]
 pub fn int_lscan(value: FilterExpression, search: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntLscan),
@@ -1395,6 +1455,7 @@ pub fn int_lscan(value: FilterExpression, search: FilterExpression) -> FilterExp
 ///     int_val(4),
 /// );
 /// ```
+#[must_use]
 pub fn int_rscan(value: FilterExpression, search: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::IntRscan),
@@ -1422,6 +1483,7 @@ pub fn int_rscan(value: FilterExpression, search: FilterExpression) -> FilterExp
 ///     int_val(0),
 /// );
 /// ```
+#[must_use]
 pub const fn min(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Min),
@@ -1449,6 +1511,7 @@ pub const fn min(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     int_val(100),
 /// );
 /// ```
+#[must_use]
 pub const fn max(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Max),
@@ -1492,6 +1555,7 @@ pub const fn max(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     int_val(-1),
 /// ]);
 /// ```
+#[must_use]
 pub const fn cond(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Cond),
@@ -1517,6 +1581,7 @@ pub const fn cond(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     ]),
 /// ]);
 /// ```
+#[must_use]
 pub const fn exp_let(exps: Vec<FilterExpression>) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Let),
@@ -1542,6 +1607,7 @@ pub const fn exp_let(exps: Vec<FilterExpression>) -> FilterExpression {
 ///     ]),
 /// ]);
 /// ```
+#[must_use]
 pub fn def(name: String, value: FilterExpression) -> FilterExpression {
     FilterExpression {
         cmd: None,
@@ -1556,6 +1622,7 @@ pub fn def(name: String, value: FilterExpression) -> FilterExpression {
 
 /// Retrieve expression value from a variable.
 /// Requires server version 5.6.0+.
+#[must_use]
 pub fn var(name: String) -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Var),
@@ -1591,6 +1658,7 @@ pub fn var(name: String) -> FilterExpression {
 ///     unknown(),
 /// ]);
 /// ```
+#[must_use]
 pub const fn unknown() -> FilterExpression {
     FilterExpression {
         cmd: Some(ExpOp::Unknown),

@@ -37,6 +37,7 @@ pub enum HllExpOp {
 }
 
 /// Create expression that creates a new HLL or resets an existing HLL.
+#[must_use]
 pub fn init(
     policy: HLLPolicy,
     index_bit_count: FilterExpression,
@@ -46,6 +47,7 @@ pub fn init(
 }
 
 /// Create expression that creates a new HLL or resets an existing HLL with minhash bits.
+#[must_use]
 pub fn init_with_min_hash(
     policy: HLLPolicy,
     index_bit_count: FilterExpression,
@@ -83,6 +85,7 @@ pub fn init_with_min_hash(
 ///     int_val(7),
 /// );
 /// ```
+#[must_use]
 pub fn add(policy: HLLPolicy, list: FilterExpression, bin: FilterExpression) -> FilterExpression {
     add_with_index_and_min_hash(policy, list, int_val(-1), int_val(-1), bin)
 }
@@ -108,6 +111,7 @@ pub fn add(policy: HLLPolicy, list: FilterExpression, bin: FilterExpression) -> 
 ///     int_val(7),
 /// );
 /// ```
+#[must_use]
 pub fn add_with_index(
     policy: HLLPolicy,
     list: FilterExpression,
@@ -139,6 +143,7 @@ pub fn add_with_index(
 ///     int_val(7),
 /// );
 /// ```
+#[must_use]
 pub fn add_with_index_and_min_hash(
     policy: HLLPolicy,
     list: FilterExpression,
@@ -165,6 +170,7 @@ pub fn add_with_index_and_min_hash(
 /// use aerospike::expressions::{gt, hll::get_count, hll_bin, int_val};
 /// gt(get_count(hll_bin("a".to_string())), int_val(7));
 /// ```
+#[must_use]
 pub fn get_count(bin: FilterExpression) -> FilterExpression {
     add_read(
         bin,
@@ -188,6 +194,7 @@ pub fn get_count(bin: FilterExpression) -> FilterExpression {
 /// let blob: Vec<u8> = vec![];
 /// get_union(hll_bin("b".to_string()), blob_val(blob));
 /// ```
+#[must_use]
 pub fn get_union(list: FilterExpression, bin: FilterExpression) -> FilterExpression {
     add_read(
         bin,
@@ -212,6 +219,7 @@ pub fn get_union(list: FilterExpression, bin: FilterExpression) -> FilterExpress
 /// let blob: Vec<u8> = vec![];
 /// get_union_count(hll_bin("b".to_string()), blob_val(blob));
 /// ```
+#[must_use]
 pub fn get_union_count(list: FilterExpression, bin: FilterExpression) -> FilterExpression {
     add_read(
         bin,
@@ -236,6 +244,7 @@ pub fn get_union_count(list: FilterExpression, bin: FilterExpression) -> FilterE
 /// let blob: Vec<u8> = vec![];
 /// get_union_count(hll_bin("b".to_string()), blob_val(blob));
 /// ```
+#[must_use]
 pub fn get_intersect_count(list: FilterExpression, bin: FilterExpression) -> FilterExpression {
     add_read(
         bin,
@@ -258,6 +267,7 @@ pub fn get_intersect_count(list: FilterExpression, bin: FilterExpression) -> Fil
 ///     float_val(0.75),
 /// );
 /// ```
+#[must_use]
 pub fn get_similarity(list: FilterExpression, bin: FilterExpression) -> FilterExpression {
     add_read(
         bin,
@@ -290,6 +300,7 @@ pub fn get_similarity(list: FilterExpression, bin: FilterExpression) -> FilterEx
 ///     int_val(10),
 /// );
 /// ```
+#[must_use]
 pub fn describe(bin: FilterExpression) -> FilterExpression {
     add_read(
         bin,
@@ -315,6 +326,7 @@ pub fn describe(bin: FilterExpression) -> FilterExpression {
 ///     int_val(1),
 /// );
 /// ```
+#[must_use]
 pub fn may_contain(list: FilterExpression, bin: FilterExpression) -> FilterExpression {
     add_read(
         bin,

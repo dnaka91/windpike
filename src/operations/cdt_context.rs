@@ -61,6 +61,7 @@ pub struct CdtContext {
 /// 4: Fifth item.
 /// -1: Last item.
 /// -3: Third to last item.
+#[must_use]
 pub const fn ctx_list_index(index: i64) -> CdtContext {
     CdtContext {
         id: CtxType::ListIndex as u8,
@@ -70,6 +71,7 @@ pub const fn ctx_list_index(index: i64) -> CdtContext {
 }
 
 /// list with given type at index offset, given an order and pad.
+#[must_use]
 pub const fn ctx_list_index_create(index: i64, order: ListOrderType, pad: bool) -> CdtContext {
     CdtContext {
         id: CtxType::ListIndex as u8,
@@ -82,6 +84,7 @@ pub const fn ctx_list_index_create(index: i64, order: ListOrderType, pad: bool) 
 /// 0 = smallest value
 /// N = Nth smallest value
 /// -1 = largest value
+#[must_use]
 pub const fn ctx_list_rank(rank: i64) -> CdtContext {
     CdtContext {
         id: CtxType::ListRank as u8,
@@ -91,6 +94,7 @@ pub const fn ctx_list_rank(rank: i64) -> CdtContext {
 }
 
 /// Defines Lookup list by value.
+#[must_use]
 pub const fn ctx_list_value(key: Value) -> CdtContext {
     CdtContext {
         id: CtxType::ListValue as u8,
@@ -107,6 +111,7 @@ pub const fn ctx_list_value(key: Value) -> CdtContext {
 /// 4: Fifth item.
 /// -1: Last item.
 /// -3: Third to last item.
+#[must_use]
 pub const fn ctx_map_index(key: Value) -> CdtContext {
     CdtContext {
         id: CtxType::MapIndex as u8,
@@ -119,6 +124,7 @@ pub const fn ctx_map_index(key: Value) -> CdtContext {
 /// 0 = smallest value
 /// N = Nth smallest value
 /// -1 = largest value
+#[must_use]
 pub const fn ctx_map_rank(rank: i64) -> CdtContext {
     CdtContext {
         id: CtxType::MapRank as u8,
@@ -128,6 +134,7 @@ pub const fn ctx_map_rank(rank: i64) -> CdtContext {
 }
 
 /// Defines Lookup map by key.
+#[must_use]
 pub const fn ctx_map_key(key: Value) -> CdtContext {
     CdtContext {
         id: CtxType::MapKey as u8,
@@ -137,6 +144,7 @@ pub const fn ctx_map_key(key: Value) -> CdtContext {
 }
 
 /// Create map with given type at map key.
+#[must_use]
 pub const fn ctx_map_key_create(key: Value, order: MapOrder) -> CdtContext {
     CdtContext {
         id: CtxType::MapKey as u8,
@@ -146,6 +154,7 @@ pub const fn ctx_map_key_create(key: Value, order: MapOrder) -> CdtContext {
 }
 
 /// Defines Lookup map by value.
+#[must_use]
 pub const fn ctx_map_value(key: Value) -> CdtContext {
     CdtContext {
         id: CtxType::MapValue as u8,

@@ -47,7 +47,7 @@ pub enum ExpWriteFlags {
 
 #[doc(hidden)]
 pub type ExpressionEncoder =
-    Box<dyn Fn(&mut Option<&mut Buffer>, &ExpOperation) -> usize + Send + Sync + 'static>;
+    Box<dyn Fn(&mut Option<&mut Buffer>, &ExpOperation<'_>) -> usize + Send + Sync + 'static>;
 
 #[doc(hidden)]
 pub struct ExpOperation<'a> {
@@ -58,6 +58,7 @@ pub struct ExpOperation<'a> {
 
 impl<'a> ExpOperation<'a> {
     #[doc(hidden)]
+    #[must_use]
     pub const fn particle_type(&self) -> ParticleType {
         ParticleType::BLOB
     }
@@ -121,7 +122,7 @@ pub fn read_exp<'a>(
     }
 }
 
-fn pack_write_exp(buf: &mut Option<&mut Buffer>, exp_op: &ExpOperation) -> usize {
+fn pack_write_exp(buf: &mut Option<&mut Buffer>, exp_op: &ExpOperation<'_>) -> usize {
     let mut size = 0;
     size += pack_array_begin(buf, 2);
     size += exp_op.exp.pack(buf);
@@ -129,7 +130,7 @@ fn pack_write_exp(buf: &mut Option<&mut Buffer>, exp_op: &ExpOperation) -> usize
     size
 }
 
-fn pack_read_exp(buf: &mut Option<&mut Buffer>, exp_op: &ExpOperation) -> usize {
+fn pack_read_exp(buf: &mut Option<&mut Buffer>, exp_op: &ExpOperation<'_>) -> usize {
     let mut size = 0;
     size += pack_array_begin(buf, 2);
     size += exp_op.exp.pack(buf);

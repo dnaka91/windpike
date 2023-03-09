@@ -21,7 +21,7 @@ pub mod partition_tokenizer;
 use std::{
     collections::HashMap,
     sync::{
-        atomic::{AtomicBool, AtomicIsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
     },
     vec::Vec,
@@ -118,7 +118,7 @@ pub struct Cluster {
     partition_write_map: Arc<RwLock<HashMap<String, Vec<Arc<Node>>>>>,
 
     // Random node index.
-    node_index: AtomicIsize,
+    node_index: AtomicUsize,
 
     client_policy: ClientPolicy,
 
@@ -129,7 +129,7 @@ pub struct Cluster {
 impl Cluster {
     pub async fn new(policy: ClientPolicy, hosts: &[Host]) -> Result<Arc<Self>> {
         let (tx, rx) = mpsc::channel(100);
-        let cluster = Arc::new(Cluster {
+        let cluster = Arc::new(Self {
             client_policy: policy,
 
             seeds: Arc::new(RwLock::new(hosts.to_vec())),
@@ -137,13 +137,13 @@ impl Cluster {
             nodes: Arc::new(RwLock::new(vec![])),
 
             partition_write_map: Arc::new(RwLock::new(HashMap::new())),
-            node_index: AtomicIsize::new(0),
+            node_index: AtomicUsize::new(0),
 
             tend_channel: Mutex::new(tx),
             closed: AtomicBool::new(false),
         });
         // try to seed connections for first use
-        Cluster::wait_till_stabilized(cluster.clone()).await?;
+        Self::wait_till_stabilized(cluster.clone()).await?;
 
         // apply policy rules
         if cluster.client_policy.fail_if_not_connected && !cluster.is_connected().await {
@@ -151,12 +151,12 @@ impl Cluster {
         }
 
         let cluster_for_tend = cluster.clone();
-        let _res = tokio::spawn(Cluster::tend_thread(cluster_for_tend, rx));
+        let _res = tokio::spawn(Self::tend_thread(cluster_for_tend, rx));
         debug!("New cluster initialized and ready to be used...");
         Ok(cluster)
     }
 
-    async fn tend_thread(cluster: Arc<Cluster>, mut rx: mpsc::Receiver<()>) {
+    async fn tend_thread(cluster: Arc<Self>, mut rx: mpsc::Receiver<()>) {
         let tend_interval = cluster.client_policy.tend_interval;
 
         loop {
@@ -196,7 +196,7 @@ impl Cluster {
         for node in nodes {
             let old_gen = node.partition_generation();
             if node.is_active() {
-                match node.refresh(self.aliases().await).await {
+                match node.refresh(&self.aliases().await).await {
                     Ok(friends) => {
                         refresh_count += 1;
 
@@ -229,7 +229,7 @@ impl Cluster {
         Ok(())
     }
 
-    async fn wait_till_stabilized(cluster: Arc<Cluster>) -> Result<()> {
+    async fn wait_till_stabilized(cluster: Arc<Self>) -> Result<()> {
         let timeout = cluster
             .client_policy()
             .timeout
@@ -347,11 +347,11 @@ impl Cluster {
                     nv2
                 };
 
-                if self.find_node_name(&list, &nv.name) {
+                if Self::find_node_name(&list, &nv.name) {
                     continue;
                 }
 
-                let node = self.create_node(nv);
+                let node = self.create_node(&nv);
                 let node = Arc::new(node);
                 self.add_aliases(node.clone()).await;
                 list.push(node);
@@ -362,7 +362,7 @@ impl Cluster {
         !list.is_empty()
     }
 
-    fn find_node_name(&self, list: &[Arc<Node>], name: &str) -> bool {
+    fn find_node_name(list: &[Arc<Node>], name: &str) -> bool {
         list.iter().any(|node| node.name() == name)
     }
 
@@ -395,7 +395,7 @@ impl Cluster {
             };
 
             if !dup {
-                let node = self.create_node(nv);
+                let node = self.create_node(&nv);
                 list.push(Arc::new(node));
             }
         }
@@ -403,8 +403,8 @@ impl Cluster {
         list
     }
 
-    fn create_node(&self, nv: NodeValidator) -> Node {
-        Node::new(self.client_policy.clone(), Arc::new(nv))
+    fn create_node(&self, nv: &NodeValidator) -> Node {
+        Node::new(self.client_policy.clone(), nv)
     }
 
     async fn find_nodes_to_remove(&self, refresh_count: usize) -> Vec<Arc<Node>> {
@@ -565,11 +565,11 @@ impl Cluster {
 
     pub async fn get_random_node(&self) -> Option<Arc<Node>> {
         let node_array = self.nodes().await;
-        let length = node_array.len() as isize;
+        let length = node_array.len();
 
         for _ in 0..length {
-            let index = ((self.node_index.fetch_add(1, Ordering::Relaxed) + 1) % length).abs();
-            if let Some(node) = node_array.get(index as usize) {
+            let index = (self.node_index.fetch_add(1, Ordering::Relaxed) + 1) % length;
+            if let Some(node) = node_array.get(index) {
                 if node.is_active() {
                     return Some(node.clone());
                 }

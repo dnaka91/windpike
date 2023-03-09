@@ -38,7 +38,7 @@ pub enum RecordExistsAction {
 }
 
 impl Default for RecordExistsAction {
-    fn default() -> RecordExistsAction {
-        RecordExistsAction::Update
+    fn default() -> Self {
+        Self::Update
     }
 }
