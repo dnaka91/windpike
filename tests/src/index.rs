@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{thread, time::Duration};
+use std::time::Duration;
 
 use aerospike::{Task, *};
 
@@ -49,7 +49,7 @@ async fn recreate_index() {
     let index = format!("{}_{}_{}", ns, set, bin);
 
     let _ = client.drop_index(ns, &set, &index).await;
-    thread::sleep(Duration::from_millis(1000));
+    tokio::time::sleep(Duration::from_millis(1000)).await;
 
     let task = client
         .create_index(ns, &set, bin, &index, IndexType::Numeric)

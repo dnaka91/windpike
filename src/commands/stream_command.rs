@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::HashMap, sync::Arc, thread, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use tracing::warn;
 
@@ -115,7 +115,7 @@ impl StreamCommand {
                         None => break,
                         Some(returned) => {
                             rec = returned.map_err(|e| CommandError::Other(Box::new(e)))?;
-                            thread::yield_now();
+                            tokio::task::yield_now().await;
                         }
                     }
                 },

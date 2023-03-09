@@ -18,7 +18,6 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     },
-    thread,
 };
 
 use aerospike::*;
@@ -86,14 +85,14 @@ async fn scan_multi_consumer() {
     for _ in 0..8 {
         let count = count.clone();
         let rs = rs.clone();
-        threads.push(thread::spawn(move || {
+        threads.push(tokio::task::spawn_blocking(move || {
             let ok = (&*rs).filter(Result::is_ok).count();
             count.fetch_add(ok, Ordering::Relaxed);
         }));
     }
 
     for t in threads {
-        t.join().expect("Cannot join thread");
+        t.await.expect("Cannot join thread");
     }
 
     assert_eq!(count.load(Ordering::Relaxed), EXPECTED);
