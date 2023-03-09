@@ -23,8 +23,8 @@ async fn serialize() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace: &str = common::namespace();
-    let set_name = &common::rand_str(10);
+    let namespace: &str = common::namespace().to_owned();
+    let set_name = common::rand_str(10);
     let policy = ReadPolicy::default();
     let wpolicy = WritePolicy::default();
     let key = Key::new(namespace, set_name, -1).unwrap();

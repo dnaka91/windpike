@@ -84,14 +84,8 @@ impl<'a> From<&'a f32> for FloatValue {
 impl fmt::Display for FloatValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::F32(val) => {
-                let val: f32 = f32::from_bits(val);
-                write!(f, "{val}")
-            }
-            Self::F64(val) => {
-                let val: f64 = f64::from_bits(val);
-                write!(f, "{val}")
-            }
+            Self::F32(val) => f32::from_bits(val).fmt(f),
+            Self::F64(val) => f64::from_bits(val).fmt(f),
         }
     }
 }

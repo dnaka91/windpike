@@ -25,14 +25,14 @@ use crate::common;
 #[tokio::test]
 async fn index_task_test() {
     let client = common::client().await;
-    let namespace = common::namespace();
+    let namespace = common::namespace().to_owned();
     let set_name = common::rand_str(10);
     let bin_name = common::rand_str(10);
     let index_name = common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
     for i in 0..2_i64 {
-        let key = Key::new(namespace, &set_name, i).unwrap();
+        let key = Key::new(namespace.clone(), set_name.clone(), i).unwrap();
         let wbin = as_bin!(&bin_name, i);
         let bins = vec![wbin];
         client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -40,7 +40,7 @@ async fn index_task_test() {
 
     let index_task = client
         .create_index(
-            namespace,
+            &namespace,
             &set_name,
             &bin_name,
             &index_name,

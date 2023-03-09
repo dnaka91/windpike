@@ -140,7 +140,7 @@ impl Queue {
 
 impl Clone for Queue {
     fn clone(&self) -> Self {
-        Self(self.0.clone())
+        Self(Arc::clone(&self.0))
     }
 }
 

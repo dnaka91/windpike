@@ -75,7 +75,7 @@ impl<'a> ReadCommand<'a> {
             let particle_type = conn.buffer().read_u8(None);
             conn.buffer().skip(1);
             let name_size = conn.buffer().read_u8(None) as usize;
-            let name: String = conn.buffer().read_str(name_size)?;
+            let name = conn.buffer().read_str(name_size)?;
 
             let particle_bytes_size = op_size - (4 + name_size);
             let value = bytes_to_particle(particle_type, conn.buffer(), particle_bytes_size)?;

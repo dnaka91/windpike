@@ -48,7 +48,7 @@ impl<'a, 'b> WriteCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<(), CommandError> {
+    pub async fn execute(&mut self) -> Result<()> {
         SingleCommand::execute(self.policy, self).await
     }
 }

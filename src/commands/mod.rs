@@ -77,7 +77,7 @@ pub enum CommandError {
 
 // Command interface describes all commands available
 #[async_trait::async_trait]
-pub trait Command {
+trait Command {
     async fn write_timeout(
         &mut self,
         conn: &mut Connection,

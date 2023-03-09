@@ -193,7 +193,7 @@ impl Client {
         T: Into<Bins> + Send + Sync + 'static,
     {
         let bins = bins.into();
-        let mut command = ReadCommand::new(policy, self.cluster.clone(), key, bins);
+        let mut command = ReadCommand::new(policy, Arc::clone(&self.cluster), key, bins);
         command.execute().await?;
         Ok(command.record.unwrap())
     }
@@ -241,7 +241,7 @@ impl Client {
         policy: &BatchPolicy,
         batch_reads: Vec<BatchRead>,
     ) -> Result<Vec<BatchRead>> {
-        let executor = BatchExecutor::new(self.cluster.clone());
+        let executor = BatchExecutor::new(Arc::clone(&self.cluster));
         executor.execute_batch_read(policy, batch_reads).await
     }
 
@@ -299,7 +299,7 @@ impl Client {
     ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
             policy,
-            self.cluster.clone(),
+            Arc::clone(&self.cluster),
             key,
             bins,
             OperationType::Write,
@@ -340,8 +340,13 @@ impl Client {
         key: &'a Key,
         bins: &'a [Bin<'b>],
     ) -> Result<(), CommandError> {
-        let mut command =
-            WriteCommand::new(policy, self.cluster.clone(), key, bins, OperationType::Incr);
+        let mut command = WriteCommand::new(
+            policy,
+            Arc::clone(&self.cluster),
+            key,
+            bins,
+            OperationType::Incr,
+        );
         command.execute().await
     }
 
@@ -356,7 +361,7 @@ impl Client {
     ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
             policy,
-            self.cluster.clone(),
+            Arc::clone(&self.cluster),
             key,
             bins,
             OperationType::Append,
@@ -375,7 +380,7 @@ impl Client {
     ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
             policy,
-            self.cluster.clone(),
+            Arc::clone(&self.cluster),
             key,
             bins,
             OperationType::Prepend,
@@ -408,7 +413,7 @@ impl Client {
     /// }
     /// ```
     pub async fn delete(&self, policy: &WritePolicy, key: &Key) -> Result<bool, CommandError> {
-        let mut command = DeleteCommand::new(policy, self.cluster.clone(), key);
+        let mut command = DeleteCommand::new(policy, Arc::clone(&self.cluster), key);
         command.execute().await?;
         Ok(command.existed)
     }
@@ -439,13 +444,13 @@ impl Client {
     /// }
     /// ```
     pub async fn touch(&self, policy: &WritePolicy, key: &Key) -> Result<(), CommandError> {
-        let mut command = TouchCommand::new(policy, self.cluster.clone(), key);
+        let mut command = TouchCommand::new(policy, Arc::clone(&self.cluster), key);
         command.execute().await
     }
 
     /// Determine if a record key exists. The policy can be used to specify timeouts.
     pub async fn exists(&self, policy: &WritePolicy, key: &Key) -> Result<bool, CommandError> {
-        let mut command = ExistsCommand::new(policy, self.cluster.clone(), key);
+        let mut command = ExistsCommand::new(policy, Arc::clone(&self.cluster), key);
         command.execute().await?;
         Ok(command.exists)
     }
@@ -487,7 +492,7 @@ impl Client {
         key: &Key,
         ops: &[Operation<'_>],
     ) -> Result<Record, CommandError> {
-        let mut command = OperateCommand::new(policy, self.cluster.clone(), key, ops);
+        let mut command = OperateCommand::new(policy, Arc::clone(&self.cluster), key, ops);
         command.execute().await?;
         Ok(command.read_command.record.unwrap())
     }
@@ -547,8 +552,8 @@ impl Client {
         let task_id = recordset.task_id();
 
         for node in nodes {
-            let partitions = self.cluster.node_partitions(node.as_ref(), namespace).await;
-            let node = node.clone();
+            let cluster = Arc::clone(&self.cluster);
+            let node = Arc::clone(&node);
             let policy = policy.clone();
             let namespace = namespace.to_owned();
             let set_name = set_name.to_owned();
@@ -556,13 +561,15 @@ impl Client {
             let queue_tx = queue_tx.clone();
 
             tokio::spawn(async move {
-                let mut command = ScanCommand::new(
+                let partitions = cluster.node_partitions(&node, &namespace).await;
+
+                ScanCommand::new(
                     &policy, node, &namespace, &set_name, bins, queue_tx, task_id, partitions,
-                );
-                command.execute().await.unwrap();
-            })
-            .await
-            .unwrap();
+                )
+                .execute()
+                .await
+                .unwrap();
+            });
         }
         Ok(recordset)
     }
@@ -596,13 +603,13 @@ impl Client {
         let task_id = recordset.task_id();
 
         tokio::spawn(async move {
-            let mut command = ScanCommand::new(
+            ScanCommand::new(
                 &policy, node, &namespace, &set_name, bins, queue_tx, task_id, partitions,
-            );
-            command.execute().await.unwrap();
-        })
-        .await
-        .unwrap();
+            )
+            .execute()
+            .await
+            .unwrap();
+        });
 
         Ok(recordset)
     }
@@ -700,7 +707,7 @@ impl Client {
         index_type: IndexType,
         collection_index_type: CollectionIndexType,
     ) -> Result<()> {
-        let cit_str: String = if collection_index_type == CollectionIndexType::Default {
+        let cit_str = if collection_index_type == CollectionIndexType::Default {
             String::new()
         } else {
             format!("indextype={collection_index_type};")
@@ -721,7 +728,7 @@ impl Client {
         set_name: &str,
         index_name: &str,
     ) -> Result<()> {
-        let set_name: String = if set_name.is_empty() {
+        let set_name = if set_name.is_empty() {
             String::new()
         } else {
             format!("set={set_name};")

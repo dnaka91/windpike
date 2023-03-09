@@ -14,7 +14,7 @@
 
 use std::{sync::Arc, time::Duration};
 
-use super::{Command, CommandError, ReadCommand, Result, SingleCommand};
+use super::{Command, ReadCommand, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
     net::Connection,
@@ -43,7 +43,7 @@ impl<'a> OperateCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<(), CommandError> {
+    pub async fn execute(&mut self) -> Result<()> {
         SingleCommand::execute(self.policy, self).await
     }
 }

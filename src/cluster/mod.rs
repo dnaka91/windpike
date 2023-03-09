@@ -143,14 +143,14 @@ impl Cluster {
             closed: AtomicBool::new(false),
         });
         // try to seed connections for first use
-        Self::wait_till_stabilized(cluster.clone()).await?;
+        Self::wait_till_stabilized(Arc::clone(&cluster)).await?;
 
         // apply policy rules
         if cluster.client_policy.fail_if_not_connected && !cluster.is_connected().await {
             return Err(ClusterError::Connection);
         }
 
-        let cluster_for_tend = cluster.clone();
+        let cluster_for_tend = Arc::clone(&cluster);
         let _res = tokio::spawn(Self::tend_thread(cluster_for_tend, rx));
         debug!("New cluster initialized and ready to be used...");
         Ok(cluster)
@@ -205,7 +205,7 @@ impl Cluster {
                         }
 
                         if old_gen != node.partition_generation() {
-                            self.update_partitions(node.clone()).await?;
+                            self.update_partitions(Arc::clone(&node)).await?;
                         }
                     }
                     Err(err) => {
@@ -235,7 +235,6 @@ impl Cluster {
             .timeout
             .unwrap_or_else(|| Duration::from_secs(3));
         let deadline = Instant::now() + timeout;
-        let sleep_between_tend = Duration::from_millis(1);
 
         let handle = tokio::spawn(async move {
             let mut count: isize = -1;
@@ -249,12 +248,13 @@ impl Cluster {
                 }
 
                 let old_count = count;
-                count = cluster.nodes().await.len() as isize;
+                // unlikely that there are ever more than isize::MAX nodes
+                count = cluster.node_count().await.try_into().unwrap_or(isize::MAX);
                 if count == old_count {
                     break;
                 }
 
-                tokio::time::sleep(sleep_between_tend).await;
+                tokio::time::sleep(Duration::from_millis(1)).await;
             }
         });
 
@@ -287,7 +287,7 @@ impl Cluster {
     }
 
     fn partitions(&self) -> Arc<RwLock<HashMap<String, Vec<Arc<Node>>>>> {
-        self.partition_write_map.clone()
+        Arc::clone(&self.partition_write_map)
     }
 
     pub async fn node_partitions(&self, node: &Node, namespace: &str) -> Vec<u16> {
@@ -353,7 +353,7 @@ impl Cluster {
 
                 let node = self.create_node(&nv);
                 let node = Arc::new(node);
-                self.add_aliases(node.clone()).await;
+                self.add_aliases(Arc::clone(&node)).await;
                 list.push(node);
             }
         }
@@ -383,12 +383,12 @@ impl Cluster {
             let mut dup = false;
             match self.get_node_by_name(&nv.name).await {
                 Some(node) => {
-                    self.add_alias(host, node.clone()).await;
+                    self.add_alias(host, Arc::clone(&node)).await;
                     dup = true;
                 }
                 None => {
                     if let Some(node) = list.iter().find(|n| n.name() == nv.name) {
-                        self.add_alias(host, node.clone()).await;
+                        self.add_alias(host, Arc::clone(node)).await;
                         dup = true;
                     }
                 }
@@ -412,7 +412,7 @@ impl Cluster {
         let mut remove_list: Vec<Arc<Node>> = vec![];
         let cluster_size = nodes.len();
         for node in nodes {
-            let tnode = node.clone();
+            let tnode = Arc::clone(&node);
 
             if !node.is_active() {
                 remove_list.push(tnode);
@@ -457,7 +457,7 @@ impl Cluster {
 
     async fn add_nodes_and_aliases(&self, friend_list: &[Arc<Node>]) {
         for node in friend_list {
-            self.add_aliases(node.clone()).await;
+            self.add_aliases(Arc::clone(node)).await;
         }
         self.add_nodes(friend_list).await;
     }
@@ -488,7 +488,7 @@ impl Cluster {
     async fn add_aliases(&self, node: Arc<Node>) {
         let mut aliases = self.aliases.write().await;
         for alias in node.aliases().await {
-            aliases.insert(alias, node.clone());
+            aliases.insert(alias, Arc::clone(&node));
         }
     }
 
@@ -519,7 +519,7 @@ impl Cluster {
 
         for node in &nodes {
             if !nodes_to_remove.contains(node) {
-                node_array.push(node.clone());
+                node_array.push(Arc::clone(node));
             }
         }
 
@@ -538,6 +538,10 @@ impl Cluster {
 
     pub async fn nodes(&self) -> Vec<Arc<Node>> {
         self.nodes.read().await.clone()
+    }
+
+    async fn node_count(&self) -> usize {
+        self.nodes.read().await.len()
     }
 
     async fn set_nodes(&self, new_nodes: Vec<Arc<Node>>) {
@@ -571,7 +575,7 @@ impl Cluster {
             let index = (self.node_index.fetch_add(1, Ordering::Relaxed) + 1) % length;
             if let Some(node) = node_array.get(index) {
                 if node.is_active() {
-                    return Some(node.clone());
+                    return Some(Arc::clone(node));
                 }
             }
         }

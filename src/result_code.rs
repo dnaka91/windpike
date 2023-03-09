@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{fmt, result::Result as StdResult};
+use std::{borrow::Cow, fmt, result::Result as StdResult};
 
 /// Database operation error codes. The error codes are defined in the server-side file proto.h.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -220,73 +220,73 @@ impl ResultCode {
 
     /// Convert a result code into an string.
     #[must_use]
-    pub fn into_string(self) -> String {
+    pub fn into_string(self) -> Cow<'static, str> {
         match self {
-            Self::Ok => String::from("ok"),
-            Self::ServerError => String::from("Server error"),
-            Self::KeyNotFoundError => String::from("Key not found"),
-            Self::GenerationError => String::from("Generation error"),
-            Self::ParameterError => String::from("Parameter error"),
-            Self::KeyExistsError => String::from("Key already exists"),
-            Self::BinExistsError => String::from("Bin already exists"),
-            Self::ClusterKeyMismatch => String::from("Cluster key mismatch"),
-            Self::ServerMemError => String::from("Server memory error"),
-            Self::Timeout => String::from("Timeout"),
-            Self::NoXds => String::from("Xds not available"),
-            Self::ServerNotAvailable => String::from("Server not available"),
-            Self::BinTypeError => String::from("Bin type error"),
-            Self::RecordTooBig => String::from("Record too big"),
-            Self::KeyBusy => String::from("Hot key"),
-            Self::ScanAbort => String::from("Scan aborted"),
-            Self::UnsupportedFeature => String::from("Unsupported Server Feature"),
-            Self::BinNotFound => String::from("Bin not found"),
-            Self::DeviceOverload => String::from("Device overload"),
-            Self::KeyMismatch => String::from("Key mismatch"),
-            Self::InvalidNamespace => String::from("Namespace not found"),
-            Self::BinNameTooLong => String::from("Bin name length greater than 14 characters"),
-            Self::FailForbidden => String::from("OperationType not allowed at this time"),
-            Self::ElementNotFound => String::from("Element not found"),
-            Self::ElementExists => String::from("Element already exists"),
+            Self::Ok => "ok".into(),
+            Self::ServerError => "Server error".into(),
+            Self::KeyNotFoundError => "Key not found".into(),
+            Self::GenerationError => "Generation error".into(),
+            Self::ParameterError => "Parameter error".into(),
+            Self::KeyExistsError => "Key already exists".into(),
+            Self::BinExistsError => "Bin already exists".into(),
+            Self::ClusterKeyMismatch => "Cluster key mismatch".into(),
+            Self::ServerMemError => "Server memory error".into(),
+            Self::Timeout => "Timeout".into(),
+            Self::NoXds => "Xds not available".into(),
+            Self::ServerNotAvailable => "Server not available".into(),
+            Self::BinTypeError => "Bin type error".into(),
+            Self::RecordTooBig => "Record too big".into(),
+            Self::KeyBusy => "Hot key".into(),
+            Self::ScanAbort => "Scan aborted".into(),
+            Self::UnsupportedFeature => "Unsupported Server Feature".into(),
+            Self::BinNotFound => "Bin not found".into(),
+            Self::DeviceOverload => "Device overload".into(),
+            Self::KeyMismatch => "Key mismatch".into(),
+            Self::InvalidNamespace => "Namespace not found".into(),
+            Self::BinNameTooLong => "Bin name length greater than 14 characters".into(),
+            Self::FailForbidden => "OperationType not allowed at this time".into(),
+            Self::ElementNotFound => "Element not found".into(),
+            Self::ElementExists => "Element already exists".into(),
             Self::EnterpriseOnly => {
-                String::from("Enterprise-only feature not supported by community edition")
+                "Enterprise-only feature not supported by community edition".into()
             }
-            Self::QueryEnd => String::from("Query end"),
-            Self::SecurityNotSupported => String::from("Security not supported"),
-            Self::SecurityNotEnabled => String::from("Security not enabled"),
-            Self::SecuritySchemeNotSupported => String::from("Security scheme not supported"),
-            Self::InvalidCommand => String::from("Invalid command"),
-            Self::InvalidField => String::from("Invalid field"),
-            Self::IllegalState => String::from("Illegal state"),
-            Self::InvalidUser => String::from("Invalid user"),
-            Self::UserAlreadyExists => String::from("User already exists"),
-            Self::InvalidPassword => String::from("Invalid password"),
-            Self::ExpiredPassword => String::from("Expired password"),
-            Self::ForbiddenPassword => String::from("Forbidden password"),
-            Self::InvalidCredential => String::from("Invalid credential"),
-            Self::InvalidRole => String::from("Invalid role"),
-            Self::RoleAlreadyExists => String::from("Role already exists"),
-            Self::InvalidPrivilege => String::from("Invalid privilege"),
-            Self::NotAuthenticated => String::from("Not authenticated"),
-            Self::RoleViolation => String::from("Role violation"),
-            Self::UdfBadResponse => String::from("Udf returned error"),
-            Self::LargeItemNotFound => String::from("Large collection item not found"),
-            Self::BatchDisabled => String::from("Batch functionality has been disabled"),
-            Self::BatchMaxRequestsExceeded => String::from("Batch max requests have been exceeded"),
-            Self::BatchQueuesFull => String::from("All batch queues are full"),
-            Self::IndexFound => String::from("Index already exists"),
-            Self::IndexNotFound => String::from("Index not found"),
-            Self::IndexOom => String::from("Index out of memory"),
-            Self::IndexNotReadable => String::from("Index not readable"),
-            Self::IndexGeneric => String::from("Index error"),
-            Self::IndexNameMaxLen => String::from("Index name max length exceeded"),
-            Self::IndexMaxCount => String::from("Index count exceeds max"),
-            Self::QueryAborted => String::from("Query aborted"),
-            Self::QueryQueueFull => String::from("Query queue full"),
-            Self::QueryTimeout => String::from("Query timeout"),
-            Self::QueryGeneric => String::from("Query error"),
-            Self::QueryNetioErr => String::from("Query NetIo error on server"),
-            Self::QueryDuplicate => String::from("Duplicate TaskId sent for the statement"),
-            Self::Unknown(code) => format!("Unknown server error code: {code}"),
+            Self::QueryEnd => "Query end".into(),
+            Self::SecurityNotSupported => "Security not supported".into(),
+            Self::SecurityNotEnabled => "Security not enabled".into(),
+            Self::SecuritySchemeNotSupported => "Security scheme not supported".into(),
+            Self::InvalidCommand => "Invalid command".into(),
+            Self::InvalidField => "Invalid field".into(),
+            Self::IllegalState => "Illegal state".into(),
+            Self::InvalidUser => "Invalid user".into(),
+            Self::UserAlreadyExists => "User already exists".into(),
+            Self::InvalidPassword => "Invalid password".into(),
+            Self::ExpiredPassword => "Expired password".into(),
+            Self::ForbiddenPassword => "Forbidden password".into(),
+            Self::InvalidCredential => "Invalid credential".into(),
+            Self::InvalidRole => "Invalid role".into(),
+            Self::RoleAlreadyExists => "Role already exists".into(),
+            Self::InvalidPrivilege => "Invalid privilege".into(),
+            Self::NotAuthenticated => "Not authenticated".into(),
+            Self::RoleViolation => "Role violation".into(),
+            Self::UdfBadResponse => "Udf returned error".into(),
+            Self::LargeItemNotFound => "Large collection item not found".into(),
+            Self::BatchDisabled => "Batch functionality has been disabled".into(),
+            Self::BatchMaxRequestsExceeded => "Batch max requests have been exceeded".into(),
+            Self::BatchQueuesFull => "All batch queues are full".into(),
+            Self::IndexFound => "Index already exists".into(),
+            Self::IndexNotFound => "Index not found".into(),
+            Self::IndexOom => "Index out of memory".into(),
+            Self::IndexNotReadable => "Index not readable".into(),
+            Self::IndexGeneric => "Index error".into(),
+            Self::IndexNameMaxLen => "Index name max length exceeded".into(),
+            Self::IndexMaxCount => "Index count exceeds max".into(),
+            Self::QueryAborted => "Query aborted".into(),
+            Self::QueryQueueFull => "Query queue full".into(),
+            Self::QueryTimeout => "Query timeout".into(),
+            Self::QueryGeneric => "Query error".into(),
+            Self::QueryNetioErr => "Query NetIo error on server".into(),
+            Self::QueryDuplicate => "Duplicate TaskId sent for the statement".into(),
+            Self::Unknown(code) => format!("Unknown server error code: {code}").into(),
         }
     }
 }
@@ -294,12 +294,6 @@ impl ResultCode {
 impl From<u8> for ResultCode {
     fn from(val: u8) -> Self {
         Self::from_u8(val)
-    }
-}
-
-impl From<ResultCode> for String {
-    fn from(code: ResultCode) -> Self {
-        code.into_string()
     }
 }
 
@@ -325,13 +319,13 @@ mod tests {
 
     #[test]
     fn into_string() {
-        let result: String = ResultCode::KeyNotFoundError.into();
+        let result = ResultCode::KeyNotFoundError.into_string();
         assert_eq!("Key not found", result);
     }
 
     #[test]
     fn unknown_into_string() {
-        let result: String = ResultCode::Unknown(234).into();
+        let result = ResultCode::Unknown(234).into_string();
         assert_eq!("Unknown server error code: 234", result);
     }
 }

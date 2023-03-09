@@ -54,13 +54,10 @@ pub struct Node {
     refresh_count: AtomicUsize,
     reference_count: AtomicUsize,
     responded: AtomicBool,
-    _use_new_info: bool,
     active: AtomicBool,
 
-    supports_float: AtomicBool,
-    _supports_batch_index: AtomicBool,
-    _supports_replicas_all: AtomicBool,
-    supports_geo: AtomicBool,
+    supports_float: bool,
+    supports_geo: bool,
 }
 
 impl Node {
@@ -73,7 +70,6 @@ impl Node {
             name: nv.name.clone(),
             aliases: RwLock::new(nv.aliases.clone()),
             address: nv.address.clone(),
-            _use_new_info: nv.use_new_info,
 
             host: nv.aliases[0].clone(),
             failures: AtomicUsize::new(0),
@@ -83,10 +79,8 @@ impl Node {
             responded: AtomicBool::new(false),
             active: AtomicBool::new(true),
 
-            supports_float: AtomicBool::new(nv.supports_float),
-            _supports_batch_index: AtomicBool::new(nv.supports_batch_index),
-            _supports_replicas_all: AtomicBool::new(nv.supports_replicas_all),
-            supports_geo: AtomicBool::new(nv.supports_geo),
+            supports_float: nv.supports_float,
+            supports_geo: nv.supports_geo,
         }
     }
 
@@ -111,12 +105,12 @@ impl Node {
 
     // Returns true if the Node supports floats
     pub fn supports_float(&self) -> bool {
-        self.supports_float.load(Ordering::Relaxed)
+        self.supports_float
     }
 
     // Returns true if the Node supports geo
     pub fn supports_geo(&self) -> bool {
-        self.supports_geo.load(Ordering::Relaxed)
+        self.supports_geo
     }
 
     // Returns the reference count

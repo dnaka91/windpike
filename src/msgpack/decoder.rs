@@ -28,9 +28,9 @@ pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
         return Ok(Value::List(vec![]));
     }
 
-    let ltype: u8 = buf.read_u8(None);
+    let ltype = buf.read_u8(None);
 
-    let count: usize = match ltype {
+    let count = match ltype {
         0x90..=0x9f => (ltype & 0x0f) as usize,
         0xdc => buf.read_u16(None) as usize,
         0xdd => buf.read_u32(None) as usize,
@@ -45,9 +45,9 @@ pub fn unpack_value_map(buf: &mut Buffer) -> Result<Value> {
         return Ok(Value::from(HashMap::with_capacity(0)));
     }
 
-    let ltype: u8 = buf.read_u8(None);
+    let ltype = buf.read_u8(None);
 
-    let count: usize = match ltype {
+    let count = match ltype {
         0x80..=0x8f => (ltype & 0x0f) as usize,
         0xde => buf.read_u16(None) as usize,
         0xdf => buf.read_u32(None) as usize,

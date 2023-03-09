@@ -46,7 +46,7 @@ impl BatchReadCommand {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<(), CommandError> {
+    pub async fn execute(&mut self) -> Result<()> {
         let mut iterations = 0;
         let base_policy = self.policy.base().clone();
 
@@ -218,7 +218,7 @@ impl Command for BatchReadCommand {
     }
 
     async fn get_node(&self) -> Option<Arc<Node>> {
-        Some(self.node.clone())
+        Some(Arc::clone(&self.node))
     }
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {

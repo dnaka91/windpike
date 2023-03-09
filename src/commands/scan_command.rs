@@ -16,7 +16,7 @@ use std::{str, sync::Arc, time::Duration};
 
 use tokio::sync::mpsc;
 
-use super::{Command, CommandError, Result, SingleCommand, StreamCommand};
+use super::{Command, Result, SingleCommand, StreamCommand};
 use crate::{cluster::Node, net::Connection, policy::ScanPolicy, Bins, Record};
 
 pub struct ScanCommand<'a> {
@@ -49,7 +49,7 @@ impl<'a> ScanCommand<'a> {
         }
     }
 
-    pub async fn execute(&mut self) -> Result<(), CommandError> {
+    pub async fn execute(&mut self) -> Result<()> {
         SingleCommand::execute(self.policy, self).await
     }
 }

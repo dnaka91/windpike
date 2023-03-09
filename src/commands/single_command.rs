@@ -50,6 +50,7 @@ impl<'a> SingleCommand<'a> {
         // Empty the socket to be safe.
         let sz = conn.buffer().read_i64(None);
         let header_length = i64::from(conn.buffer().read_u8(None));
+        #[allow(clippy::cast_sign_loss)]
         let receive_size = ((sz & 0xFFFF_FFFF_FFFF) - header_length) as usize;
 
         // Read remaining message bytes.
@@ -64,7 +65,7 @@ impl<'a> SingleCommand<'a> {
     // EXECUTE
     //
 
-    pub async fn execute(
+    pub(super) async fn execute(
         policy: &(dyn Policy + Send + Sync),
         cmd: &'a mut (dyn Command + Send),
     ) -> Result<()> {

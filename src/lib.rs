@@ -13,7 +13,12 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#![warn(rust_2018_idioms, clippy::all, clippy::pedantic)]
+#![warn(
+    rust_2018_idioms,
+    clippy::all,
+    clippy::pedantic,
+    clippy::clone_on_ref_ptr
+)]
 #![allow(
     clippy::cast_possible_truncation,
     clippy::module_name_repetitions,

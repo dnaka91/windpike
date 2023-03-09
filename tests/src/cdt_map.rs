@@ -31,8 +31,8 @@ async fn map_operations() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace();
-    let set_name = &common::rand_str(10);
+    let namespace = common::namespace().to_owned();
+    let set_name = common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
     let mpolicy = MapPolicy::default();

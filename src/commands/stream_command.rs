@@ -77,7 +77,7 @@ impl StreamCommand {
             conn.buffer().skip(1);
             let name_size = conn.buffer().read_u8(None) as usize;
             conn.read_buffer(name_size).await?;
-            let name: String = conn.buffer().read_str(name_size)?;
+            let name = conn.buffer().read_str(name_size)?;
 
             let particle_bytes_size = op_size - (4 + name_size);
             conn.read_buffer(particle_bytes_size).await?;
@@ -155,8 +155,8 @@ impl StreamCommand {
         }
 
         Ok(Key {
-            namespace,
-            set_name,
+            namespace: namespace.into(),
+            set_name: set_name.into(),
             user_key: orig_key,
             digest,
         })
@@ -189,7 +189,7 @@ impl Command for StreamCommand {
     }
 
     async fn get_node(&self) -> Option<Arc<Node>> {
-        Some(self.node.clone())
+        Some(Arc::clone(&self.node))
     }
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {

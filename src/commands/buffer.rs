@@ -435,8 +435,7 @@ impl Buffer {
                         OperationType::Read
                         | OperationType::CdtRead
                         | OperationType::BitRead
-                        | OperationType::HllRead
-                        | OperationType::ExpRead,
+                        | OperationType::HllRead,
                     ..
                 } => read_attr |= INFO1_READ,
                 _ => write_attr |= INFO2_WRITE,
@@ -932,7 +931,7 @@ impl Buffer {
 
     pub fn write_timeout(&mut self, val: Option<Duration>) {
         if let Some(val) = val {
-            let millis: i32 = (val.as_secs() * 1_000) as i32 + val.subsec_millis() as i32;
+            let millis = (val.as_secs() * 1_000) as i32 + val.subsec_millis() as i32;
             self.buffer[22..22 + 4].copy_from_slice(&millis.to_be_bytes());
         }
     }

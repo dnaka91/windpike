@@ -67,12 +67,12 @@ impl PartitionTokenizer {
                     let restore_buffer = general_purpose::STANDARD.decode(part)?;
                     match amap.entry(ns.to_string()) {
                         Vacant(entry) => {
-                            entry.insert(vec![node.clone(); node::PARTITIONS]);
+                            entry.insert(vec![Arc::clone(&node); node::PARTITIONS]);
                         }
                         Occupied(mut entry) => {
                             for (idx, item) in entry.get_mut().iter_mut().enumerate() {
                                 if restore_buffer[idx >> 3] & (0x80 >> (idx & 7) as u8) != 0 {
-                                    *item = node.clone();
+                                    *item = Arc::clone(&node);
                                 }
                             }
                         }

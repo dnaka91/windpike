@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{fmt, result::Result as StdResult};
+use std::{borrow::Cow, fmt, result::Result as StdResult};
 
 use ripemd::{Digest, Ripemd160};
 
@@ -25,16 +25,16 @@ use crate::{errors::Result, Value};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Key {
     /// Namespace.
-    pub namespace: String,
+    pub namespace: Cow<'static, str>,
 
     /// Set name.
-    pub set_name: String,
+    pub set_name: Cow<'static, str>,
 
     /// Original user key.
     pub user_key: Option<Value>,
 
     /// Unique server hash value generated from set name and user key.
-    pub digest: [u8; 20],
+    pub(crate) digest: [u8; 20],
 }
 
 impl Key {
@@ -46,7 +46,7 @@ impl Key {
     /// panic if any other value type is passed.
     pub fn new<S, K>(namespace: S, set_name: S, key: K) -> Result<Self>
     where
-        S: Into<String>,
+        S: Into<Cow<'static, str>>,
         K: Into<Value>,
     {
         let mut key = Self {
@@ -58,6 +58,11 @@ impl Key {
 
         key.compute_digest()?;
         Ok(key)
+    }
+
+    #[must_use]
+    pub fn digest(&self) -> [u8; 20] {
+        self.digest
     }
 
     fn compute_digest(&mut self) -> Result<()> {

@@ -67,7 +67,7 @@ impl BatchExecutor {
         };
         let size = jobs.len() / threads;
         let mut overhead = jobs.len() % threads;
-        let last_err: Arc<Mutex<Option<Error>>> = Arc::default();
+        let last_err = Arc::<Mutex<Option<Error>>>::default();
         let mut slice_index = 0;
         let mut handles = vec![];
         let res = Arc::new(Mutex::new(vec![]));
@@ -79,8 +79,8 @@ impl BatchExecutor {
             }
             let slice = Vec::from(&jobs[slice_index..slice_index + thread_size]);
             slice_index = thread_size + 1;
-            let last_err = last_err.clone();
-            let res = res.clone();
+            let last_err = Arc::clone(&last_err);
+            let res = Arc::clone(&res);
             let handle = tokio::spawn(async move {
                 //let next_job = async { jobs.lock().await.next().await};
                 for mut cmd in slice {
