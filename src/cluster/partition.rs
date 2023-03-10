@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{
-    fmt,
-    io::{Cursor, Read},
-};
+use std::fmt;
 
 use crate::{cluster::node, Key};
 
@@ -37,8 +34,6 @@ impl<'a> Partition<'a> {
 
     #[must_use]
     pub fn new_by_key(key: &'a Key) -> Self {
-        let mut rdr = Cursor::new(&key.digest[0..4]);
-
         Partition {
             namespace: &key.namespace,
 
@@ -47,7 +42,7 @@ impl<'a> Partition<'a> {
             // For any x, y : x % 2^y = x & (2^y - 1); the second method is twice as fast
             partition_id: {
                 let mut buf = [0; 4];
-                rdr.read_exact(&mut buf).unwrap();
+                buf.copy_from_slice(&key.digest()[0..4]);
 
                 u32::from_le_bytes(buf) as usize & (node::PARTITIONS - 1)
             },

@@ -258,7 +258,7 @@ impl Cluster {
             }
         });
 
-        return handle.await.map_err(ClusterError::InitialTend);
+        handle.await.map_err(ClusterError::InitialTend)
     }
 
     pub const fn cluster_name(&self) -> &Option<String> {

@@ -98,7 +98,7 @@ impl<'a> Command for WriteCommand<'a> {
         if result_code != ResultCode::Ok {
             return Err(CommandError::ServerError(result_code));
         }
-        let res = SingleCommand::empty_socket(conn).await;
-        res
+
+        SingleCommand::empty_socket(conn).await
     }
 }

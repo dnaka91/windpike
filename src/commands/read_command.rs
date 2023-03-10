@@ -25,11 +25,12 @@ use tracing::warn;
 
 use super::{buffer, Command, CommandError, Result, SingleCommand};
 use crate::{
+    as_list,
     cluster::{Cluster, Node},
     net::Connection,
     policy::ReadPolicy,
     value::bytes_to_particle,
-    Bins, Key, Record, ResultCode, Value, as_list,
+    Bins, Key, Record, ResultCode, Value,
 };
 
 pub struct ReadCommand<'a> {

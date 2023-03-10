@@ -29,6 +29,7 @@ pub struct ScanCommand<'a> {
 }
 
 impl<'a> ScanCommand<'a> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         policy: &'a ScanPolicy,
         node: Arc<Node>,
