@@ -260,7 +260,7 @@ pub fn put<'a>(
     val: &'a Value,
 ) -> Operation<'a> {
     let mut args = vec![CdtArgument::Value(key)];
-    if !val.is_nil() {
+    if *val != Value::Nil {
         args.push(CdtArgument::Value(val));
     }
     if let Some(arg) = map_order_arg(policy) {
@@ -321,7 +321,7 @@ pub fn increment_value<'a>(
     incr: &'a Value,
 ) -> Operation<'a> {
     let mut args = vec![CdtArgument::Value(key)];
-    if !incr.is_nil() {
+    if *incr != Value::Nil {
         args.push(CdtArgument::Value(incr));
     }
     if let Some(arg) = map_order_arg(policy) {
@@ -353,7 +353,7 @@ pub fn decrement_value<'a>(
     decr: &'a Value,
 ) -> Operation<'a> {
     let mut args = vec![CdtArgument::Value(key)];
-    if !decr.is_nil() {
+    if *decr != Value::Nil {
         args.push(CdtArgument::Value(decr));
     }
     if let Some(arg) = map_order_arg(policy) {
@@ -452,7 +452,7 @@ pub fn remove_by_key_range<'a>(
         CdtArgument::Byte(return_type as u8),
         CdtArgument::Value(begin),
     ];
-    if !end.is_nil() {
+    if *end != Value::Nil {
         args.push(CdtArgument::Value(end));
     }
     let cdt_op = CdtOperation {
@@ -531,7 +531,7 @@ pub fn remove_by_value_range<'a>(
         CdtArgument::Byte(return_type as u8),
         CdtArgument::Value(begin),
     ];
-    if !end.is_nil() {
+    if *end != Value::Nil {
         args.push(CdtArgument::Value(end));
     }
     let cdt_op = CdtOperation {
@@ -732,7 +732,7 @@ pub fn get_by_key_range<'a>(
         CdtArgument::Byte(return_type as u8),
         CdtArgument::Value(begin),
     ];
-    if !end.is_nil() {
+    if *end != Value::Nil {
         args.push(CdtArgument::Value(end));
     }
     let cdt_op = CdtOperation {
@@ -787,7 +787,7 @@ pub fn get_by_value_range<'a>(
         CdtArgument::Byte(return_type as u8),
         CdtArgument::Value(begin),
     ];
-    if !end.is_nil() {
+    if *end != Value::Nil {
         args.push(CdtArgument::Value(end));
     }
     let cdt_op = CdtOperation {

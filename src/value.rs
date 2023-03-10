@@ -41,6 +41,24 @@ pub enum FloatValue {
     F64(u64),
 }
 
+impl FloatValue {
+    #[must_use]
+    pub fn as_f32(&self) -> Option<f32> {
+        match self {
+            Self::F32(val) => Some(f32::from_bits(*val)),
+            Self::F64(_) => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            Self::F32(_) => None,
+            Self::F64(val) => Some(f64::from_bits(*val)),
+        }
+    }
+}
+
 impl From<f64> for FloatValue {
     fn from(val: f64) -> Self {
         let mut val = val;
@@ -164,12 +182,6 @@ impl Hash for Value {
 }
 
 impl Value {
-    /// Returns true if this value is the empty value (nil).
-    #[must_use]
-    pub const fn is_nil(&self) -> bool {
-        matches!(*self, Self::Nil)
-    }
-
     /// Return the particle type for the value used in the wire protocol.
     /// For internal use only.
     #[must_use]
@@ -193,9 +205,57 @@ impl Value {
     }
 
     #[must_use]
+    pub const fn as_bool(&self) -> Option<bool> {
+        match self {
+            Self::Bool(val) => Some(*val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
     pub const fn as_i64(&self) -> Option<i64> {
         match self {
             Self::Int(val) => Some(*val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn as_u64(&self) -> Option<u64> {
+        match self {
+            Self::Uint(val) => Some(*val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_f32(&self) -> Option<f32> {
+        match self {
+            Self::Float(val) => val.as_f32(),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            Self::Float(val) => val.as_f64(),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(val) => Some(val.as_str()),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_bytes(&self) -> Option<&[u8]> {
+        match self {
+            Self::Blob(val) => Some(val.as_slice()),
             _ => None,
         }
     }
@@ -537,15 +597,8 @@ mod tests {
         assert_eq!(Value::Bool(true).to_string(), String::from("true"));
         assert_eq!(Value::from(4.1416).to_string(), String::from("4.1416"));
         assert_eq!(
-            as_geo!(r#"{"type":"Point"}"#).to_string(),
+            Value::GeoJson(r#"{"type":"Point"}"#.to_owned()).to_string(),
             String::from(r#"{"type":"Point"}"#)
         );
-    }
-
-    #[test]
-    fn as_geo() {
-        let string = String::from(r#"{"type":"Point"}"#);
-        let str = r#"{"type":"Point"}"#;
-        assert_eq!(as_geo!(string), as_geo!(str));
     }
 }

@@ -81,7 +81,7 @@ impl<'a> ReadCommand<'a> {
             let particle_bytes_size = op_size - (4 + name_size);
             let value = bytes_to_particle(particle_type, conn.buffer(), particle_bytes_size)?;
 
-            if !value.is_nil() {
+            if value != Value::Nil {
                 // list/map operations may return multiple values for the same bin.
                 match bins.entry(name) {
                     Vacant(entry) => {

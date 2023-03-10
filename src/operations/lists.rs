@@ -731,7 +731,7 @@ pub fn remove_by_rank_range_count(
 /// Panics if value is empty
 #[must_use]
 pub fn set<'a>(bin: &'a str, index: i64, value: &'a Value) -> Operation<'a> {
-    assert!(!value.is_nil());
+    assert!(*value != Value::Nil);
 
     let cdt_op = CdtOperation {
         op: CdtListOpType::Set as u8,

@@ -14,7 +14,7 @@
 // the License.
 
 use aerospike::{
-    as_bin, as_list, as_val, as_values, operations,
+    as_bin, as_list, as_values, operations,
     operations::{
         lists,
         lists::{ListPolicy, ListReturnType, ListSortFlags},
@@ -51,7 +51,7 @@ async fn cdt_list() {
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(*rec.bins.get("bin").unwrap(), Value::from(3));
 
-    let values = vec![as_val!(9), as_val!(8), as_val!(7)];
+    let values = vec![9.into(), 8.into(), 7.into()];
     let ops = &vec![
         lists::insert_items(&lpolicy, "bin", 1, &values),
         operations::get_bin("bin"),
@@ -120,7 +120,7 @@ async fn cdt_list() {
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(*rec.bins.get("bin").unwrap(), as_list!(1, as_list!("0", 1)));
 
-    let v = as_val!(2);
+    let v = Value::from(2);
     let ops = &vec![lists::set("bin", -1, &v), operations::get_bin("bin")];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(*rec.bins.get("bin").unwrap(), as_list!("0", 2));
@@ -155,7 +155,7 @@ async fn cdt_list() {
 
     let ops = &vec![lists::get("bin", 1)];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
-    assert_eq!(*rec.bins.get("bin").unwrap(), as_val!(9));
+    assert_eq!(*rec.bins.get("bin").unwrap(), Value::from(9));
 
     let ops = &vec![lists::get_range("bin", 1, -1)];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();

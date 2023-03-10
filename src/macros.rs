@@ -9,30 +9,6 @@ macro_rules! as_bin {
     }};
 }
 
-/// Constructs a new Value from one of the supported native data types.
-#[macro_export]
-macro_rules! as_val {
-    ($val:expr) => {{
-        $crate::Value::from($val)
-    }};
-}
-
-/// Constructs a new `GeoJSON` Value from one of the supported native data types.
-#[macro_export]
-macro_rules! as_geo {
-    ($val:expr) => {{
-        $crate::Value::GeoJson($val.to_owned())
-    }};
-}
-
-/// Constructs a new Blob Value from one of the supported native data types.
-#[macro_export]
-macro_rules! as_blob {
-    ($val:expr) => {{
-        $crate::Value::Blob($val)
-    }};
-}
-
 /// Constructs a new List Value from a list of one or more native data types.
 ///
 /// # Examples
@@ -40,7 +16,7 @@ macro_rules! as_blob {
 /// Write a list value to a record bin.
 ///
 /// ```rust
-/// use aerospike::{as_bin, as_list, as_val, Client, ClientPolicy, Key, WritePolicy};
+/// use aerospike::{as_bin, as_list, Client, ClientPolicy, Key, WritePolicy};
 ///
 /// #[tokio::main]
 /// async fn main() {
@@ -59,29 +35,19 @@ macro_rules! as_blob {
 /// ```
 #[macro_export]
 macro_rules! as_list {
-    ( $( $v:expr),* ) => {
-        {
-            let mut temp_vec = Vec::new();
-            $(
-                temp_vec.push($crate::as_val!($v));
-            )*
-            $crate::Value::List(temp_vec)
-        }
-    };
+    ($($v:expr),*) => {{
+        $crate::Value::List(
+            vec![$($crate::Value::from($v),)*]
+        )
+    }};
 }
 
 /// Constructs a vector of Values from a list of one or more native data types.
 #[macro_export]
 macro_rules! as_values {
-    ( $( $v:expr),* ) => {
-        {
-            let mut temp_vec = Vec::new();
-            $(
-                temp_vec.push(as_val!($v));
-            )*
-            temp_vec
-        }
-    };
+    ($($v:expr),*) => {{
+        vec![$($crate::Value::from($v),)*]
+    }};
 }
 
 /// Constructs a Map Value from a list of key/value pairs.
@@ -91,7 +57,7 @@ macro_rules! as_values {
 /// Write a map value to a record bin.
 ///
 /// ```rust
-/// use aerospike::{as_bin, Key, as_map, as_val, Client, ClientPolicy, WritePolicy};
+/// use aerospike::{as_bin, Key, as_map, Client, ClientPolicy, WritePolicy};
 
 /// #[tokio::main]
 /// async fn main() {
@@ -110,13 +76,11 @@ macro_rules! as_values {
 /// ```
 #[macro_export]
 macro_rules! as_map {
-    ( $( $k:expr => $v:expr),* ) => {
-        {
-            let mut temp_map = std::collections::HashMap::new();
-            $(
-                temp_map.insert(as_val!($k), as_val!($v));
-            )*
-            $crate::Value::HashMap(temp_map)
-        }
-    };
+    ($($k:expr => $v:expr),*) => {{
+        $crate::Value::HashMap(
+            std::collections::HashMap::from([
+                $(($crate::Value::from($k), $crate::Value::from($v)),)*
+            ])
+        )
+    }};
 }

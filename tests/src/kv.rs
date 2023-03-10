@@ -12,10 +12,7 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-use aerospike::{
-    as_bin, as_blob, as_geo, as_list, as_map, as_val, operations, Bins, Key, ReadPolicy, Value,
-    WritePolicy,
-};
+use aerospike::{as_bin, as_list, as_map, operations, Bins, Key, ReadPolicy, Value, WritePolicy};
 
 use crate::common;
 
@@ -35,13 +32,13 @@ async fn connect() {
     let bins = [
         as_bin!("bin999", "test string"),
         as_bin!("bin vec![int]", as_list![1u32, 2u32, 3u32]),
-        as_bin!("bin vec![u8]", as_blob!(vec![1u8, 2u8, 3u8])),
+        as_bin!("bin vec![u8]", Value::from(vec![1u8, 2u8, 3u8])),
         as_bin!("bin map", as_map!(1 => 1, 2 => 2, 3 => "hi!")),
         as_bin!("bin f64", 1.64f64),
         as_bin!("bin Nil", None), // Writing None erases the bin!
         as_bin!(
             "bin Geo",
-            as_geo!(format!(
+            Value::GeoJson(format!(
                 r#"{{ "type": "Point", "coordinates": [{}, {}] }}"#,
                 17.119_381, 19.45612
             ))
@@ -57,7 +54,7 @@ async fn connect() {
     assert_eq!(bins.get("bin vec![int]"), Some(&as_list![1u32, 2u32, 3u32]));
     assert_eq!(
         bins.get("bin vec![u8]"),
-        Some(&as_blob!(vec![1u8, 2u8, 3u8]))
+        Some(&Value::from(vec![1u8, 2u8, 3u8]))
     );
     assert_eq!(
         bins.get("bin map"),
@@ -66,8 +63,8 @@ async fn connect() {
     assert_eq!(bins.get("bin f64"), Some(&Value::from(1.64f64)));
     assert_eq!(
         bins.get("bin Geo"),
-        Some(&as_geo!(
-            r#"{ "type": "Point", "coordinates": [17.119381, 19.45612] }"#
+        Some(&Value::GeoJson(
+            r#"{ "type": "Point", "coordinates": [17.119381, 19.45612] }"#.to_owned()
         ))
     );
     assert_eq!(
