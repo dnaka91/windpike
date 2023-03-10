@@ -1,5 +1,5 @@
 use aerospike::{
-    as_list, as_val,
+    as_list,
     operations::{hll, hll::HllPolicy},
     Bins, FloatValue, Key, ReadPolicy, Value, WritePolicy,
 };

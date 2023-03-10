@@ -41,17 +41,6 @@ impl<'a> AsRef<Bin<'a>> for Bin<'a> {
     }
 }
 
-/// Construct a new bin from a name and an optional value (defaults to the empty value `nil`).
-#[macro_export]
-macro_rules! as_bin {
-    ($bin_name:expr, None) => {{
-        $crate::Bin::new($bin_name, $crate::Value::Nil)
-    }};
-    ($bin_name:expr, $val:expr) => {{
-        $crate::Bin::new($bin_name, $crate::Value::from($val))
-    }};
-}
-
 /// Specify which, if any, bins to return in read operations.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Bins {

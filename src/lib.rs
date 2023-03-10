@@ -126,17 +126,15 @@ pub use task::{IndexTask, Task};
 pub use user::User;
 pub use value::{FloatValue, Value};
 
-pub mod errors;
-#[macro_use]
-mod value;
-#[macro_use]
-mod bin;
-#[macro_use]
-mod key;
 mod batch;
+mod bin;
 mod client;
 pub mod cluster;
 mod commands;
+pub mod errors;
+mod key;
+#[macro_use]
+mod macros;
 mod msgpack;
 mod net;
 pub mod operations;
@@ -146,3 +144,4 @@ mod record;
 mod result_code;
 pub mod task;
 mod user;
+mod value;

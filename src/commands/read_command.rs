@@ -29,7 +29,7 @@ use crate::{
     net::Connection,
     policy::ReadPolicy,
     value::bytes_to_particle,
-    Bins, Key, Record, ResultCode, Value,
+    Bins, Key, Record, ResultCode, Value, as_list,
 };
 
 pub struct ReadCommand<'a> {
