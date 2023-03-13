@@ -260,6 +260,38 @@ impl Value {
         }
     }
 
+    #[must_use]
+    pub fn as_list(&self) -> Option<&[Value]> {
+        match self {
+            Self::List(val) => Some(val.as_slice()),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn into_string(self) -> Option<String> {
+        match self {
+            Self::String(val) => Some(val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn into_bytes(self) -> Option<Vec<u8>> {
+        match self {
+            Self::Blob(val) => Some(val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn into_list(self) -> Option<Vec<Value>> {
+        match self {
+            Self::List(val) => Some(val),
+            _ => None,
+        }
+    }
+
     /// Calculate the size in bytes that the representation on wire for this value will require.
     /// For internal use only.
     pub(crate) fn estimate_size(&self) -> usize {
