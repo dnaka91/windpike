@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::policy::{BasePolicy, Concurrency, PolicyLike};
+use crate::policy::{BasePolicy, Concurrency};
 
 /// `BatchPolicy` encapsulates parameters for all batch operations.
 #[derive(Debug, Clone)]
@@ -65,8 +65,8 @@ impl Default for BatchPolicy {
     }
 }
 
-impl PolicyLike for BatchPolicy {
-    fn base(&self) -> &BasePolicy {
+impl AsRef<BasePolicy> for BatchPolicy {
+    fn as_ref(&self) -> &BasePolicy {
         &self.base_policy
     }
 }

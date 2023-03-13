@@ -21,7 +21,7 @@ use super::{Command, CommandError, Result};
 use crate::{
     cluster::Node,
     net::Connection,
-    policy::{BatchPolicy, Policy, PolicyLike},
+    policy::{BatchPolicy, Policy},
     value, BatchRead, Record, ResultCode, Value,
 };
 
@@ -48,7 +48,7 @@ impl BatchReadCommand {
 
     pub async fn execute(&mut self) -> Result<()> {
         let mut iterations = 0;
-        let base_policy = self.policy.base().clone();
+        let base_policy = self.policy.as_ref().clone();
 
         // set timeout outside the loop
         let deadline = base_policy.deadline();

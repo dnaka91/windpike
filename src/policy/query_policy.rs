@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::policy::{BasePolicy, PolicyLike};
+use crate::policy::BasePolicy;
 
 /// `QueryPolicy` encapsulates parameters for query operations.
 #[derive(Debug, Clone)]
@@ -55,8 +55,8 @@ impl Default for QueryPolicy {
     }
 }
 
-impl PolicyLike for QueryPolicy {
-    fn base(&self) -> &BasePolicy {
+impl AsRef<BasePolicy> for QueryPolicy {
+    fn as_ref(&self) -> &BasePolicy {
         &self.base_policy
     }
 }

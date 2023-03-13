@@ -13,10 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::{
-    policy::{BasePolicy, PolicyLike},
-    CommitLevel, Expiration, GenerationPolicy, RecordExistsAction,
-};
+use crate::{policy::BasePolicy, CommitLevel, Expiration, GenerationPolicy, RecordExistsAction};
 
 /// `WritePolicy` encapsulates parameters for all write operations.
 #[derive(Debug, Clone)]
@@ -95,8 +92,8 @@ impl Default for WritePolicy {
     }
 }
 
-impl PolicyLike for WritePolicy {
-    fn base(&self) -> &BasePolicy {
+impl AsRef<BasePolicy> for WritePolicy {
+    fn as_ref(&self) -> &BasePolicy {
         &self.base_policy
     }
 }

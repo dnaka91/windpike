@@ -74,38 +74,32 @@ pub trait Policy {
     fn consistency_level(&self) -> ConsistencyLevel;
 }
 
-/// Policy-like object that encapsulates a base policy instance.
-pub(crate) trait PolicyLike {
-    /// Retrieve a reference to the base policy.
-    fn base(&self) -> &BasePolicy;
-}
-
 impl<T> Policy for T
 where
-    T: PolicyLike,
+    T: AsRef<BasePolicy>,
 {
     fn priority(&self) -> Priority {
-        self.base().priority()
+        self.as_ref().priority()
     }
 
     fn deadline(&self) -> Option<Instant> {
-        self.base().deadline()
+        self.as_ref().deadline()
     }
 
     fn timeout(&self) -> Option<Duration> {
-        self.base().timeout()
+        self.as_ref().timeout()
     }
 
     fn max_retries(&self) -> Option<usize> {
-        self.base().max_retries()
+        self.as_ref().max_retries()
     }
 
     fn sleep_between_retries(&self) -> Option<Duration> {
-        self.base().sleep_between_retries()
+        self.as_ref().sleep_between_retries()
     }
 
     fn consistency_level(&self) -> ConsistencyLevel {
-        self.base().consistency_level()
+        self.as_ref().consistency_level()
     }
 }
 

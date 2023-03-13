@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use crate::policy::{BasePolicy, PolicyLike};
+use crate::policy::BasePolicy;
 
 /// `ScanPolicy` encapsulates optional parameters used in scan operations.
 #[derive(Debug, Clone)]
@@ -67,8 +67,8 @@ impl Default for ScanPolicy {
     }
 }
 
-impl PolicyLike for ScanPolicy {
-    fn base(&self) -> &BasePolicy {
+impl AsRef<BasePolicy> for ScanPolicy {
+    fn as_ref(&self) -> &BasePolicy {
         &self.base_policy
     }
 }
