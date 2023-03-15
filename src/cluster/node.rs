@@ -15,9 +15,7 @@
 
 use std::{
     collections::HashMap,
-    fmt,
     hash::{Hash, Hasher},
-    result::Result as StdResult,
     str::FromStr,
     sync::{
         atomic::{AtomicBool, AtomicIsize, AtomicUsize, Ordering},
@@ -326,9 +324,3 @@ impl PartialEq for Node {
 }
 
 impl Eq for Node {}
-
-impl fmt::Display for Node {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
-        format!("{}: {}", self.name, self.host).fmt(f)
-    }
-}

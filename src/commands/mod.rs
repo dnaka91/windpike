@@ -53,7 +53,7 @@ pub enum CommandError {
     BufferSize { size: usize, max: usize },
     #[error("Timeout")]
     Timeout,
-    #[error("Server error: {0}")]
+    #[error("Server error: {}", .0.into_string())]
     ServerError(ResultCode),
     #[error("Invalid UTF-8 content ecountered")]
     InvalidUtf8(#[from] std::str::Utf8Error),

@@ -210,7 +210,7 @@ impl Cluster {
                     }
                     Err(err) => {
                         node.increase_failures();
-                        warn!(%node, %err, "Node refresh failed");
+                        warn!(?node, %err, "Node refresh failed");
                     }
                 }
             }

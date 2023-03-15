@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fmt;
-
 use crate::{cluster::node, Key};
 
 // Validates a Database server node
@@ -53,11 +51,5 @@ impl<'a> Partition<'a> {
 impl<'a> PartialEq for Partition<'a> {
     fn eq(&self, other: &Partition<'_>) -> bool {
         self.namespace == other.namespace && self.partition_id == other.partition_id
-    }
-}
-
-impl<'a> fmt::Display for Partition<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        format!("Partition ({}: {})", self.namespace, self.partition_id).fmt(f)
     }
 }

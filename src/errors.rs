@@ -89,7 +89,7 @@ pub enum Error {
     #[error("Too many connections")]
     NoMoreConnections,
     /// Server responded with a response code indicating an error condition.
-    #[error("Server error: {0}")]
+    #[error("Server error: {}", .0.into_string())]
     ServerError(ResultCode),
     /// Error returned when a tasked timed out before it could be completed.
     #[error("Timeout: {0}")]

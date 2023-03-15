@@ -106,7 +106,7 @@ impl<'a> SingleCommand<'a> {
             let mut conn = match node.get_connection().await {
                 Ok(conn) => conn,
                 Err(err) => {
-                    warn!(%node, %err, "Node {node}");
+                    warn!(?node, %err, "Node");
                     continue;
                 }
             };
@@ -122,7 +122,7 @@ impl<'a> SingleCommand<'a> {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
                 conn.invalidate().await;
-                warn!(%node, %err, "Node {node}");
+                warn!(?node, %err, "Node");
                 continue;
             }
 

@@ -13,7 +13,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{borrow::Cow, fmt, result::Result as StdResult};
+use std::borrow::Cow;
 
 /// Database operation error codes. The error codes are defined in the server-side file proto.h.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -294,12 +294,6 @@ impl ResultCode {
 impl From<u8> for ResultCode {
     fn from(val: u8) -> Self {
         Self::from_u8(val)
-    }
-}
-
-impl fmt::Display for ResultCode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
-        write!(f, "{}", self.into_string())
     }
 }
 

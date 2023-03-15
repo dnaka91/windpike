@@ -16,7 +16,7 @@
 use std::fmt;
 
 /// Underlying data type of secondary index.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum IndexType {
     /// Numeric index.
     Numeric,
@@ -26,8 +26,18 @@ pub enum IndexType {
     Geo2DSphere,
 }
 
+impl fmt::Display for IndexType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str(match self {
+            Self::Numeric => "NUMERIC",
+            Self::String => "STRING",
+            Self::Geo2DSphere => "GEO2DSPHERE",
+        })
+    }
+}
+
 /// Secondary index collection type.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CollectionIndexType {
     /// Normal, scalar index.
     Default = 0,
@@ -39,23 +49,13 @@ pub enum CollectionIndexType {
     MapValues,
 }
 
-impl fmt::Display for IndexType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        match *self {
-            Self::Numeric => "NUMERIC".fmt(f),
-            Self::String => "STRING".fmt(f),
-            Self::Geo2DSphere => "GEO2DSPHERE".fmt(f),
-        }
-    }
-}
-
 impl fmt::Display for CollectionIndexType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        match *self {
+        f.write_str(match self {
             Self::Default => panic!("Unknown IndexCollectionType value `Default`"),
-            Self::List => "LIST".fmt(f),
-            Self::MapKeys => "MAPKEYS".fmt(f),
-            Self::MapValues => "MAPVALUES".fmt(f),
-        }
+            Self::List => "LIST",
+            Self::MapKeys => "MAPKEYS",
+            Self::MapValues => "MAPVALUES",
+        })
     }
 }

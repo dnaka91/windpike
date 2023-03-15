@@ -15,7 +15,6 @@
 
 use std::{
     collections::HashMap,
-    fmt,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
@@ -76,25 +75,6 @@ impl Record {
                         .unwrap_or(Duration::new(1, 0)),
                 )
             }
-        }
-    }
-}
-
-impl fmt::Display for Record {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "key: {:?}", self.key)?;
-        write!(f, ", bins: {{")?;
-        for (i, (k, v)) in self.bins.iter().enumerate() {
-            if i > 0 {
-                write!(f, ", ")?;
-            }
-            write!(f, "{k}: {v}")?;
-        }
-        write!(f, "}}, generation: {}", self.generation)?;
-        write!(f, ", ttl: ")?;
-        match self.time_to_live() {
-            None => "none".fmt(f),
-            Some(duration) => duration.as_secs().fmt(f),
         }
     }
 }
