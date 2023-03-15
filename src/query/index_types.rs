@@ -39,8 +39,6 @@ impl fmt::Display for IndexType {
 /// Secondary index collection type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CollectionIndexType {
-    /// Normal, scalar index.
-    Default = 0,
     /// Index list elements.
     List,
     /// Index map keys.
@@ -52,7 +50,6 @@ pub enum CollectionIndexType {
 impl fmt::Display for CollectionIndexType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         f.write_str(match self {
-            Self::Default => panic!("Unknown IndexCollectionType value `Default`"),
             Self::List => "LIST",
             Self::MapKeys => "MAPKEYS",
             Self::MapValues => "MAPVALUES",

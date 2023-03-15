@@ -685,7 +685,7 @@ impl Client {
             bin_name,
             index_name,
             index_type,
-            CollectionIndexType::Default,
+            None,
         )
         .await?;
         Ok(IndexTask::new(
@@ -705,13 +705,11 @@ impl Client {
         bin_name: &str,
         index_name: &str,
         index_type: IndexType,
-        collection_index_type: CollectionIndexType,
+        collection_index_type: Option<CollectionIndexType>,
     ) -> Result<()> {
-        let cit_str = if collection_index_type == CollectionIndexType::Default {
-            String::new()
-        } else {
-            format!("indextype={collection_index_type};")
-        };
+        let cit_str = collection_index_type
+            .map(|v| format!("indextype={v};"))
+            .unwrap_or_default();
         let cmd = format!(
             "sindex-create:ns={namespace};set={set_name};indexname={index_name};numbins=1;\
              {cit_str}indexdata={bin_name},{index_type};priority=normal",
