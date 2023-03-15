@@ -21,8 +21,6 @@ use std::{
     vec::Vec,
 };
 
-use ripemd::{Digest, Ripemd160};
-
 use crate::{
     commands::{
         buffer::{Buffer, BufferError},
@@ -33,7 +31,7 @@ use crate::{
 };
 
 /// Container for floating point bin values stored in the Aerospike database.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum FloatValue {
     /// Container for single precision float values.
     F32(u32),
@@ -113,13 +111,10 @@ impl fmt::Display for FloatValue {
 pub enum Value {
     /// Empty value.
     Nil,
-
     /// Boolean value.
     Bool(bool),
-
     /// Integer value. All integers are represented as 64-bit numerics in Aerospike.
     Int(i64),
-
     /// Unsigned integer value. The largest integer value that can be stored in a record bin is
     /// `i64::max_value()`; however the list and map data types can store integer values (and keys)
     /// up to `u64::max_value()`.
@@ -129,34 +124,26 @@ pub enum Value {
     /// Attempting to store an `u64` value as a record bin value will cause a panic. Use casting to
     /// store and retrieve `u64` values.
     Uint(u64),
-
     /// Floating point value. All floating point values are stored in 64-bit IEEE-754 format in
     /// Aerospike. Aerospike server v3.6.0 and later support double data type.
     Float(FloatValue),
-
     /// String value.
     String(String),
-
     /// Byte array value.
     Blob(Vec<u8>),
-
     /// List data type is an ordered collection of values. Lists can contain values of any
     /// supported data type. List data order is maintained on writes and reads.
     List(Vec<Value>),
-
     /// Map data type is a collection of key-value pairs. Each key can only appear once in a
     /// collection and is associated with a value. Map keys and values can be any supported data
     /// type.
     HashMap(HashMap<Value, Value>),
-
     /// Map data type where the map entries are sorted based key ordering (K-ordered maps) and may
     /// have an additional value-order index depending the namespace configuration (KV-ordered
     /// maps).
     OrderedMap(Vec<(Value, Value)>),
-
     /// GeoJSON data type are JSON formatted strings to encode geospatial information.
     GeoJson(String),
-
     /// HLL value
     Hll(Vec<u8>),
 }
@@ -316,13 +303,13 @@ impl Value {
     pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
         match *self {
             Self::Nil => 0,
-            Self::Int(ref val) => w.write_i64(*val),
+            Self::Bool(val) => w.write_bool(val),
+            Self::Int(val) => w.write_i64(val),
             Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Self::Bool(ref val) => w.write_bool(*val),
-            Self::Float(ref val) => w.write_f64(match *val {
+            Self::Float(val) => w.write_f64(match val {
                 FloatValue::F32(val) => f64::from(f32::from_bits(val)),
                 FloatValue::F64(val) => f64::from_bits(val),
             }),
@@ -331,26 +318,6 @@ impl Value {
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(w, self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
             Self::GeoJson(ref val) => w.write_geo(val),
-        }
-    }
-
-    /// Serialize the value as a record key.
-    /// For internal use only.
-    pub(crate) fn write_key_bytes(&self, h: &mut Ripemd160) -> Result<()> {
-        match *self {
-            Self::Int(ref val) => {
-                h.update(val.to_be_bytes());
-                Ok(())
-            }
-            Self::String(ref val) => {
-                h.update(val.as_bytes());
-                Ok(())
-            }
-            Self::Blob(ref val) => {
-                h.update(val);
-                Ok(())
-            }
-            _ => panic!("Data type is not supported as Key value."),
         }
     }
 }
@@ -580,6 +547,8 @@ impl<'a> From<&'a bool> for Value {
 pub enum ParticleError {
     #[error("Particle type not recognized")]
     UnrecognizedParticle(#[from] ParseParticleError),
+    #[error("Particle type `{0:?}` not supported for the target type")]
+    Unsupported(u8),
     #[error("Buffer error")]
     Buffer(#[from] BufferError),
     #[error("MessagePack error")]

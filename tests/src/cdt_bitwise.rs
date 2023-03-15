@@ -32,7 +32,7 @@ async fn cdt_bitwise() {
     let set_name = common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
-    let key = Key::new(namespace, set_name, -1).unwrap();
+    let key = Key::new(namespace, set_name, -1);
     let val = Value::Blob(vec![
         0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101,
     ]);

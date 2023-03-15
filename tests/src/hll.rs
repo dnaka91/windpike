@@ -14,7 +14,7 @@ async fn hll() {
     let namespace = common::namespace().to_owned();
     let set_name = common::rand_str(10);
 
-    let key = Key::new(namespace, set_name, "test").unwrap();
+    let key = Key::new(namespace, set_name, "test");
 
     let hpolicy = HllPolicy::default();
     let wpolicy = WritePolicy::default();

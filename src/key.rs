@@ -13,11 +13,15 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-use std::{borrow::Cow, fmt, result::Result as StdResult};
+use std::borrow::Cow;
 
 use ripemd::{Digest, Ripemd160};
 
-use crate::{errors::Result, Value};
+use crate::{
+    commands::{buffer::Buffer, ParticleType},
+    msgpack,
+    value::ParticleError,
+};
 
 /// Unique record identifier. Records can be identified using a specified namespace, an optional
 /// set name and a user defined key which must be uique within a set. Records can also be
@@ -26,13 +30,10 @@ use crate::{errors::Result, Value};
 pub struct Key {
     /// Namespace.
     pub namespace: Cow<'static, str>,
-
     /// Set name.
     pub set_name: Cow<'static, str>,
-
     /// Original user key.
-    pub user_key: Option<Value>,
-
+    pub user_key: Option<UserKey>,
     /// Unique server hash value generated from set name and user key.
     pub(crate) digest: [u8; 20],
 }
@@ -44,10 +45,10 @@ impl Key {
     ///
     /// Only integers, strings and blobs (`Vec<u8>`) can be used as user keys. The constructor will
     /// panic if any other value type is passed.
-    pub fn new<S, K>(namespace: S, set_name: S, key: K) -> Result<Self>
+    pub fn new<S, K>(namespace: S, set_name: S, key: K) -> Self
     where
         S: Into<Cow<'static, str>>,
-        K: Into<Value>,
+        K: Into<UserKey>,
     {
         let mut key = Self {
             namespace: namespace.into(),
@@ -56,8 +57,8 @@ impl Key {
             user_key: Some(key.into()),
         };
 
-        key.compute_digest()?;
-        Ok(key)
+        key.compute_digest();
+        key
     }
 
     #[must_use]
@@ -65,35 +66,153 @@ impl Key {
         self.digest
     }
 
-    fn compute_digest(&mut self) -> Result<()> {
+    fn compute_digest(&mut self) {
         let mut hash = Ripemd160::new();
         hash.update(self.set_name.as_bytes());
         if let Some(ref user_key) = self.user_key {
             hash.update([user_key.particle_type() as u8]);
-            user_key.write_key_bytes(&mut hash)?;
+            user_key.write_key_bytes(&mut hash);
         } else {
             unreachable!();
         }
         self.digest = hash.finalize().into();
-
-        Ok(())
     }
 }
 
-impl fmt::Display for Key {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
-        match self.user_key {
-            Some(ref value) => write!(
-                f,
-                "<Key: ns=\"{}\", set=\"{}\", key=\"{}\">",
-                &self.namespace, &self.set_name, value
-            ),
-            None => write!(
-                f,
-                "<Key: ns=\"{}\", set=\"{}\", digest=\"{:?}\">",
-                &self.namespace, &self.set_name, &self.digest
-            ),
+/// The user key, which is a subset of the [`Value`](crate::Value) type, as only a few of its
+/// variants are allowed to be used in Aerospike keys.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum UserKey {
+    /// 64-bit signed integer.
+    Int(i64),
+    /// String value.
+    String(Cow<'static, str>),
+    /// Byte array value.
+    Blob(Cow<'static, [u8]>),
+}
+
+impl UserKey {
+    pub(crate) fn particle_type(&self) -> ParticleType {
+        match self {
+            UserKey::Int(_) => ParticleType::Integer,
+            UserKey::String(_) => ParticleType::String,
+            UserKey::Blob(_) => ParticleType::Blob,
         }
+    }
+
+    fn write_key_bytes(&self, hasher: &mut impl Digest) {
+        match self {
+            UserKey::Int(i) => hasher.update(i.to_be_bytes()),
+            UserKey::String(s) => hasher.update(s.as_bytes()),
+            UserKey::Blob(b) => hasher.update(b),
+        }
+    }
+
+    pub(crate) fn estimate_size(&self) -> usize {
+        match self {
+            UserKey::Int(_) => 8,
+            UserKey::String(s) => s.len(),
+            UserKey::Blob(b) => b.len(),
+        }
+    }
+
+    pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
+        match *self {
+            UserKey::Int(i) => w.write_i64(i),
+            UserKey::String(ref s) => w.write_str(s),
+            UserKey::Blob(ref b) => w.write_bytes(b),
+        }
+    }
+
+    pub(crate) fn read_from(
+        ptype: u8,
+        buf: &mut Buffer,
+        len: usize,
+    ) -> Result<Self, ParticleError> {
+        Ok(match ParticleType::try_from(ptype)? {
+            ParticleType::Integer => Self::Int(buf.read_i64(None)),
+            ParticleType::String => Self::String(buf.read_str(len)?.into()),
+            ParticleType::Blob => Self::Blob(buf.read_blob(len).into()),
+            _ => return Err(ParticleError::Unsupported(ptype)),
+        })
+    }
+}
+
+impl From<i8> for UserKey {
+    fn from(value: i8) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<i16> for UserKey {
+    fn from(value: i16) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<i32> for UserKey {
+    fn from(value: i32) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<i64> for UserKey {
+    fn from(value: i64) -> Self {
+        Self::Int(value)
+    }
+}
+
+impl From<u8> for UserKey {
+    fn from(value: u8) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<u16> for UserKey {
+    fn from(value: u16) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<u32> for UserKey {
+    fn from(value: u32) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<String> for UserKey {
+    fn from(value: String) -> Self {
+        Self::String(value.into())
+    }
+}
+
+impl From<&'static str> for UserKey {
+    fn from(value: &'static str) -> Self {
+        Self::String(value.into())
+    }
+}
+
+impl From<Cow<'static, str>> for UserKey {
+    fn from(value: Cow<'static, str>) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<Vec<u8>> for UserKey {
+    fn from(value: Vec<u8>) -> Self {
+        Self::Blob(value.into())
+    }
+}
+
+impl From<&'static [u8]> for UserKey {
+    fn from(value: &'static [u8]) -> Self {
+        Self::Blob(value.into())
+    }
+}
+
+impl From<Cow<'static, [u8]>> for UserKey {
+    fn from(value: Cow<'static, [u8]>) -> Self {
+        Self::Blob(value)
     }
 }
 
@@ -106,7 +225,6 @@ mod tests {
     macro_rules! digest {
         ($x:expr) => {
             Key::new("namespace", "set", $x)
-                .unwrap()
                 .digest
                 .iter()
                 .map(|v| format!("{v:02x}"))
@@ -126,21 +244,12 @@ mod tests {
         assert_eq!(digest!(-1), "22116d253745e29fc63fdf760b6e26f7e197e01d");
 
         assert_eq!(digest!(1i8), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1i8), "82d7213b469812947c109a6d341e3b5b1dedec1f");
         assert_eq!(digest!(1u8), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1u8), "82d7213b469812947c109a6d341e3b5b1dedec1f");
         assert_eq!(digest!(1i16), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1i16), "82d7213b469812947c109a6d341e3b5b1dedec1f");
         assert_eq!(digest!(1u16), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1u16), "82d7213b469812947c109a6d341e3b5b1dedec1f");
         assert_eq!(digest!(1i32), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1i32), "82d7213b469812947c109a6d341e3b5b1dedec1f");
         assert_eq!(digest!(1u32), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1u32), "82d7213b469812947c109a6d341e3b5b1dedec1f");
         assert_eq!(digest!(1i64), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1i64), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(1isize), "82d7213b469812947c109a6d341e3b5b1dedec1f");
-        assert_eq!(digest!(&1isize), "82d7213b469812947c109a6d341e3b5b1dedec1f");
 
         assert_eq!(
             digest!(i64::min_value()),
@@ -222,10 +331,6 @@ mod tests {
             digest!("haha".to_string()),
             "36eb02a807dbade8cd784e7800d76308b4e89212"
         );
-        assert_eq!(
-            digest!(&"haha".to_string()),
-            "36eb02a807dbade8cd784e7800d76308b4e89212"
-        );
     }
 
     #[test]
@@ -258,17 +363,5 @@ mod tests {
             digest!(vec![b'+'; 100_000]),
             "fe19770c371774ba1a1532438d4851b8a773a9e6"
         );
-    }
-
-    #[test]
-    #[should_panic(expected = "Data type is not supported as Key value.")]
-    fn unsupported_float_key() {
-        Key::new("namespace", "set", 4.1415).unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "Aerospike does not support u64 natively on server-side.")]
-    fn unsupported_u64_key() {
-        Key::new("namespace", "set", u64::max_value()).unwrap();
     }
 }

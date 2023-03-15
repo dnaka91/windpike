@@ -143,13 +143,13 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     match client.get(&ReadPolicy::default(), &key, ["a", "b"]).await {
     ///         Ok(record) => println!("a={:?}", record.bins.get("a")),
     ///         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
-    ///             println!("No such record: {}", key)
+    ///             println!("No such record: {key:?}")
     ///         }
-    ///         Err(err) => println!("Error fetching record: {}", err),
+    ///         Err(err) => println!("Error fetching record: {err}"),
     ///     }
     /// }
     /// ```
@@ -167,16 +167,16 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     match client.get(&ReadPolicy::default(), &key, Bins::None).await {
     ///         Ok(record) => match record.time_to_live() {
     ///             None => println!("record never expires"),
     ///             Some(duration) => println!("ttl: {} secs", duration.as_secs()),
     ///         },
     ///         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
-    ///             println!("No such record: {}", key)
+    ///             println!("No such record: {key:?}")
     ///         }
-    ///         Err(err) => println!("Error fetching record: {}", err),
+    ///         Err(err) => println!("Error fetching record: {err}"),
     ///     }
     /// }
     /// ```
@@ -220,7 +220,7 @@ impl Client {
     ///     let bins = Bins::from(["name", "age"]);
     ///     let mut batch_reads = vec![];
     ///     for i in 0..10 {
-    ///         let key = Key::new("test", "test", i).unwrap();
+    ///         let key = Key::new("test", "test", i);
     ///         batch_reads.push(BatchRead::new(key, bins.clone()));
     ///     }
     ///     match client.batch_get(&BatchPolicy::default(), batch_reads).await {
@@ -232,7 +232,7 @@ impl Client {
     ///                 }
     ///             }
     ///         }
-    ///         Err(err) => println!("Error executing batch request: {}", err),
+    ///         Err(err) => println!("Error executing batch request: {err}"),
     ///     }
     /// }
     /// ```
@@ -261,11 +261,11 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     let bin = as_bin!("i", 42);
     ///     match client.put(&WritePolicy::default(), &key, &vec![bin]).await {
     ///         Ok(()) => println!("Record written"),
-    ///         Err(err) => println!("Error writing record: {}", err),
+    ///         Err(err) => println!("Error writing record: {err}"),
     ///     }
     /// }
     /// ```
@@ -281,13 +281,13 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     let bin = as_bin!("i", 42);
     ///     let mut policy = WritePolicy::default();
     ///     policy.expiration = policy::Expiration::Seconds(10);
     ///     match client.put(&policy, &key, &vec![bin]).await {
     ///         Ok(()) => println!("Record written"),
-    ///         Err(err) => println!("Error writing record: {}", err),
+    ///         Err(err) => println!("Error writing record: {err}"),
     ///     }
     /// }
     /// ```
@@ -324,13 +324,13 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     let bina = as_bin!("a", 1);
     ///     let binb = as_bin!("b", 2);
     ///     let bins = vec![bina, binb];
     ///     match client.add(&WritePolicy::default(), &key, &bins).await {
     ///         Ok(()) => println!("Record updated"),
-    ///         Err(err) => println!("Error writing record: {}", err),
+    ///         Err(err) => println!("Error writing record: {err}"),
     ///     }
     /// }
     /// ```
@@ -404,11 +404,11 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     match client.delete(&WritePolicy::default(), &key).await {
     ///         Ok(true) => println!("Record deleted"),
     ///         Ok(false) => println!("Record did not exist"),
-    ///         Err(err) => println!("Error deleting record: {}", err),
+    ///         Err(err) => println!("Error deleting record: {err}"),
     ///     }
     /// }
     /// ```
@@ -434,7 +434,7 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     let mut policy = WritePolicy::default();
     ///     policy.expiration = policy::Expiration::NamespaceDefault;
     ///     match client.touch(&policy, &key).await {
@@ -475,12 +475,12 @@ impl Client {
     ///         .await
     ///         .unwrap();
     ///
-    ///     let key = Key::new("test", "test", "mykey").unwrap();
+    ///     let key = Key::new("test", "test", "mykey");
     ///     let bin = as_bin!("a", 42);
     ///     let ops = vec![operations::add(&bin), operations::get_bin("a")];
     ///     match client.operate(&WritePolicy::default(), &key, &ops).await {
     ///         Ok(record) => println!("The new value is {}", record.bins.get("a").unwrap()),
-    ///         Err(err) => println!("Error writing record: {}", err),
+    ///         Err(err) => println!("Error writing record: {err}"),
     ///     }
     /// }
     /// ```
@@ -523,12 +523,12 @@ impl Client {
     ///             while let Some(record) = records.next().await {
     ///                 match record {
     ///                     Ok(record) => count += 1,
-    ///                     Err(err) => panic!("Error executing scan: {}", err),
+    ///                     Err(err) => panic!("Error executing scan: {err}"),
     ///                 }
     ///             }
-    ///             println!("Records: {}", count);
+    ///             println!("Records: {count}");
     ///         }
-    ///         Err(err) => println!("Failed to execute scan: {}", err),
+    ///         Err(err) => println!("Failed to execute scan: {err}"),
     ///     }
     /// }
     /// ```
@@ -666,7 +666,7 @@ impl Client {
     ///         .create_index("foo", "bar", "baz", "idx_foo_bar_baz", IndexType::Numeric)
     ///         .await
     ///     {
-    ///         Err(err) => println!("Failed to create index: {}", err),
+    ///         Err(err) => println!("Failed to create index: {err}"),
     ///         _ => {}
     ///     }
     /// }

@@ -68,7 +68,7 @@
 //!         let t = tokio::spawn(async move {
 //!             let rpolicy = ReadPolicy::default();
 //!             let wpolicy = WritePolicy::default();
-//!             let key = Key::new("test", "test", i).unwrap();
+//!             let key = Key::new("test", "test", i);
 //!             let bins = [as_bin!("int", 123), as_bin!("str", "Hello, World!")];
 //!
 //!             client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -112,7 +112,7 @@ pub use batch::BatchRead;
 pub use bin::{Bin, Bins};
 pub use client::Client;
 pub use cluster::Node;
-pub use key::Key;
+pub use key::{Key, UserKey};
 pub use net::{Host, ToHosts};
 pub use operations::{MapPolicy, MapReturnType, MapWriteMode};
 pub use policy::{

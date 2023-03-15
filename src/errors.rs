@@ -30,14 +30,14 @@
 //!         .await
 //!         .expect("Failed to connect to cluster");
 //!
-//!     let key = Key::new("test", "test", "someKey").unwrap();
+//!     let key = Key::new("test", "test", "someKey");
 //!     match client.get(&ReadPolicy::default(), &key, Bins::None).await {
 //!         Ok(record) => match record.time_to_live() {
 //!             None => println!("record never expires"),
 //!             Some(duration) => println!("ttl: {} secs", duration.as_secs()),
 //!         },
 //!         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
-//!             println!("No such record: {key}");
+//!             println!("No such record: {key:?}");
 //!         }
 //!         Err(err) => {
 //!             println!("Error fetching record: {err:#?}");

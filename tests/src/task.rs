@@ -32,7 +32,7 @@ async fn index_task_test() {
 
     let wpolicy = WritePolicy::default();
     for i in 0..2_i64 {
-        let key = Key::new(namespace.clone(), set_name.clone(), i).unwrap();
+        let key = Key::new(namespace.clone(), set_name.clone(), i);
         let wbin = as_bin!(&bin_name, i);
         let bins = vec![wbin];
         client.put(&wpolicy, &key, &bins).await.unwrap();

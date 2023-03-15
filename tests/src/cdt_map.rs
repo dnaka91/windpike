@@ -39,7 +39,7 @@ async fn map_operations() {
     let rpolicy = ReadPolicy::default();
 
     let key = common::rand_str(10);
-    let key = Key::new(namespace, set_name, &key).unwrap();
+    let key = Key::new(namespace, set_name, key);
 
     client.delete(&wpolicy, &key).await.unwrap();
 

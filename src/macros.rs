@@ -24,7 +24,7 @@ macro_rules! as_bin {
 ///         .await
 ///         .unwrap();
 ///
-///     let key = Key::new("test", "test", "mykey").unwrap();
+///     let key = Key::new("test", "test", "mykey");
 ///     let list = as_list!("a", "b", "c");
 ///     let bin = as_bin!("list", list);
 ///     client
@@ -65,7 +65,7 @@ macro_rules! as_values {
 ///         .await
 ///         .unwrap();
 ///
-///     let key = Key::new("test", "test", "mykey").unwrap();
+///     let key = Key::new("test", "test", "mykey");
 ///     let map = as_map!("a" => 1, "b" => 2);
 ///     let bin = as_bin!("map", map);
 ///     client

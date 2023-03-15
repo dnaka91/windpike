@@ -19,7 +19,8 @@ use tracing::warn;
 
 use super::{buffer, field_type::FieldType, Command, CommandError, Result};
 use crate::{
-    cluster::Node, net::Connection, value::bytes_to_particle, Key, Record, ResultCode, Value,
+    cluster::Node, net::Connection, value::bytes_to_particle, Key, Record, ResultCode, UserKey,
+    Value,
 };
 
 pub struct StreamCommand {
@@ -144,7 +145,7 @@ impl StreamCommand {
                 x if x == FieldType::Key as u8 => {
                     let particle_type = conn.buffer().read_u8(None);
                     let particle_bytes_size = field_len - 2;
-                    orig_key = Some(bytes_to_particle(
+                    orig_key = Some(UserKey::read_from(
                         particle_type,
                         conn.buffer(),
                         particle_bytes_size,

@@ -25,7 +25,7 @@ async fn connect() {
     let set_name = common::rand_str(10);
     let policy = ReadPolicy::default();
     let wpolicy = WritePolicy::default();
-    let key = Key::new(namespace, set_name, -1).unwrap();
+    let key = Key::new(namespace, set_name, -1);
 
     client.delete(&wpolicy, &key).await.unwrap();
 
@@ -38,10 +38,9 @@ async fn connect() {
         as_bin!("bin Nil", None), // Writing None erases the bin!
         as_bin!(
             "bin Geo",
-            Value::GeoJson(format!(
-                r#"{{ "type": "Point", "coordinates": [{}, {}] }}"#,
-                17.119_381, 19.45612
-            ))
+            Value::GeoJson(
+                r#"{ "type": "Point", "coordinates": [17.119381, 19.45612] }"#.to_owned(),
+            )
         ),
         as_bin!("bin-name-len-15", "max. bin name length is 15 chars"),
     ];

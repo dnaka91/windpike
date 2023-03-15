@@ -28,7 +28,7 @@ use crate::{
         BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy, ReadPolicy,
         RecordExistsAction, ScanPolicy, WritePolicy,
     },
-    BatchRead, Bin, Bins, Key, Value,
+    BatchRead, Bin, Bins, Key, UserKey,
 };
 
 // Contains a read operation.
@@ -742,7 +742,7 @@ impl Buffer {
 
         if send_key {
             if let Some(ref user_key) = key.user_key {
-                self.write_field_value(user_key, FieldType::Key);
+                self.write_user_key(user_key, FieldType::Key);
             }
         }
     }
@@ -762,7 +762,7 @@ impl Buffer {
         self.write_bytes(bytes);
     }
 
-    fn write_field_value(&mut self, value: &Value, ftype: FieldType) {
+    fn write_user_key(&mut self, value: &UserKey, ftype: FieldType) {
         self.write_field_header(value.estimate_size() + 1, ftype);
         self.write_u8(value.particle_type() as u8);
         value.write_to(self);
