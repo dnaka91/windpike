@@ -202,7 +202,7 @@ async fn cdt_list() {
         as_list!(7, as_list!("0", 9, 8, 7, 1, 2.1f64, -1))
     );
 
-    let ops = &vec![lists::sort("bin", ListSortFlags::Default)];
+    let ops = &vec![lists::sort("bin", ListSortFlags::empty())];
     client.operate(&wpolicy, &key, ops).await.unwrap();
 
     let ops = &vec![operations::get_bin("bin")];

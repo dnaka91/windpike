@@ -18,6 +18,8 @@
 //! // bin result = [[0b00000001, 0b01000010, 0b00000000], [0b01011010]]
 //! ```
 
+use bitflags::bitflags;
+
 use super::cdt::OperationEncoder;
 use crate::{
     operations::{
@@ -50,37 +52,38 @@ pub(crate) enum CdtBitwiseOpType {
     GetInt,
 }
 
-/// `CdtBitwiseResizeFlags` specifies the bitwise operation flags for resize.
-#[derive(Clone, Copy, Debug)]
-pub enum BitwiseResizeFlags {
-    /// Default specifies the defalt flag.
-    Default = 0,
-    /// FromFront Adds/removes bytes from the beginning instead of the end.
-    FromFront = 1,
-    /// GrowOnly will only allow the byte[] size to increase.
-    GrowOnly = 2,
-    /// ShrinkOnly will only allow the byte[] size to decrease.
-    ShrinkOnly = 4,
+bitflags! {
+    /// `CdtBitwiseResizeFlags` specifies the bitwise operation flags for resize.
+    #[derive(Clone, Copy, Debug)]
+    pub struct BitwiseResizeFlags: u8 {
+        /// FromFront Adds/removes bytes from the beginning instead of the end.
+        const FROM_FRONT = 1;
+        /// GrowOnly will only allow the byte[] size to increase.
+        const GROW_ONLY = 2;
+        /// ShrinkOnly will only allow the byte[] size to decrease.
+        const SHRINK_ONLY = 4;
+    }
 }
 
-/// `CdtBitwiseWriteFlags` specify bitwise operation policy write flags.
-#[derive(Clone, Copy, Debug)]
-pub enum BitwiseWriteFlags {
-    /// Default allows create or update.
-    Default = 0,
-    /// CreateOnly specifies that:
-    /// If the bin already exists, the operation will be denied.
-    /// If the bin does not exist, a new bin will be created.
-    CreateOnly = 1,
-    /// UpdateOnly specifies that:
-    /// If the bin already exists, the bin will be overwritten.
-    /// If the bin does not exist, the operation will be denied.
-    UpdateOnly = 2,
-    /// NoFail specifies not to raise error if operation is denied.
-    NoFail = 4,
-    /// Partial allows other valid operations to be committed if this operations is
-    /// denied due to flag constraints.
-    Partial = 8,
+bitflags! {
+    /// `CdtBitwiseWriteFlags` specify bitwise operation policy write flags.
+    #[derive(Clone, Copy, Debug)]
+    pub struct BitwiseWriteFlags: u8 {
+        /// CreateOnly specifies that:
+        /// If the bin already exists, the operation will be denied.
+        /// If the bin does not exist, a new bin will be created.
+        const CREATE_ONLY = 1;
+        /// UpdateOnly specifies that:
+        /// If the bin already exists, the bin will be overwritten.
+        /// If the bin does not exist, the operation will be denied.
+        const UPDATE_ONLY = 2;
+        /// NoFail specifies not to raise error if operation is denied.
+        const NO_FAIL = 4;
+        /// Partial allows other valid operations to be committed if this operations is
+        /// denied due to flag constraints.
+        const PARTIAL = 8;
+    }
+
 }
 
 /// `CdtBitwiseOverflowActions` specifies the action to take when bitwise add/subtract results in
@@ -100,13 +103,13 @@ pub enum BitwiseOverflowActions {
 #[derive(Clone, Copy, Debug)]
 pub struct BitPolicy {
     /// The flags determined by CdtBitwiseWriteFlags
-    pub flags: u8,
+    pub flags: BitwiseWriteFlags,
 }
 
 impl BitPolicy {
     /// Creates a new `BitPolicy` with defined `CdtBitwiseWriteFlags`
     #[must_use]
-    pub const fn new(flags: u8) -> Self {
+    pub const fn new(flags: BitwiseWriteFlags) -> Self {
         Self { flags }
     }
 }
@@ -114,7 +117,7 @@ impl BitPolicy {
 impl Default for BitPolicy {
     /// Returns the default `BitPolicy`
     fn default() -> Self {
-        Self::new(BitwiseWriteFlags::Default as u8)
+        Self::new(BitwiseWriteFlags::empty())
     }
 }
 
@@ -133,12 +136,15 @@ impl Default for BitPolicy {
 pub fn resize<'a>(
     bin: &'a str,
     byte_size: i64,
-    resize_flags: Option<BitwiseResizeFlags>,
+    resize_flags: BitwiseResizeFlags,
     policy: &'a BitPolicy,
 ) -> Operation<'a> {
-    let mut args = vec![CdtArgument::Int(byte_size), CdtArgument::Byte(policy.flags)];
-    if let Some(resize_flags) = resize_flags {
-        args.push(CdtArgument::Byte(resize_flags as u8));
+    let mut args = vec![
+        CdtArgument::Int(byte_size),
+        CdtArgument::Byte(policy.flags.bits()),
+    ];
+    if !resize_flags.is_empty() {
+        args.push(CdtArgument::Byte(resize_flags.bits()));
     }
     let cdt_op = CdtOperation {
         op: CdtBitwiseOpType::Resize as u8,
@@ -177,7 +183,7 @@ pub fn insert<'a>(
         args: vec![
             CdtArgument::Int(byte_offset),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -213,7 +219,7 @@ pub fn remove<'a>(
         args: vec![
             CdtArgument::Int(byte_offset),
             CdtArgument::Int(byte_size),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -252,7 +258,7 @@ pub fn set<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -291,7 +297,7 @@ pub fn or<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -330,7 +336,7 @@ pub fn xor<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -369,7 +375,7 @@ pub fn and<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -405,7 +411,7 @@ pub fn not<'a>(
         args: vec![
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -444,7 +450,7 @@ pub fn lshift<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(shift),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -483,7 +489,7 @@ pub fn rshift<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(shift),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 
@@ -532,7 +538,7 @@ pub fn add<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
             CdtArgument::Byte(action_flags),
         ],
     };
@@ -582,7 +588,7 @@ pub fn subtract<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
             CdtArgument::Byte(action_flags),
         ],
     };
@@ -622,7 +628,7 @@ pub fn set_int<'a>(
             CdtArgument::Int(bit_offset),
             CdtArgument::Int(bit_size),
             CdtArgument::Int(value),
-            CdtArgument::Byte(policy.flags),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
 

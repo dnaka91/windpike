@@ -16,6 +16,8 @@
 //! If an index is out of bounds, a parameter error will be returned. If a range is partially out of
 //! bounds, the valid part of the range will be returned.
 
+use bitflags::bitflags;
+
 use super::cdt::OperationEncoder;
 use crate::{
     operations::{
@@ -108,33 +110,32 @@ pub enum ListReturnType {
     Inverted = 0x10000,
 }
 
-/// `CdtListSortFlags` determines sort flags for CDT lists
-#[derive(Clone, Copy, Debug)]
-pub enum ListSortFlags {
-    /// Default is the default sort flag for CDT lists, and sort in Ascending order.
-    Default = 0,
-    /// Descending will sort the contents of the list in descending order.
-    Descending,
-    /// DropDuplicates will drop duplicate values in the results of the CDT list operation.
-    DropDuplicates,
+bitflags! {
+    /// `CdtListSortFlags` determines sort flags for CDT lists
+    #[derive(Clone, Copy, Debug)]
+    pub struct ListSortFlags: u8 {
+        /// Descending will sort the contents of the list in descending order.
+        const DESCENDING = 1;
+        /// DropDuplicates will drop duplicate values in the results of the CDT list operation.
+        const DROP_DUPLICATES = 2;
+    }
 }
 
-/// `CdtListWriteFlags` determines write flags for CDT lists
-#[derive(Clone, Copy, Debug)]
-pub enum ListWriteFlags {
-    /// Default is the default behavior. It means:  Allow duplicate values and insertions at any
-    /// index.
-    Default = 0,
-    /// AddUnique means: Only add unique values.
-    AddUnique = 1,
-    /// InsertBounded means: Enforce list boundaries when inserting.  Do not allow values to be
-    /// inserted at index outside current list boundaries.
-    InsertBounded = 2,
-    /// NoFail means: do not raise error if a list item fails due to write flag constraints.
-    NoFail = 4,
-    /// Partial means: allow other valid list items to be committed if a list item fails due to
-    /// write flag constraints.
-    Partial = 8,
+bitflags! {
+    /// `CdtListWriteFlags` determines write flags for CDT lists
+    #[derive(Clone, Copy, Debug)]
+    pub struct ListWriteFlags: u8 {
+        /// AddUnique means: Only add unique values.
+        const ADD_UNIQUE = 1;
+        /// InsertBounded means: Enforce list boundaries when inserting.  Do not allow values to be
+        /// inserted at index outside current list boundaries.
+        const INSERT_BOUNDED = 2;
+        /// NoFail means: do not raise error if a list item fails due to write flag constraints.
+        const NO_FAIL = 4;
+        /// Partial means: allow other valid list items to be committed if a list item fails due to
+        /// write flag constraints.
+        const PARTIAL = 8;
+    }
 }
 
 /// `ListPolicy` directives when creating a list and writing list items.
@@ -161,7 +162,7 @@ impl ListPolicy {
 impl Default for ListPolicy {
     /// Returns the default policy for CDT list operations.
     fn default() -> Self {
-        Self::new(ListOrderType::Unordered, ListWriteFlags::Default)
+        Self::new(ListOrderType::Unordered, ListWriteFlags::empty())
     }
 }
 
@@ -228,7 +229,7 @@ pub fn append<'a>(policy: &ListPolicy, bin: &'a str, value: &'a Value) -> Operat
         args: vec![
             CdtArgument::Value(value),
             CdtArgument::Byte(policy.attributes as u8),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
@@ -254,7 +255,7 @@ pub fn append_items<'a>(policy: &ListPolicy, bin: &'a str, values: &'a [Value]) 
         args: vec![
             CdtArgument::List(values),
             CdtArgument::Byte(policy.attributes as u8),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
@@ -280,7 +281,7 @@ pub fn insert<'a>(
         args: vec![
             CdtArgument::Int(index),
             CdtArgument::Value(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
@@ -311,7 +312,7 @@ pub fn insert_items<'a>(
         args: vec![
             CdtArgument::Int(index),
             CdtArgument::List(values),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
@@ -776,7 +777,7 @@ pub fn increment<'a>(policy: &ListPolicy, bin: &'a str, index: i64, value: i64) 
         args: vec![
             CdtArgument::Int(index),
             CdtArgument::Int(value),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
@@ -1151,7 +1152,7 @@ pub fn sort(bin: &str, sort_flags: ListSortFlags) -> Operation<'_> {
     let cdt_op = CdtOperation {
         op: CdtListOpType::Sort as u8,
         encoder: OperationEncoder::Cdt,
-        args: vec![CdtArgument::Byte(sort_flags as u8)],
+        args: vec![CdtArgument::Byte(sort_flags.bits())],
     };
     Operation {
         op: OperationType::CdtWrite,

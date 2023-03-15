@@ -1,6 +1,8 @@
 //! `HyperLogLog` operations on HLL items nested in lists/maps are not currently
 //! supported by the server.
 
+use bitflags::bitflags;
+
 use super::cdt::OperationEncoder;
 use crate::{
     operations::{
@@ -11,23 +13,24 @@ use crate::{
     Value,
 };
 
-/// `HLLWriteFlags` determines write flags for HLL
-#[derive(Clone, Copy, Debug)]
-pub enum HllWriteFlags {
-    /// Default.  Allow create or update.
-    Default = 0,
-    /// If the bin already exists, the operation will be denied.
-    /// If the bin does not exist, a new bin will be created.
-    CreateOnly = 1,
-    /// If the bin already exists, the bin will be overwritten.
-    /// If the bin does not exist, the operation will be denied.
-    UpdateOnly = 2,
-    /// Do not raise error if operation is denied.
-    NoFail = 4,
-    /// Allow the resulting set to be the minimum of provided index bits.
-    /// Also, allow the usage of less precise HLL algorithms when minHash bits
-    /// of all participating sets do not match.
-    AllowFold = 8,
+bitflags! {
+    /// `HLLWriteFlags` determines write flags for HLL
+    #[derive(Clone, Copy, Debug)]
+    pub struct HllWriteFlags: u8 {
+        /// If the bin already exists, the operation will be denied.
+        /// If the bin does not exist, a new bin will be created.
+        const CREATE_ONLY = 1;
+        /// If the bin already exists, the bin will be overwritten.
+        /// If the bin does not exist, the operation will be denied.
+        const UPDATE_ONLY = 2;
+        /// Do not raise error if operation is denied.
+        const NO_FAIL = 4;
+        /// Allow the resulting set to be the minimum of provided index bits.
+        /// Also, allow the usage of less precise HLL algorithms when minHash bits
+        /// of all participating sets do not match.
+        const ALLOW_FOLD = 8;
+    }
+
 }
 
 /// `HLLPolicy` operation policy.
@@ -48,7 +51,7 @@ impl HllPolicy {
 impl Default for HllPolicy {
     /// Returns the default policy for HLL operations.
     fn default() -> Self {
-        Self::new(HllWriteFlags::Default)
+        Self::new(HllWriteFlags::empty())
     }
 }
 
@@ -91,7 +94,7 @@ pub fn init_with_min_hash<'a>(
         args: vec![
             CdtArgument::Int(index_bit_count),
             CdtArgument::Int(min_hash_bit_count),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
@@ -142,7 +145,7 @@ pub fn add_with_index_and_min_hash<'a>(
             CdtArgument::List(list),
             CdtArgument::Int(index_bit_count),
             CdtArgument::Int(min_hash_bit_count),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
@@ -163,7 +166,7 @@ pub fn set_union<'a>(policy: &HllPolicy, bin: &'a str, list: &'a [Value]) -> Ope
         encoder: OperationEncoder::Hll,
         args: vec![
             CdtArgument::List(list),
-            CdtArgument::Byte(policy.flags as u8),
+            CdtArgument::Byte(policy.flags.bits()),
         ],
     };
     Operation {
