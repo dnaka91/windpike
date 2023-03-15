@@ -70,13 +70,13 @@ impl<'a> Operation<'a> {
             OperationBin::Name(bin) => bin.len(),
             OperationBin::None | OperationBin::All => 0,
         };
-        size += match self.data {
+        size += match &self.data {
             OperationData::None => 0,
             OperationData::Value(value) => value.estimate_size(),
-            OperationData::CdtListOp(ref cdt_op)
-            | OperationData::CdtMapOp(ref cdt_op)
-            | OperationData::CdtBitOp(ref cdt_op)
-            | OperationData::HllOp(ref cdt_op) => cdt_op.estimate_size(self.ctx),
+            OperationData::CdtListOp(cdt_op)
+            | OperationData::CdtMapOp(cdt_op)
+            | OperationData::CdtBitOp(cdt_op)
+            | OperationData::HllOp(cdt_op) => cdt_op.estimate_size(self.ctx),
         };
 
         size
@@ -91,7 +91,7 @@ impl<'a> Operation<'a> {
         size += w.write_u32(op_size as u32 + 4);
         size += w.write_u8(self.op as u8);
 
-        match self.data {
+        match &self.data {
             OperationData::None => {
                 size += self.write_op_header_to(w, ParticleType::Null as u8);
             }
@@ -99,10 +99,10 @@ impl<'a> Operation<'a> {
                 size += self.write_op_header_to(w, value.particle_type() as u8);
                 size += value.write_to(w);
             }
-            OperationData::CdtListOp(ref cdt_op)
-            | OperationData::CdtMapOp(ref cdt_op)
-            | OperationData::CdtBitOp(ref cdt_op)
-            | OperationData::HllOp(ref cdt_op) => {
+            OperationData::CdtListOp(cdt_op)
+            | OperationData::CdtMapOp(cdt_op)
+            | OperationData::CdtBitOp(cdt_op)
+            | OperationData::HllOp(cdt_op) => {
                 size += self.write_op_header_to(w, CdtOperation::particle_type() as u8);
                 size += cdt_op.write_to(w, self.ctx);
             }

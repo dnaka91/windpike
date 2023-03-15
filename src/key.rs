@@ -54,7 +54,7 @@ impl Key {
     fn compute_digest(&mut self) {
         let mut hash = Ripemd160::new();
         hash.update(self.set_name.as_bytes());
-        if let Some(ref user_key) = self.user_key {
+        if let Some(user_key) = &self.user_key {
             hash.update([user_key.particle_type() as u8]);
             user_key.write_key_bytes(&mut hash);
         } else {
@@ -102,10 +102,10 @@ impl UserKey {
     }
 
     pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
-        match *self {
-            UserKey::Int(i) => w.write_i64(i),
-            UserKey::String(ref s) => w.write_str(s),
-            UserKey::Blob(ref b) => w.write_bytes(b),
+        match self {
+            UserKey::Int(i) => w.write_i64(*i),
+            UserKey::String(s) => w.write_str(s),
+            UserKey::Blob(b) => w.write_bytes(b),
         }
     }
 

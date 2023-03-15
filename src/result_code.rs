@@ -53,7 +53,8 @@ pub enum ResultCode {
     ElementNotFound,
     /// Element already exists in CDT.
     ElementExists,
-    /// Attempt to use an Enterprise feature on a community server or a server without the applicable feature key.
+    /// Attempt to use an Enterprise feature on a community server or a server without the
+    /// applicable feature key.
     EnterpriseOnly,
     /// The operation cannot be applied to the current bin value on the server.
     OpNotApplicable,

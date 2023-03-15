@@ -83,7 +83,7 @@ impl NodeValidator {
             Some(node_name) => self.name = node_name.clone(),
         }
 
-        if let Some(ref cluster_name) = *cluster.cluster_name() {
+        if let Some(cluster_name) = cluster.cluster_name() {
             match info_map.get("cluster-name") {
                 None => return Err(NodeError::MissingClusterName),
                 Some(info_name) if info_name == cluster_name => {}

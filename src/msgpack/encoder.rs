@@ -11,21 +11,21 @@ use crate::{
 };
 
 pub(crate) fn pack_value(w: &mut impl Write, val: &Value) -> usize {
-    match *val {
+    match val {
         Value::Nil => pack_nil(w),
-        Value::Int(ref val) => pack_integer(w, *val),
-        Value::Uint(ref val) => pack_u64(w, *val),
-        Value::Bool(ref val) => pack_bool(w, *val),
-        Value::String(ref val) => pack_string(w, val),
-        Value::Float(ref val) => match *val {
-            FloatValue::F64(val) => pack_f64(w, f64::from_bits(val)),
-            FloatValue::F32(val) => pack_f32(w, f32::from_bits(val)),
+        Value::Int(val) => pack_integer(w, *val),
+        Value::Uint(val) => pack_u64(w, *val),
+        Value::Bool(val) => pack_bool(w, *val),
+        Value::String(val) => pack_string(w, val),
+        Value::Float(val) => match val {
+            FloatValue::F64(val) => pack_f64(w, f64::from_bits(*val)),
+            FloatValue::F32(val) => pack_f32(w, f32::from_bits(*val)),
         },
-        Value::Blob(ref val) | Value::Hll(ref val) => pack_blob(w, val),
-        Value::List(ref val) => pack_array(w, val),
-        Value::HashMap(ref val) => pack_map(w, val),
+        Value::Blob(val) | Value::Hll(val) => pack_blob(w, val),
+        Value::List(val) => pack_array(w, val),
+        Value::HashMap(val) => pack_map(w, val),
         Value::OrderedMap(_) => panic!("Ordered maps are not supported in this encoder."),
-        Value::GeoJson(ref val) => pack_geo_json(w, val),
+        Value::GeoJson(val) => pack_geo_json(w, val),
     }
 }
 

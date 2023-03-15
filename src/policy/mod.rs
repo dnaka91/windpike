@@ -119,7 +119,7 @@ pub struct BasePolicy {
 
     /// Send user defined key in addition to hash digest on both reads and writes.
     /// The default is to not send the user defined key.
-    pub send_key:bool,
+    pub send_key: bool,
 }
 
 impl Policy for BasePolicy {

@@ -136,17 +136,17 @@ pub enum Value {
 #[allow(clippy::derived_hash_with_manual_eq)]
 impl Hash for Value {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        match *self {
+        match self {
             Self::Nil => {
                 Option::<u8>::None.hash(state);
             }
-            Self::Bool(ref val) => val.hash(state),
-            Self::Int(ref val) => val.hash(state),
-            Self::Uint(ref val) => val.hash(state),
-            Self::Float(ref val) => val.hash(state),
-            Self::String(ref val) | Self::GeoJson(ref val) => val.hash(state),
-            Self::Blob(ref val) | Self::Hll(ref val) => val.hash(state),
-            Self::List(ref val) => val.hash(state),
+            Self::Bool(val) => val.hash(state),
+            Self::Int(val) => val.hash(state),
+            Self::Uint(val) => val.hash(state),
+            Self::Float(val) => val.hash(state),
+            Self::String(val) | Self::GeoJson(val) => val.hash(state),
+            Self::Blob(val) | Self::Hll(val) => val.hash(state),
+            Self::List(val) => val.hash(state),
             Self::HashMap(_) => panic!("HashMaps cannot be used as map keys."),
             Self::OrderedMap(_) => panic!("OrderedMaps cannot be used as map keys."),
         }
@@ -267,42 +267,42 @@ impl Value {
     /// Calculate the size in bytes that the representation on wire for this value will require.
     /// For internal use only.
     pub(crate) fn estimate_size(&self) -> usize {
-        match *self {
+        match self {
             Self::Nil => 0,
             Self::Int(_) | Self::Bool(_) | Self::Float(_) => 8,
             Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Self::String(ref s) => s.len(),
-            Self::Blob(ref b) => b.len(),
+            Self::String(s) => s.len(),
+            Self::Blob(b) => b.len(),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut msgpack::Sink, self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Self::GeoJson(ref s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
-            Self::Hll(ref h) => h.len(),
+            Self::GeoJson(s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
+            Self::Hll(h) => h.len(),
         }
     }
 
     /// Serialize the value into the given buffer.
     /// For internal use only.
     pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
-        match *self {
+        match self {
             Self::Nil => 0,
-            Self::Bool(val) => w.write_bool(val),
-            Self::Int(val) => w.write_i64(val),
+            Self::Bool(val) => w.write_bool(*val),
+            Self::Int(val) => w.write_i64(*val),
             Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
             Self::Float(val) => w.write_f64(match val {
-                FloatValue::F32(val) => f64::from(f32::from_bits(val)),
-                FloatValue::F64(val) => f64::from_bits(val),
+                FloatValue::F32(val) => f64::from(f32::from_bits(*val)),
+                FloatValue::F64(val) => f64::from_bits(*val),
             }),
-            Self::String(ref val) => w.write_str(val),
-            Self::Blob(ref val) | Self::Hll(ref val) => w.write_bytes(val),
+            Self::String(val) => w.write_str(val),
+            Self::Blob(val) | Self::Hll(val) => w.write_bytes(val),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(w, self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Self::GeoJson(ref val) => w.write_geo(val),
+            Self::GeoJson(val) => w.write_geo(val),
         }
     }
 }

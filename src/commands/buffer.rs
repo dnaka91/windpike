@@ -261,7 +261,7 @@ impl Buffer {
         match bins {
             Bins::None => self.set_read_header(policy, key),
             Bins::All => self.set_read_for_key_only(policy, key),
-            Bins::Some(ref bin_names) => {
+            Bins::Some(bin_names) => {
                 self.begin();
                 let field_count = self.estimate_key_size(key, policy.send_key);
                 for bin_name in bin_names {
@@ -353,7 +353,7 @@ impl Buffer {
                     if policy.send_set_name {
                         self.offset += key.set_name.len() + FIELD_HEADER_SIZE as usize;
                     }
-                    if let Bins::Some(ref bin_names) = batch_read.bins {
+                    if let Bins::Some(bin_names) = &batch_read.bins {
                         for name in bin_names {
                             self.estimate_operation_size_for_bin_name(name);
                         }
@@ -393,7 +393,7 @@ impl Buffer {
                 }
                 _ => {
                     self.write_u8(0);
-                    match batch_read.bins {
+                    match &batch_read.bins {
                         Bins::None => {
                             self.write_u8((ReadAttr::READ | ReadAttr::GET_NO_BINS).bits());
                             self.write_u16(field_count_row);
@@ -412,7 +412,7 @@ impl Buffer {
                                 self.write_field_string(&key.set_name, FieldType::Table);
                             }
                         }
-                        Bins::Some(ref bin_names) => {
+                        Bins::Some(bin_names) => {
                             self.write_u8(ReadAttr::READ.bits());
                             self.write_u16(field_count_row);
                             self.write_u16(bin_names.len() as u16);
@@ -554,9 +554,9 @@ impl Buffer {
         self.offset += 8 + FIELD_HEADER_SIZE as usize;
         field_count += 1;
 
-        let bin_count = match *bins {
+        let bin_count = match bins {
             Bins::All | Bins::None => 0,
-            Bins::Some(ref bin_names) => {
+            Bins::Some(bin_names) => {
                 for bin_name in bin_names {
                     self.estimate_operation_size_for_bin_name(bin_name);
                 }
@@ -611,7 +611,7 @@ impl Buffer {
         self.write_field_header(8, FieldType::TranId);
         self.write_u64(task_id);
 
-        if let Bins::Some(ref bin_names) = *bins {
+        if let Bins::Some(bin_names) = bins {
             for bin_name in bin_names {
                 self.write_operation_for_bin_name(bin_name, OperationType::Read);
             }
@@ -638,7 +638,7 @@ impl Buffer {
         field_count += 1;
 
         if send_key {
-            if let Some(ref user_key) = key.user_key {
+            if let Some(user_key) = &key.user_key {
                 // field header size + key size
                 self.offset += user_key.estimate_size() + FIELD_HEADER_SIZE as usize + 1;
                 field_count += 1;
@@ -771,7 +771,7 @@ impl Buffer {
         self.write_field_bytes(&key.digest, FieldType::DigestRipe);
 
         if send_key {
-            if let Some(ref user_key) = key.user_key {
+            if let Some(user_key) = &key.user_key {
                 self.write_user_key(user_key, FieldType::Key);
             }
         }

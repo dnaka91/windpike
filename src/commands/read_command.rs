@@ -73,9 +73,9 @@ impl<'a> ReadCommand<'a> {
                     Vacant(entry) => {
                         entry.insert(value);
                     }
-                    Occupied(entry) => match *entry.into_mut() {
-                        Value::List(ref mut list) => list.push(value),
-                        ref mut prev => {
+                    Occupied(entry) => match entry.into_mut() {
+                        Value::List(list) => list.push(value),
+                        prev => {
                             *prev = as_list!(prev.clone(), value);
                         }
                     },

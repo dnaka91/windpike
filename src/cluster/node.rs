@@ -203,8 +203,8 @@ impl Node {
 
             let host = friend_info.next().unwrap();
             let port = u16::from_str(friend_info.next().unwrap())?;
-            let alias = match self.client_policy.ip_map {
-                Some(ref ip_map) if ip_map.contains_key(host) => {
+            let alias = match &self.client_policy.ip_map {
+                Some(ip_map) if ip_map.contains_key(host) => {
                     Host::new(ip_map.get(host).unwrap(), port)
                 }
                 _ => Host::new(host, port),

@@ -92,7 +92,7 @@ impl Connection {
     }
 
     async fn authenticate(&mut self, user_password: &Option<(String, String)>) -> Result<()> {
-        if let Some((ref user, ref password)) = *user_password {
+        if let Some((user, password)) = user_password {
             return match AdminCommand::authenticate(self, user, password).await {
                 Ok(()) => Ok(()),
                 Err(err) => {

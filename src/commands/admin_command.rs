@@ -165,8 +165,8 @@ impl AdminCommand {
         conn.buffer().reset_offset();
         Self::write_header(&mut conn, CHANGE_PASSWORD, 3);
         Self::write_field_str(&mut conn, USER, user);
-        match cluster.client_policy().user_password {
-            Some((_, ref password)) => {
+        match &cluster.client_policy().user_password {
+            Some((_, password)) => {
                 Self::write_field_str(&mut conn, OLD_PASSWORD, &Self::hash_password(password)?);
             }
 
