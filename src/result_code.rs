@@ -3,31 +3,31 @@ use std::borrow::Cow;
 /// Database operation error codes. The error codes are defined in the server-side file proto.h.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ResultCode {
-    /// OperationType was successful.
+    /// Operation was successful.
     Ok,
     /// Unknown server failure.
     ServerError,
-    /// On retrieving, touching or replacing a record that doesn't exist.
+    /// Retrieving, touching or replacing a record that doesn't exist.
     KeyNotFoundError,
-    /// On modifying a record with unexpected generation.
+    /// Modifying a record with unexpected generation.
     GenerationError,
     /// Bad parameter(s) were passed in database operation call.
     ParameterError,
-    /// On create-only (write unique) operations on a record that already exists.
+    /// Create-only (write unique) operations on a record that already exists.
     KeyExistsError,
-    /// On create-only (write unique) operations on a bin that already exists.
+    /// Bin already exists on a create-only operation.
     BinExistsError,
-    /// Expected cluster Id was not received.
+    /// Expected cluster ID was not received.
     ClusterKeyMismatch,
     /// Server has run out of memory.
     ServerMemError,
     /// Client or server has timed out.
     Timeout,
-    /// Xds product is not available.
-    NoXds,
-    /// Server is not accepting requests.
-    ServerNotAvailable,
-    /// OperationType is not supported with configured bin type (single-bin or multi-bin).
+    /// Operation not allowed in current configuration.
+    AlwaysForbidden,
+    /// Partition is unavailable.
+    PartitionUnavailable,
+    /// Operation is not supported with configured bin type (single-bin or multi-bin).
     BinTypeError,
     /// Record size exceeds limit.
     RecordTooBig,
@@ -35,34 +35,39 @@ pub enum ResultCode {
     KeyBusy,
     /// Scan aborted by server.
     ScanAbort,
-    /// Unsupported Server Feature (e.g. Scan + Udf)
+    /// Unsupported server feature (e.g. Scan + UDF).
     UnsupportedFeature,
-    /// Specified bin name does not exist in record.
+    /// Bin not found on update-only operation.
     BinNotFound,
-    /// Specified bin name does not exist in record.
+    /// Device not keeping up with writes.
     DeviceOverload,
     /// Key type mismatch.
     KeyMismatch,
     /// Invalid namespace.
     InvalidNamespace,
-    /// Bin name length greater than 14 characters.
+    /// Bin name length greater than 15 characters or maximum bins exceeded.
     BinNameTooLong,
-    /// OperationType not allowed at this time.
+    /// Operation not allowed at this time.
     FailForbidden,
-    /// Returned by Map put and put_items operations when policy is REPLACE but key was not found.
+    /// Element not found in CDT.
     ElementNotFound,
-    /// Returned by Map put and put_items operations when policy is CREATE_ONLY but key already
-    /// exists.
+    /// Element already exists in CDT.
     ElementExists,
-    /// Enterprise-only feature not supported by the community edition
+    /// Attempt to use an Enterprise feature on a community server or a server without the applicable feature key.
     EnterpriseOnly,
+    /// The operation cannot be applied to the current bin value on the server.
+    OpNotApplicable,
+    /// The transaction was not performed because the filter was false.
+    FilteredOut,
+    /// Write command loses conflict to XDR.
+    LostConflict,
     /// There are no more records left for query.
     QueryEnd,
-    /// Security type not supported by connected server.
+    /// Security functionality not supported by connected server.
     SecurityNotSupported,
-    /// Administration command is invalid.
+    /// Security functionality supported, but not enabled by connected server.
     SecurityNotEnabled,
-    /// Administration field is invalid.
+    /// Security configuration not supported.
     SecuritySchemeNotSupported,
     /// Administration command is invalid.
     InvalidCommand,
@@ -76,26 +81,36 @@ pub enum ResultCode {
     UserAlreadyExists,
     /// Password is invalid.
     InvalidPassword,
-    /// Security credential is invalid.
+    /// Password has expired.
     ExpiredPassword,
     /// Forbidden password (e.g. recently used)
     ForbiddenPassword,
     /// Security credential is invalid.
     InvalidCredential,
+    /// Login session expired.
+    InvalidSession,
     /// Role name is invalid.
     InvalidRole,
     /// Role already exists.
     RoleAlreadyExists,
     /// Privilege is invalid.
     InvalidPrivilege,
+    /// Invalid IP address whiltelist.
+    InvalidWhitelist,
+    /// Quotas not enabled on server.
+    QuotasNotEnabled,
+    /// Invalid quota value.
+    InvalidQuota,
     /// User must be authentication before performing database operations.
     NotAuthenticated,
     /// User does not posses the required role to perform the database operation.
     RoleViolation,
+    /// Command not allowed because sender IP address not whitelisted.
+    NotWhitelisted,
+    /// Quota exceeded.
+    QuotaExceeded,
     /// A user defined function returned an error code.
     UdfBadResponse,
-    /// The requested item in a large collection was not found.
-    LargeItemNotFound,
     /// Batch functionality has been disabled.
     BatchDisabled,
     /// Batch max requests have been exceeded.
@@ -103,7 +118,7 @@ pub enum ResultCode {
     /// All batch queues are full.
     BatchQueuesFull,
     /// Secondary index already exists.
-    IndexFound,
+    IndexAlreadyExists,
     /// Requested secondary index does not exist.
     IndexNotFound,
     /// Secondary index memory space exceeded.
@@ -124,11 +139,7 @@ pub enum ResultCode {
     QueryTimeout,
     /// Generic query error.
     QueryGeneric,
-    /// Query NetIo error on server
-    QueryNetioErr,
-    /// Duplicate TaskId sent for the statement
-    QueryDuplicate,
-    /// Unknown server result code
+    /// Unknown server result code.
     Unknown(u8),
 }
 
@@ -147,8 +158,8 @@ impl ResultCode {
             7 => Self::ClusterKeyMismatch,
             8 => Self::ServerMemError,
             9 => Self::Timeout,
-            10 => Self::NoXds,
-            11 => Self::ServerNotAvailable,
+            10 => Self::AlwaysForbidden,
+            11 => Self::PartitionUnavailable,
             12 => Self::BinTypeError,
             13 => Self::RecordTooBig,
             14 => Self::KeyBusy,
@@ -163,6 +174,9 @@ impl ResultCode {
             23 => Self::ElementNotFound,
             24 => Self::ElementExists,
             25 => Self::EnterpriseOnly,
+            26 => Self::OpNotApplicable,
+            27 => Self::FilteredOut,
+            28 => Self::LostConflict,
             50 => Self::QueryEnd,
             51 => Self::SecurityNotSupported,
             52 => Self::SecurityNotEnabled,
@@ -176,17 +190,22 @@ impl ResultCode {
             63 => Self::ExpiredPassword,
             64 => Self::ForbiddenPassword,
             65 => Self::InvalidCredential,
+            66 => Self::InvalidSession,
             70 => Self::InvalidRole,
             71 => Self::RoleAlreadyExists,
             72 => Self::InvalidPrivilege,
+            73 => Self::InvalidWhitelist,
+            74 => Self::QuotasNotEnabled,
+            75 => Self::InvalidQuota,
             80 => Self::NotAuthenticated,
             81 => Self::RoleViolation,
+            82 => Self::NotWhitelisted,
+            83 => Self::QuotaExceeded,
             100 => Self::UdfBadResponse,
-            125 => Self::LargeItemNotFound,
             150 => Self::BatchDisabled,
             151 => Self::BatchMaxRequestsExceeded,
             152 => Self::BatchQueuesFull,
-            200 => Self::IndexFound,
+            200 => Self::IndexAlreadyExists,
             201 => Self::IndexNotFound,
             202 => Self::IndexOom,
             203 => Self::IndexNotReadable,
@@ -197,8 +216,6 @@ impl ResultCode {
             211 => Self::QueryQueueFull,
             212 => Self::QueryTimeout,
             213 => Self::QueryGeneric,
-            214 => Self::QueryNetioErr,
-            215 => Self::QueryDuplicate,
             code => Self::Unknown(code),
         }
     }
@@ -217,8 +234,8 @@ impl ResultCode {
             Self::ClusterKeyMismatch => "Cluster key mismatch".into(),
             Self::ServerMemError => "Server memory error".into(),
             Self::Timeout => "Timeout".into(),
-            Self::NoXds => "Xds not available".into(),
-            Self::ServerNotAvailable => "Server not available".into(),
+            Self::AlwaysForbidden => "Operation not allowed".into(),
+            Self::PartitionUnavailable => "Partitions unavailable".into(),
             Self::BinTypeError => "Bin type error".into(),
             Self::RecordTooBig => "Record too big".into(),
             Self::KeyBusy => "Hot key".into(),
@@ -228,13 +245,16 @@ impl ResultCode {
             Self::DeviceOverload => "Device overload".into(),
             Self::KeyMismatch => "Key mismatch".into(),
             Self::InvalidNamespace => "Namespace not found".into(),
-            Self::BinNameTooLong => "Bin name length greater than 14 characters".into(),
-            Self::FailForbidden => "OperationType not allowed at this time".into(),
-            Self::ElementNotFound => "Element not found".into(),
-            Self::ElementExists => "Element already exists".into(),
-            Self::EnterpriseOnly => {
-                "Enterprise-only feature not supported by community edition".into()
+            Self::BinNameTooLong => {
+                "Bin name length greater than 15 characters or maximum bins exceeded".into()
             }
+            Self::FailForbidden => "Operation not allowed at this time".into(),
+            Self::ElementNotFound => "Element not found".into(),
+            Self::ElementExists => "Element exists".into(),
+            Self::EnterpriseOnly => "Enterprise only".into(),
+            Self::OpNotApplicable => "Operation not applicable".into(),
+            Self::FilteredOut => "Transaction filtered out".into(),
+            Self::LostConflict => "Transaction failed due to conflict with XDR".into(),
             Self::QueryEnd => "Query end".into(),
             Self::SecurityNotSupported => "Security not supported".into(),
             Self::SecurityNotEnabled => "Security not enabled".into(),
@@ -248,17 +268,22 @@ impl ResultCode {
             Self::ExpiredPassword => "Expired password".into(),
             Self::ForbiddenPassword => "Forbidden password".into(),
             Self::InvalidCredential => "Invalid credential".into(),
+            Self::InvalidSession => "Login session expired".into(),
             Self::InvalidRole => "Invalid role".into(),
             Self::RoleAlreadyExists => "Role already exists".into(),
             Self::InvalidPrivilege => "Invalid privilege".into(),
+            Self::InvalidWhitelist => "Invalid whitelist".into(),
+            Self::QuotasNotEnabled => "Quotas not enabled".into(),
+            Self::InvalidQuota => "Invalid quota".into(),
             Self::NotAuthenticated => "Not authenticated".into(),
             Self::RoleViolation => "Role violation".into(),
-            Self::UdfBadResponse => "Udf returned error".into(),
-            Self::LargeItemNotFound => "Large collection item not found".into(),
+            Self::NotWhitelisted => "Command not whitelisted".into(),
+            Self::QuotaExceeded => "Quota exceeded".into(),
+            Self::UdfBadResponse => "UDF returned error".into(),
             Self::BatchDisabled => "Batch functionality has been disabled".into(),
             Self::BatchMaxRequestsExceeded => "Batch max requests have been exceeded".into(),
             Self::BatchQueuesFull => "All batch queues are full".into(),
-            Self::IndexFound => "Index already exists".into(),
+            Self::IndexAlreadyExists => "Index already exists".into(),
             Self::IndexNotFound => "Index not found".into(),
             Self::IndexOom => "Index out of memory".into(),
             Self::IndexNotReadable => "Index not readable".into(),
@@ -269,8 +294,6 @@ impl ResultCode {
             Self::QueryQueueFull => "Query queue full".into(),
             Self::QueryTimeout => "Query timeout".into(),
             Self::QueryGeneric => "Query error".into(),
-            Self::QueryNetioErr => "Query NetIo error on server".into(),
-            Self::QueryDuplicate => "Duplicate TaskId sent for the statement".into(),
             Self::Unknown(code) => format!("Unknown server error code: {code}").into(),
         }
     }
