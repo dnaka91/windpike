@@ -180,7 +180,7 @@ impl Buffer {
         bins: &[A],
     ) -> Result<()> {
         self.begin();
-        let field_count = self.estimate_key_size(key, policy.send_key);
+        let field_count = self.estimate_key_size(key, policy.as_ref().send_key);
 
         for bin in bins {
             self.estimate_operation_size_for_bin(bin.as_ref());
@@ -194,7 +194,7 @@ impl Buffer {
             field_count,
             bins.len() as u16,
         );
-        self.write_key(key, policy.send_key);
+        self.write_key(key, policy.as_ref().send_key);
 
         for bin in bins {
             self.write_operation_for_bin(bin.as_ref(), op_type);
@@ -226,11 +226,11 @@ impl Buffer {
     // Writes the command for touch operations
     pub fn set_touch(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
         self.begin();
-        let field_count = self.estimate_key_size(key, policy.send_key);
+        let field_count = self.estimate_key_size(key, policy.as_ref().send_key);
         self.estimate_operation_size();
         self.size_buffer()?;
         self.write_header_with_policy(policy, ReadAttr::empty(), WriteAttr::WRITE, field_count, 1);
-        self.write_key(key, policy.send_key);
+        self.write_key(key, policy.as_ref().send_key);
 
         self.write_operation_for_operation_type(OperationType::Touch);
         self.end();
@@ -263,7 +263,7 @@ impl Buffer {
             Bins::All => self.set_read_for_key_only(policy, key),
             Bins::Some(ref bin_names) => {
                 self.begin();
-                let field_count = self.estimate_key_size(key, false);
+                let field_count = self.estimate_key_size(key, policy.send_key);
                 for bin_name in bin_names {
                     self.estimate_operation_size_for_bin_name(bin_name);
                 }
@@ -276,7 +276,7 @@ impl Buffer {
                     field_count,
                     bin_names.len() as u16,
                 );
-                self.write_key(key, false);
+                self.write_key(key, policy.send_key);
 
                 for bin_name in bin_names {
                     self.write_operation_for_bin_name(bin_name, OperationType::Read);
@@ -291,7 +291,7 @@ impl Buffer {
     // Writes the command for getting metadata operations
     pub fn set_read_header(&mut self, policy: &ReadPolicy, key: &Key) -> Result<()> {
         self.begin();
-        let field_count = self.estimate_key_size(key, false);
+        let field_count = self.estimate_key_size(key, policy.send_key);
 
         self.estimate_operation_size_for_bin_name("");
         self.size_buffer()?;
@@ -302,7 +302,7 @@ impl Buffer {
             field_count,
             1,
         );
-        self.write_key(key, false);
+        self.write_key(key, policy.send_key);
 
         self.write_operation_for_bin_name("", OperationType::Read);
         self.end();
@@ -312,7 +312,7 @@ impl Buffer {
     pub fn set_read_for_key_only(&mut self, policy: &ReadPolicy, key: &Key) -> Result<()> {
         self.begin();
 
-        let field_count = self.estimate_key_size(key, false);
+        let field_count = self.estimate_key_size(key, policy.send_key);
 
         self.size_buffer()?;
         self.write_header(
@@ -322,7 +322,7 @@ impl Buffer {
             field_count,
             0,
         );
-        self.write_key(key, false);
+        self.write_key(key, policy.send_key);
 
         self.end();
         Ok(())
@@ -485,7 +485,8 @@ impl Buffer {
             self.offset += operation.estimate_size() + OPERATION_HEADER_SIZE as usize;
         }
 
-        let field_count = self.estimate_key_size(key, policy.send_key && !write_attr.is_empty());
+        let field_count =
+            self.estimate_key_size(key, policy.as_ref().send_key && !write_attr.is_empty());
         self.size_buffer()?;
 
         if write_attr.is_empty() {
@@ -505,7 +506,7 @@ impl Buffer {
                 operations.len() as u16,
             );
         }
-        self.write_key(key, policy.send_key && !write_attr.is_empty());
+        self.write_key(key, policy.as_ref().send_key && !write_attr.is_empty());
 
         for operation in operations {
             operation.write_to(self);

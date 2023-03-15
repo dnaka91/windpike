@@ -116,6 +116,10 @@ pub struct BasePolicy {
     /// SleepBetweenReplies determines duration to sleep between retries if a
     /// transaction fails and the timeout was not exceeded.  Enter zero to skip sleep.
     pub sleep_between_retries: Option<Duration>,
+
+    /// Send user defined key in addition to hash digest on both reads and writes.
+    /// The default is to not send the user defined key.
+    pub send_key:bool,
 }
 
 impl Policy for BasePolicy {

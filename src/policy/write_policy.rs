@@ -28,10 +28,6 @@ pub struct WritePolicy {
     /// Seconds record will live before being removed by the server.
     pub expiration: Expiration,
 
-    /// Send user defined key in addition to hash digest on a record put.
-    /// The default is to not send the user defined key.
-    pub send_key: bool,
-
     /// For Client::operate() method, return a result for every operation.
     /// Some list operations do not return results by default (`operations::list::clear()` for
     /// example). This can sometimes make it difficult to determine the desired result offset in
@@ -65,12 +61,11 @@ impl Default for WritePolicy {
     fn default() -> Self {
         Self {
             base_policy: BasePolicy::default(),
-            record_exists_action: RecordExistsAction::Update,
-            generation_policy: GenerationPolicy::None,
-            commit_level: CommitLevel::CommitAll,
+            record_exists_action: RecordExistsAction::default(),
+            generation_policy: GenerationPolicy::default(),
+            commit_level: CommitLevel::default(),
             generation: 0,
-            expiration: Expiration::NamespaceDefault,
-            send_key: false,
+            expiration: Expiration::default(),
             respond_per_each_op: false,
             durable_delete: false,
         }

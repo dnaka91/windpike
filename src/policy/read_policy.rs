@@ -9,11 +9,12 @@ pub type ReadPolicy = BasePolicy;
 impl Default for ReadPolicy {
     fn default() -> Self {
         ReadPolicy {
-            priority: Priority::Default,
+            priority: Priority::default(),
             timeout: Some(Duration::new(30, 0)),
             max_retries: Some(2),
             sleep_between_retries: Some(Duration::new(0, 500_000_000)),
-            consistency_level: ConsistencyLevel::ConsistencyOne,
+            consistency_level: ConsistencyLevel::default(),
+            send_key: false,
         }
     }
 }

@@ -43,7 +43,7 @@ impl Default for BatchPolicy {
     fn default() -> Self {
         Self {
             base_policy: BasePolicy::default(),
-            concurrency: Concurrency::Sequential,
+            concurrency: Concurrency::default(),
             allow_inline: true,
             send_set_name: false,
         }

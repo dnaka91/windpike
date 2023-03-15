@@ -1,11 +1,12 @@
 /// Specifies whether a command, that needs to be executed on multiple cluster nodes, should be
 /// executed sequentially, one node at a time, or in parallel on multiple nodes using the client's
 /// thread pool.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum Concurrency {
     /// Issue commands sequentially. This mode has a performance advantage for small to
     /// medium sized batch sizes because requests can be issued in the main transaction thread.
     /// This is the default.
+    #[default]
     Sequential,
     /// Issue all commands in parallel threads. This mode has a performance advantage for
     /// extremely large batch sizes because each node can process the request immediately. The
