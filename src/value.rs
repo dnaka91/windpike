@@ -92,7 +92,7 @@ impl fmt::Display for FloatValue {
 }
 
 /// Container for bin values stored in the Aerospike database.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Value {
     /// Empty value.
     Nil,

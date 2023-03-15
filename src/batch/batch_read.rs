@@ -1,7 +1,7 @@
 use crate::{Bins, Key, Record};
 
 /// Key and bin names used in batch read commands where variable bins are needed for each key.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct BatchRead {
     /// Key.
     pub key: Key,

@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// Struct for querying index creation status
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct IndexTask {
     cluster: Arc<Cluster>,
     namespace: String,

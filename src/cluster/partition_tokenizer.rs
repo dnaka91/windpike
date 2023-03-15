@@ -17,7 +17,7 @@ use crate::{commands::Message, net::Connection};
 const REPLICAS_NAME: &str = "replicas-master";
 
 // Validates a Database server node
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct PartitionTokenizer {
     buffer: Vec<u8>,
     _length: usize,

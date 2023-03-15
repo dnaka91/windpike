@@ -12,7 +12,7 @@ pub static CITRUSLEAF_EPOCH: Lazy<SystemTime> =
     Lazy::new(|| UNIX_EPOCH + Duration::new(1_262_304_000, 0));
 
 /// Container object for a database record.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Record {
     /// Record key. When reading a record from the database, the key is not set in the returned
     /// Record struct.

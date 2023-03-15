@@ -89,7 +89,7 @@ where
 }
 
 /// Common parameters shared by all policy types.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct BasePolicy {
     /// Priority of request relative to other transactions.
     /// Currently, only used for scans.

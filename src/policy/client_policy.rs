@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// `ClientPolicy` encapsulates parameters for client policy command.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct ClientPolicy {
     /// User authentication to cluster. Leave empty for clusters running without restricted access.
     pub user_password: Option<(String, String)>,

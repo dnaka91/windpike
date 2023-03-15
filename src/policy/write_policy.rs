@@ -1,7 +1,7 @@
 use crate::{policy::BasePolicy, CommitLevel, Expiration, GenerationPolicy, RecordExistsAction};
 
 /// `WritePolicy` encapsulates parameters for all write operations.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct WritePolicy {
     /// Base policy instance
     pub base_policy: BasePolicy,
@@ -53,21 +53,6 @@ impl WritePolicy {
             generation: gen,
             expiration: exp,
             ..Self::default()
-        }
-    }
-}
-
-impl Default for WritePolicy {
-    fn default() -> Self {
-        Self {
-            base_policy: BasePolicy::default(),
-            record_exists_action: RecordExistsAction::default(),
-            generation_policy: GenerationPolicy::default(),
-            commit_level: CommitLevel::default(),
-            generation: 0,
-            expiration: Expiration::default(),
-            respond_per_each_op: false,
-            durable_delete: false,
         }
     }
 }

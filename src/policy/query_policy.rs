@@ -1,7 +1,7 @@
 use crate::policy::BasePolicy;
 
 /// `QueryPolicy` encapsulates parameters for query operations.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct QueryPolicy {
     /// Base policy instance
     pub base_policy: BasePolicy,

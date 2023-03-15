@@ -1,7 +1,7 @@
 use crate::{cluster::node, Key};
 
 // Validates a Database server node
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Partition<'a> {
     pub namespace: &'a str,
     pub partition_id: usize,

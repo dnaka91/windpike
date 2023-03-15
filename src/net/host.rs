@@ -7,11 +7,10 @@ use std::{
 use super::{parser::Parser, ParseHostError, Result};
 
 /// Host name/port of database server.
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Host {
     /// Host name or IP address of database server.
     pub name: String,
-
     /// Port of database server.
     pub port: u16,
 }

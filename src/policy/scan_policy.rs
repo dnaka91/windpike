@@ -1,7 +1,7 @@
 use crate::policy::BasePolicy;
 
 /// `ScanPolicy` encapsulates optional parameters used in scan operations.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct ScanPolicy {
     /// Base policy instance
     pub base_policy: BasePolicy,

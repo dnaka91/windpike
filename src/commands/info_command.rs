@@ -9,7 +9,7 @@ use crate::net::Connection;
 // for buffers.
 const MAX_BUFFER_SIZE: usize = 1024 * 1024 + 8; // 1 MB + header
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Message {
     buf: Vec<u8>,
 }

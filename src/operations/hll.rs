@@ -31,7 +31,7 @@ pub enum HllWriteFlags {
 }
 
 /// `HLLPolicy` operation policy.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct HllPolicy {
     /// CdtListWriteFlags
     pub flags: HllWriteFlags,
