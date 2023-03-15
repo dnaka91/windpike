@@ -22,7 +22,6 @@ use crate::value::Value;
 pub struct Bin<'a> {
     /// Bin name
     pub name: &'a str,
-
     /// Bin value
     pub value: Value,
 }
@@ -59,43 +58,8 @@ impl<'a> From<&'a [&'a str]> for Bins {
     }
 }
 
-impl<'a> From<[&'a str; 1]> for Bins {
-    fn from(bins: [&'a str; 1]) -> Self {
-        let bins = bins.iter().copied().map(String::from).collect();
-        Self::Some(bins)
-    }
-}
-
-impl<'a> From<[&'a str; 2]> for Bins {
-    fn from(bins: [&'a str; 2]) -> Self {
-        let bins = bins.iter().copied().map(String::from).collect();
-        Self::Some(bins)
-    }
-}
-
-impl<'a> From<[&'a str; 3]> for Bins {
-    fn from(bins: [&'a str; 3]) -> Self {
-        let bins = bins.iter().copied().map(String::from).collect();
-        Self::Some(bins)
-    }
-}
-
-impl<'a> From<[&'a str; 4]> for Bins {
-    fn from(bins: [&'a str; 4]) -> Self {
-        let bins = bins.iter().copied().map(String::from).collect();
-        Self::Some(bins)
-    }
-}
-
-impl<'a> From<[&'a str; 5]> for Bins {
-    fn from(bins: [&'a str; 5]) -> Self {
-        let bins = bins.iter().copied().map(String::from).collect();
-        Self::Some(bins)
-    }
-}
-
-impl<'a> From<[&'a str; 6]> for Bins {
-    fn from(bins: [&'a str; 6]) -> Self {
+impl<'a, const N: usize> From<[&'a str; N]> for Bins {
+    fn from(bins: [&'a str; N]) -> Self {
         let bins = bins.iter().copied().map(String::from).collect();
         Self::Some(bins)
     }
