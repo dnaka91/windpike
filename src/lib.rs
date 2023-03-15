@@ -58,14 +58,14 @@
 //!
 //!             client.put(&wpolicy, &key, &bins).await.unwrap();
 //!             let rec = client.get(&rpolicy, &key, Bins::All).await.unwrap();
-//!             println!("Record: {rec}");
+//!             println!("Record: {rec:?}");
 //!
 //!             client.touch(&wpolicy, &key).await.unwrap();
 //!             let rec = client.get(&rpolicy, &key, Bins::All).await.unwrap();
-//!             println!("Record: {rec}");
+//!             println!("Record: {rec:?}");
 //!
 //!             let rec = client.get(&rpolicy, &key, Bins::None).await.unwrap();
-//!             println!("Record Header: {rec}");
+//!             println!("Record Header: {rec:?}");
 //!
 //!             let exists = client.exists(&wpolicy, &key).await.unwrap();
 //!             println!("exists: {exists}");
@@ -73,7 +73,7 @@
 //!             let bin = as_bin!("int", 999);
 //!             let ops = &vec![operations::put(&bin), operations::get()];
 //!             let op_rec = client.operate(&wpolicy, &key, ops).await.unwrap();
-//!             println!("operate: {op_rec}");
+//!             println!("operate: {op_rec:?}");
 //!
 //!             let existed = client.delete(&wpolicy, &key).await.unwrap();
 //!             println!("existed (sould be true): {existed}");
