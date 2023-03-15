@@ -664,15 +664,8 @@ impl Client {
         index_name: &str,
         index_type: IndexType,
     ) -> Result<IndexTask> {
-        self.create_complex_index(
-            namespace,
-            set_name,
-            bin_name,
-            index_name,
-            index_type,
-            None,
-        )
-        .await?;
+        self.create_complex_index(namespace, set_name, bin_name, index_name, index_type, None)
+            .await?;
         Ok(IndexTask::new(
             Arc::clone(&self.cluster),
             namespace.to_string(),

@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::time::{Duration, Instant};
 use tracing::warn;
 
-use super::{Command, CommandError, Result};
+use super::{buffer::InfoAttr, Command, CommandError, Result};
 use crate::{
     cluster::Node,
     net::Connection,
@@ -138,8 +138,8 @@ impl BatchReadCommand {
         };
 
         // if cmd is the end marker of the response, do not proceed further
-        let info3 = conn.buffer().read_u8(Some(3));
-        if info3 & super::buffer::INFO3_LAST == super::buffer::INFO3_LAST {
+        let info3 = InfoAttr::from_bits_truncate(conn.buffer().read_u8(Some(3)));
+        if info3.contains(InfoAttr::LAST) {
             return Ok(None);
         }
 

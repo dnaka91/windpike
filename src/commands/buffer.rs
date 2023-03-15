@@ -6,6 +6,8 @@
 
 use std::{str, time::Duration};
 
+use bitflags::bitflags;
+
 use crate::{
     commands::field_type::FieldType,
     msgpack::Write,
@@ -17,59 +19,73 @@ use crate::{
     BatchRead, Bin, Bins, Key, UserKey,
 };
 
-// Contains a read operation.
-const INFO1_READ: u8 = 1;
+bitflags! {
+    /// First set of info bits, describing read attributes.
+    #[derive(Clone, Copy)]
+    struct ReadAttr: u8 {
+        /// Contains a read operation.
+        const READ = 1;
+        /// Get all bins.
+        const GET_ALL = 1 << 1;
+        /// Bypass monitoring, inline if data-in-memory.
+        const SHORT_QUERY = 1 << 2;
+        /// Batch protocol.
+        const BATCH = 1 << 3;
+        /// Operation is via XDR.
+        const XDR = 1 << 4;
+        /// Get record metadata only, no bin metadata or data.
+        const GET_NO_BINS = 1 << 5;
+        /// Involve all replicas in read operation.
+        const CONSISTENCY_LEVEL_ALL = 1 << 6;
+        /// **Enterprise only:** Compress the response data.
+        const COMPRESS_RESPONSE = 1 << 7;
+    }
+}
 
-// Get all bins.
-const INFO1_GET_ALL: u8 = 1 << 1;
+bitflags! {
+    /// Second set of info bits, describing write attributes.
+    #[derive(Clone, Copy)]
+    struct WriteAttr: u8 {
+        /// Contains a write semantic.
+        const WRITE = 1;
+        /// Delete record.
+        const DELETE = 1 << 1;
+        /// Pay attention to the generation.
+        const GENERATION = 1 << 2;
+        /// Apply write if `new generation > old`, good for restore.
+        const GENERATION_GT = 1 << 3;
+        /// **Enterprise only:** Operation resulting in record deletion leaves tombstone.
+        const DURABLE_DELETE = 1 << 4;
+        /// Write record only if it doesn't exist.
+        const CREATE_ONLY = 1 << 5;
+        // Bit 6 is unused
+        /// All bin operations (read, write, or modify) require a response, in request order.
+        const RESPOND_ALL_OPS = 1 << 7;
+    }
+}
 
-// Batch read or exists.
-const INFO1_BATCH: u8 = 1 << 3;
-
-// Do not read the bins
-const INFO1_NOBINDATA: u8 = 1 << 5;
-
-// Involve all replicas in read operation.
-const INFO1_CONSISTENCY_ALL: u8 = 1 << 6;
-
-// Create or update record
-const INFO2_WRITE: u8 = 1;
-
-// Fling a record into the belly of Moloch.
-const INFO2_DELETE: u8 = 1 << 1;
-
-// Update if expected generation == old.
-const INFO2_GENERATION: u8 = 1 << 2;
-
-// Update if new generation >= old, good for restore.
-const INFO2_GENERATION_GT: u8 = 1 << 3;
-
-// Transaction resulting in record deletion leaves tombstone (Enterprise only).
-const INFO2_DURABLE_DELETE: u8 = 1 << 4;
-
-// Create only. Fail if record already exists.
-const INFO2_CREATE_ONLY: u8 = 1 << 5;
-
-// Return a result for every operation.
-const INFO2_RESPOND_ALL_OPS: u8 = 1 << 7;
-
-// This is the last of a multi-part message.
-pub const INFO3_LAST: u8 = 1;
-
-// Commit to master only before declaring success.
-const INFO3_COMMIT_MASTER: u8 = 1 << 1;
-
-// Partition is complete response in scan.
-pub const _INFO3_PARTITION_DONE: u8 = 1 << 2;
-
-// Update only. Merge bins.
-const INFO3_UPDATE_ONLY: u8 = 1 << 3;
-
-// Create or completely replace record.
-const INFO3_CREATE_OR_REPLACE: u8 = 1 << 4;
-
-// Completely replace existing record only.
-const INFO3_REPLACE_ONLY: u8 = 1 << 5;
+bitflags! {
+    /// Third and last set of info bits, describing other attributes.
+    #[derive(Clone, Copy)]
+    pub(crate) struct InfoAttr: u8 {
+        /// This is the last of a multi-part message.
+        const LAST = 1;
+        /// "Fire and forget" replica writes.
+        const COMMIT_LEVEL_MASTER = 1 << 1;
+        /// In query response, partition is done.
+        const PARTITION_DONE = 1 << 2;
+        /// Update existing record only, do not create new record.
+        const UPDATE_ONLY = 1 << 3;
+        /// Completely replace existing record, or create new record.
+        const CREATE_OR_REPLACE = 1 << 4;
+        /// Completely replace existing record, do **not** create new record.
+        const REPLACE_ONLY = 1 << 5;
+        /// **Enterprise only**
+        const SC_READ_TYPE = 1 << 6;
+        /// **Enterprise only**
+        const SC_READ_RELAX = 1 << 7;
+    }
+}
 
 pub const MSG_TOTAL_HEADER_SIZE: u8 = 30;
 const FIELD_HEADER_SIZE: u8 = 5;
@@ -171,7 +187,13 @@ impl Buffer {
         }
 
         self.size_buffer()?;
-        self.write_header_with_policy(policy, 0, INFO2_WRITE, field_count, bins.len() as u16);
+        self.write_header_with_policy(
+            policy,
+            ReadAttr::empty(),
+            WriteAttr::WRITE,
+            field_count,
+            bins.len() as u16,
+        );
         self.write_key(key, policy.send_key);
 
         for bin in bins {
@@ -188,7 +210,13 @@ impl Buffer {
         let field_count = self.estimate_key_size(key, false);
 
         self.size_buffer()?;
-        self.write_header_with_policy(policy, 0, INFO2_WRITE | INFO2_DELETE, field_count, 0);
+        self.write_header_with_policy(
+            policy,
+            ReadAttr::empty(),
+            WriteAttr::WRITE | WriteAttr::DELETE,
+            field_count,
+            0,
+        );
         self.write_key(key, false);
 
         self.end();
@@ -201,7 +229,7 @@ impl Buffer {
         let field_count = self.estimate_key_size(key, policy.send_key);
         self.estimate_operation_size();
         self.size_buffer()?;
-        self.write_header_with_policy(policy, 0, INFO2_WRITE, field_count, 1);
+        self.write_header_with_policy(policy, ReadAttr::empty(), WriteAttr::WRITE, field_count, 1);
         self.write_key(key, policy.send_key);
 
         self.write_operation_for_operation_type(OperationType::Touch);
@@ -217,8 +245,8 @@ impl Buffer {
         self.size_buffer()?;
         self.write_header(
             &policy.base_policy,
-            INFO1_READ | INFO1_NOBINDATA,
-            0,
+            ReadAttr::READ | ReadAttr::GET_NO_BINS,
+            WriteAttr::empty(),
             field_count,
             0,
         );
@@ -241,7 +269,13 @@ impl Buffer {
                 }
 
                 self.size_buffer()?;
-                self.write_header(policy, INFO1_READ, 0, field_count, bin_names.len() as u16);
+                self.write_header(
+                    policy,
+                    ReadAttr::READ,
+                    WriteAttr::empty(),
+                    field_count,
+                    bin_names.len() as u16,
+                );
                 self.write_key(key, false);
 
                 for bin_name in bin_names {
@@ -261,7 +295,13 @@ impl Buffer {
 
         self.estimate_operation_size_for_bin_name("");
         self.size_buffer()?;
-        self.write_header(policy, INFO1_READ | INFO1_NOBINDATA, 0, field_count, 1);
+        self.write_header(
+            policy,
+            ReadAttr::READ | ReadAttr::GET_NO_BINS,
+            WriteAttr::empty(),
+            field_count,
+            1,
+        );
         self.write_key(key, false);
 
         self.write_operation_for_bin_name("", OperationType::Read);
@@ -275,7 +315,13 @@ impl Buffer {
         let field_count = self.estimate_key_size(key, false);
 
         self.size_buffer()?;
-        self.write_header(policy, INFO1_READ | INFO1_GET_ALL, 0, field_count, 0);
+        self.write_header(
+            policy,
+            ReadAttr::READ | ReadAttr::GET_ALL,
+            WriteAttr::empty(),
+            field_count,
+            0,
+        );
         self.write_key(key, false);
 
         self.end();
@@ -320,8 +366,8 @@ impl Buffer {
         self.size_buffer()?;
         self.write_header(
             &policy.base_policy,
-            INFO1_READ | INFO1_BATCH,
-            0,
+            ReadAttr::READ | ReadAttr::BATCH,
+            WriteAttr::empty(),
             field_count,
             0,
         );
@@ -349,7 +395,7 @@ impl Buffer {
                     self.write_u8(0);
                     match batch_read.bins {
                         Bins::None => {
-                            self.write_u8(INFO1_READ | INFO1_NOBINDATA);
+                            self.write_u8((ReadAttr::READ | ReadAttr::GET_NO_BINS).bits());
                             self.write_u16(field_count_row);
                             self.write_u16(0);
                             self.write_field_string(&key.namespace, FieldType::Namespace);
@@ -358,7 +404,7 @@ impl Buffer {
                             }
                         }
                         Bins::All => {
-                            self.write_u8(INFO1_READ | INFO1_GET_ALL);
+                            self.write_u8((ReadAttr::READ | ReadAttr::GET_ALL).bits());
                             self.write_u16(field_count_row);
                             self.write_u16(0);
                             self.write_field_string(&key.namespace, FieldType::Namespace);
@@ -367,7 +413,7 @@ impl Buffer {
                             }
                         }
                         Bins::Some(ref bin_names) => {
-                            self.write_u8(INFO1_READ);
+                            self.write_u8(ReadAttr::READ.bits());
                             self.write_u16(field_count_row);
                             self.write_u16(bin_names.len() as u16);
                             self.write_field_string(&key.namespace, FieldType::Namespace);
@@ -401,8 +447,8 @@ impl Buffer {
     ) -> Result<()> {
         self.begin();
 
-        let mut read_attr = 0;
-        let mut write_attr = 0;
+        let mut read_attr = ReadAttr::empty();
+        let mut write_attr = WriteAttr::empty();
 
         for operation in operations {
             match *operation {
@@ -410,12 +456,12 @@ impl Buffer {
                     op: OperationType::Read,
                     bin: OperationBin::None,
                     ..
-                } => read_attr |= INFO1_READ | INFO1_NOBINDATA,
+                } => read_attr |= ReadAttr::READ | ReadAttr::GET_NO_BINS,
                 Operation {
                     op: OperationType::Read,
                     bin: OperationBin::All,
                     ..
-                } => read_attr |= INFO1_READ | INFO1_GET_ALL,
+                } => read_attr |= ReadAttr::READ | ReadAttr::GET_ALL,
                 Operation {
                     op:
                         OperationType::Read
@@ -423,8 +469,8 @@ impl Buffer {
                         | OperationType::BitRead
                         | OperationType::HllRead,
                     ..
-                } => read_attr |= INFO1_READ,
-                _ => write_attr |= INFO2_WRITE,
+                } => read_attr |= ReadAttr::READ,
+                _ => write_attr |= WriteAttr::WRITE,
             }
 
             let each_op = matches!(
@@ -433,16 +479,16 @@ impl Buffer {
             );
 
             if policy.respond_per_each_op || each_op {
-                write_attr |= INFO2_RESPOND_ALL_OPS;
+                write_attr |= WriteAttr::RESPOND_ALL_OPS;
             }
 
             self.offset += operation.estimate_size() + OPERATION_HEADER_SIZE as usize;
         }
 
-        let field_count = self.estimate_key_size(key, policy.send_key && write_attr != 0);
+        let field_count = self.estimate_key_size(key, policy.send_key && !write_attr.is_empty());
         self.size_buffer()?;
 
-        if write_attr == 0 {
+        if write_attr.is_empty() {
             self.write_header(
                 &policy.base_policy,
                 read_attr,
@@ -459,7 +505,7 @@ impl Buffer {
                 operations.len() as u16,
             );
         }
-        self.write_key(key, policy.send_key && write_attr != 0);
+        self.write_key(key, policy.send_key && !write_attr.is_empty());
 
         for operation in operations {
             operation.write_to(self);
@@ -519,15 +565,15 @@ impl Buffer {
 
         self.size_buffer()?;
 
-        let mut read_attr = INFO1_READ;
+        let mut read_attr = ReadAttr::READ;
         if *bins == Bins::None {
-            read_attr |= INFO1_NOBINDATA;
+            read_attr |= ReadAttr::GET_NO_BINS;
         }
 
         self.write_header(
             &policy.base_policy,
             read_attr,
-            0,
+            WriteAttr::empty(),
             field_count,
             bin_count as u16,
         );
@@ -617,21 +663,21 @@ impl Buffer {
     fn write_header(
         &mut self,
         policy: &ReadPolicy,
-        read_attr: u8,
-        write_attr: u8,
+        read_attr: ReadAttr,
+        write_attr: WriteAttr,
         field_count: u16,
         operation_count: u16,
     ) {
         let mut read_attr = read_attr;
 
         if policy.consistency_level == ConsistencyLevel::ConsistencyAll {
-            read_attr |= INFO1_CONSISTENCY_ALL;
+            read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
         }
 
         // Write all header data except total size which must be written last.
         self.buffer[8] = MSG_REMAINING_HEADER_SIZE; // Message header length.
-        self.buffer[9] = read_attr;
-        self.buffer[10] = write_attr;
+        self.buffer[9] = read_attr.bits();
+        self.buffer[10] = write_attr.bits();
 
         for i in 11..26 {
             self.buffer[i] = 0;
@@ -648,55 +694,55 @@ impl Buffer {
     fn write_header_with_policy(
         &mut self,
         policy: &WritePolicy,
-        read_attr: u8,
-        write_attr: u8,
+        read_attr: ReadAttr,
+        write_attr: WriteAttr,
         field_count: u16,
         operation_count: u16,
     ) {
         // Set flags.
         let mut generation: u32 = 0;
-        let mut info_attr: u8 = 0;
+        let mut info_attr = InfoAttr::empty();
         let mut read_attr = read_attr;
         let mut write_attr = write_attr;
 
         match policy.record_exists_action {
             RecordExistsAction::Update => (),
-            RecordExistsAction::UpdateOnly => info_attr |= INFO3_UPDATE_ONLY,
-            RecordExistsAction::Replace => info_attr |= INFO3_CREATE_OR_REPLACE,
-            RecordExistsAction::ReplaceOnly => info_attr |= INFO3_REPLACE_ONLY,
-            RecordExistsAction::CreateOnly => write_attr |= INFO2_CREATE_ONLY,
+            RecordExistsAction::UpdateOnly => info_attr |= InfoAttr::UPDATE_ONLY,
+            RecordExistsAction::Replace => info_attr |= InfoAttr::CREATE_OR_REPLACE,
+            RecordExistsAction::ReplaceOnly => info_attr |= InfoAttr::REPLACE_ONLY,
+            RecordExistsAction::CreateOnly => write_attr |= WriteAttr::CREATE_ONLY,
         }
 
         match policy.generation_policy {
             GenerationPolicy::None => (),
             GenerationPolicy::ExpectGenEqual => {
                 generation = policy.generation;
-                write_attr |= INFO2_GENERATION;
+                write_attr |= WriteAttr::GENERATION;
             }
             GenerationPolicy::ExpectGenGreater => {
                 generation = policy.generation;
-                write_attr |= INFO2_GENERATION_GT;
+                write_attr |= WriteAttr::GENERATION_GT;
             }
         }
 
         if policy.commit_level == CommitLevel::CommitMaster {
-            info_attr |= INFO3_COMMIT_MASTER;
+            info_attr |= InfoAttr::COMMIT_LEVEL_MASTER;
         }
 
         if policy.base_policy.consistency_level == ConsistencyLevel::ConsistencyAll {
-            read_attr |= INFO1_CONSISTENCY_ALL;
+            read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
         }
 
         if policy.durable_delete {
-            write_attr |= INFO2_DURABLE_DELETE;
+            write_attr |= WriteAttr::DURABLE_DELETE;
         }
 
         // Write all header data except total size which must be written last.
         self.offset = 8;
         self.write_u8(MSG_REMAINING_HEADER_SIZE); // Message header length.
-        self.write_u8(read_attr);
-        self.write_u8(write_attr);
-        self.write_u8(info_attr);
+        self.write_u8(read_attr.bits());
+        self.write_u8(write_attr.bits());
+        self.write_u8(info_attr.bits());
         self.write_u8(0); // unused
         self.write_u8(0); // clear the result code
 
@@ -704,10 +750,7 @@ impl Buffer {
         self.write_u32(policy.expiration.into());
 
         // Initialize timeout. It will be written later.
-        self.write_u8(0);
-        self.write_u8(0);
-        self.write_u8(0);
-        self.write_u8(0);
+        self.write_u32(0);
 
         self.write_u16(field_count);
         self.write_u16(operation_count);

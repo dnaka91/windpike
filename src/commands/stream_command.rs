@@ -3,7 +3,11 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::sync::mpsc;
 use tracing::warn;
 
-use super::{buffer, field_type::FieldType, Command, CommandError, Result};
+use super::{
+    buffer::{self, InfoAttr},
+    field_type::FieldType,
+    Command, CommandError, Result,
+};
 use crate::{
     cluster::Node, net::Connection, value::bytes_to_particle, Key, Record, ResultCode, UserKey,
     Value,
@@ -35,8 +39,8 @@ impl StreamCommand {
         }
 
         // if cmd is the end marker of the response, do not proceed further
-        let info3 = conn.buffer().read_u8(Some(3));
-        if info3 & buffer::INFO3_LAST == buffer::INFO3_LAST {
+        let info3 = InfoAttr::from_bits_truncate(conn.buffer().read_u8(Some(3)));
+        if info3.contains(InfoAttr::LAST) {
             return Ok((None, false));
         }
 
@@ -50,7 +54,7 @@ impl StreamCommand {
         let key = Self::parse_key(conn, field_count).await?;
 
         // Partition is done, don't go further
-        if info3 & buffer::_INFO3_PARTITION_DONE != 0 {
+        if info3.contains(InfoAttr::PARTITION_DONE) {
             return Ok((None, true));
         }
 
