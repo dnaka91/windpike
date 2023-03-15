@@ -5,8 +5,7 @@ edition = "2021"
 description = "Aerospike Client for Rust"
 keywords = ["aerospike", "nosql", "distributed", "database"]
 categories = ["database"]
-homepage = "https://www.aerospike.com/"
-license = "Apache-2.0"
+license = "MIT"
 readme = "README.md"
 
 [dependencies]
