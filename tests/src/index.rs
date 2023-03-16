@@ -23,7 +23,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 }
 
 #[tokio::test]
-#[should_panic(expected = "IndexFound")]
+#[should_panic(expected = "IndexAlreadyExists")]
 async fn recreate_index() {
     common::init_logger();
 
