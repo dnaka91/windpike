@@ -14,7 +14,7 @@ use crate::{
     as_list,
     cluster::{Cluster, Node},
     net::Connection,
-    policy::ReadPolicy,
+    policy::BasePolicy,
     value::bytes_to_particle,
     Bins, Key, Record, ResultCode, Value,
 };
@@ -22,12 +22,12 @@ use crate::{
 pub struct ReadCommand<'a> {
     pub single_command: SingleCommand<'a>,
     pub record: Option<Record>,
-    policy: &'a ReadPolicy,
+    policy: &'a BasePolicy,
     bins: Bins,
 }
 
 impl<'a> ReadCommand<'a> {
-    pub fn new(policy: &'a ReadPolicy, cluster: Arc<Cluster>, key: &'a Key, bins: Bins) -> Self {
+    pub fn new(policy: &'a BasePolicy, cluster: Arc<Cluster>, key: &'a Key, bins: Bins) -> Self {
         ReadCommand {
             single_command: SingleCommand::new(cluster, key),
             bins,

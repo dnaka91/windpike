@@ -4,7 +4,7 @@ use aerospike::{
         lists,
         lists::{ListPolicy, ListReturnType, ListSortFlags},
     },
-    Bins, Key, ReadPolicy, Value, WritePolicy,
+    BasePolicy, Bins, Key, Value, WritePolicy,
 };
 
 use crate::common;
@@ -17,7 +17,7 @@ async fn cdt_list() {
     let namespace = common::namespace().to_owned();
     let set_name = common::rand_str(10);
 
-    let policy = ReadPolicy::default();
+    let policy = BasePolicy::default();
 
     let wpolicy = WritePolicy::default();
     let key = Key::new(namespace, set_name, -1);

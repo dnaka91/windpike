@@ -128,6 +128,19 @@ pub struct BasePolicy {
     pub send_key: bool,
 }
 
+impl Default for BasePolicy {
+    fn default() -> Self {
+        Self {
+            priority: Priority::default(),
+            timeout: Some(Duration::new(30, 0)),
+            max_retries: Some(2),
+            sleep_between_retries: Some(Duration::new(0, 500_000_000)),
+            consistency_level: ConsistencyLevel::default(),
+            send_key: false,
+        }
+    }
+}
+
 impl Policy for BasePolicy {
     fn priority(&self) -> Priority {
         self.priority
@@ -378,23 +391,6 @@ impl Default for QueryPolicy {
 impl AsRef<BasePolicy> for QueryPolicy {
     fn as_ref(&self) -> &BasePolicy {
         &self.base_policy
-    }
-}
-
-/// `ReadPolicy` excapsulates parameters for transaction policy attributes
-/// used in all database operation calls.
-pub type ReadPolicy = BasePolicy;
-
-impl Default for ReadPolicy {
-    fn default() -> Self {
-        ReadPolicy {
-            priority: Priority::default(),
-            timeout: Some(Duration::new(30, 0)),
-            max_retries: Some(2),
-            sleep_between_retries: Some(Duration::new(0, 500_000_000)),
-            consistency_level: ConsistencyLevel::default(),
-            send_key: false,
-        }
     }
 }
 

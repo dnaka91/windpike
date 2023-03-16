@@ -13,7 +13,7 @@ use crate::{
     msgpack::Write,
     operations::{Operation, OperationBin, OperationData, OperationType},
     policy::{
-        BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy, ReadPolicy,
+        BasePolicy, BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy,
         RecordExistsAction, ScanPolicy, WritePolicy,
     },
     BatchRead, Bin, Bins, Key, UserKey,
@@ -244,7 +244,7 @@ impl Buffer {
 
         self.size_buffer()?;
         self.write_header(
-            &policy.base_policy,
+            policy.as_ref(),
             ReadAttr::READ | ReadAttr::GET_NO_BINS,
             WriteAttr::empty(),
             field_count,
@@ -257,7 +257,7 @@ impl Buffer {
     }
 
     // Writes the command for get operations
-    pub fn set_read(&mut self, policy: &ReadPolicy, key: &Key, bins: &Bins) -> Result<()> {
+    pub fn set_read(&mut self, policy: &BasePolicy, key: &Key, bins: &Bins) -> Result<()> {
         match bins {
             Bins::None => self.set_read_header(policy, key),
             Bins::All => self.set_read_for_key_only(policy, key),
@@ -289,7 +289,7 @@ impl Buffer {
     }
 
     // Writes the command for getting metadata operations
-    pub fn set_read_header(&mut self, policy: &ReadPolicy, key: &Key) -> Result<()> {
+    pub fn set_read_header(&mut self, policy: &BasePolicy, key: &Key) -> Result<()> {
         self.begin();
         let field_count = self.estimate_key_size(key, policy.send_key);
 
@@ -309,7 +309,7 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn set_read_for_key_only(&mut self, policy: &ReadPolicy, key: &Key) -> Result<()> {
+    pub fn set_read_for_key_only(&mut self, policy: &BasePolicy, key: &Key) -> Result<()> {
         self.begin();
 
         let field_count = self.estimate_key_size(key, policy.send_key);
@@ -365,7 +365,7 @@ impl Buffer {
 
         self.size_buffer()?;
         self.write_header(
-            &policy.base_policy,
+            policy.as_ref(),
             ReadAttr::READ | ReadAttr::BATCH,
             WriteAttr::empty(),
             field_count,
@@ -491,7 +491,7 @@ impl Buffer {
 
         if write_attr.is_empty() {
             self.write_header(
-                &policy.base_policy,
+                policy.as_ref(),
                 read_attr,
                 write_attr,
                 field_count,
@@ -572,7 +572,7 @@ impl Buffer {
         }
 
         self.write_header(
-            &policy.base_policy,
+            policy.as_ref(),
             read_attr,
             WriteAttr::empty(),
             field_count,
@@ -663,7 +663,7 @@ impl Buffer {
 
     fn write_header(
         &mut self,
-        policy: &ReadPolicy,
+        policy: &BasePolicy,
         read_attr: ReadAttr,
         write_attr: WriteAttr,
         field_count: u16,

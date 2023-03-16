@@ -6,7 +6,7 @@ use aerospike::{
         cdt_context::{ctx_map_key, ctx_map_key_create},
         maps, MapOrder,
     },
-    Bins, Key, MapPolicy, MapReturnType, ReadPolicy, Value, WritePolicy,
+    BasePolicy, Bins, Key, MapPolicy, MapReturnType, Value, WritePolicy,
 };
 
 use crate::common;
@@ -21,7 +21,7 @@ async fn map_operations() {
 
     let wpolicy = WritePolicy::default();
     let mpolicy = MapPolicy::default();
-    let rpolicy = ReadPolicy::default();
+    let rpolicy = BasePolicy::default();
 
     let key = common::rand_str(10);
     let key = Key::new(namespace, set_name, key);

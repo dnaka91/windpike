@@ -1,7 +1,7 @@
 use aerospike::{
     as_list,
     operations::{hll, hll::HllPolicy},
-    Bins, FloatValue, Key, ReadPolicy, Value, WritePolicy,
+    BasePolicy, Bins, FloatValue, Key, Value, WritePolicy,
 };
 
 use crate::common;
@@ -18,7 +18,7 @@ async fn hll() {
 
     let hpolicy = HllPolicy::default();
     let wpolicy = WritePolicy::default();
-    let rpolicy = ReadPolicy::default();
+    let rpolicy = BasePolicy::default();
 
     let ops = &vec![hll::init(&hpolicy, "bin", 4)];
     client.operate(&wpolicy, &key, ops).await.unwrap();

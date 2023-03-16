@@ -1,4 +1,4 @@
-use aerospike::{as_bin, as_list, as_map, operations, Bins, Key, ReadPolicy, Value, WritePolicy};
+use aerospike::{as_bin, as_list, as_map, operations, BasePolicy, Bins, Key, Value, WritePolicy};
 
 use crate::common;
 
@@ -9,7 +9,7 @@ async fn connect() {
     let client = common::client().await;
     let namespace = common::namespace().to_owned();
     let set_name = common::rand_str(10);
-    let policy = ReadPolicy::default();
+    let policy = BasePolicy::default();
     let wpolicy = WritePolicy::default();
     let key = Key::new(namespace, set_name, -1);
 

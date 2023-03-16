@@ -12,7 +12,7 @@ use crate::{
     errors::{Error, Result},
     net::ToHosts,
     operations::{Operation, OperationType},
-    policy::{BatchPolicy, ClientPolicy, ReadPolicy, ScanPolicy, WritePolicy},
+    policy::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
     task::IndexTask,
     BatchRead, Bin, Bins, CollectionIndexType, IndexType, Key, Record, Recordset, ResultCode,
 };
@@ -120,7 +120,7 @@ impl Client {
     /// Fetch specified bins for a record with the given key.
     ///
     /// ```rust
-    /// use aerospike::{errors::CommandError, Client, ClientPolicy, Key, ReadPolicy, ResultCode};
+    /// use aerospike::{errors::CommandError, BasePolicy, Client, ClientPolicy, Key, ResultCode};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -129,7 +129,7 @@ impl Client {
     ///         .unwrap();
     ///
     ///     let key = Key::new("test", "test", "mykey");
-    ///     match client.get(&ReadPolicy::default(), &key, ["a", "b"]).await {
+    ///     match client.get(&BasePolicy::default(), &key, ["a", "b"]).await {
     ///         Ok(record) => println!("a={:?}", record.bins.get("a")),
     ///         Err(CommandError::ServerError(ResultCode::KeyNotFoundError)) => {
     ///             println!("No such record: {key:?}")
@@ -143,7 +143,7 @@ impl Client {
     ///
     /// ```rust
     /// use aerospike::{
-    ///     errors::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
+    ///     errors::CommandError, BasePolicy, Bins, Client, ClientPolicy, Key, ResultCode,
     /// };
     ///
     /// #[tokio::main]
@@ -153,7 +153,7 @@ impl Client {
     ///         .unwrap();
     ///
     ///     let key = Key::new("test", "test", "mykey");
-    ///     match client.get(&ReadPolicy::default(), &key, Bins::None).await {
+    ///     match client.get(&BasePolicy::default(), &key, Bins::None).await {
     ///         Ok(record) => match record.time_to_live() {
     ///             None => println!("record never expires"),
     ///             Some(duration) => println!("ttl: {} secs", duration.as_secs()),
@@ -170,7 +170,7 @@ impl Client {
     /// Panics if the return is invalid
     pub async fn get<T>(
         &self,
-        policy: &ReadPolicy,
+        policy: &BasePolicy,
         key: &Key,
         bins: T,
     ) -> Result<Record, CommandError>

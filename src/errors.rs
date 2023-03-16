@@ -6,7 +6,7 @@
 //!
 //! ```rust
 //! use aerospike::{
-//!     errors::CommandError, Bins, Client, ClientPolicy, Key, ReadPolicy, ResultCode,
+//!     errors::CommandError, BasePolicy, Bins, Client, ClientPolicy, Key, ResultCode,
 //! };
 //!
 //! #[tokio::main]
@@ -16,7 +16,7 @@
 //!         .expect("Failed to connect to cluster");
 //!
 //!     let key = Key::new("test", "test", "someKey");
-//!     match client.get(&ReadPolicy::default(), &key, Bins::None).await {
+//!     match client.get(&BasePolicy::default(), &key, Bins::None).await {
 //!         Ok(record) => match record.time_to_live() {
 //!             None => println!("record never expires"),
 //!             Some(duration) => println!("ttl: {} secs", duration.as_secs()),

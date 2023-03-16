@@ -37,7 +37,7 @@
 //! ```rust
 //! use std::{sync::Arc, time::Instant};
 //!
-//! use aerospike::{as_bin, operations, Bins, Client, ClientPolicy, Key, ReadPolicy, WritePolicy};
+//! use aerospike::{as_bin, operations, BasePolicy, Bins, Client, ClientPolicy, Key, WritePolicy};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -51,7 +51,7 @@
 //!     for i in 0..2 {
 //!         let client = client.clone();
 //!         let t = tokio::spawn(async move {
-//!             let rpolicy = ReadPolicy::default();
+//!             let rpolicy = BasePolicy::default();
 //!             let wpolicy = WritePolicy::default();
 //!             let key = Key::new("test", "test", i);
 //!             let bins = [as_bin!("int", 123), as_bin!("str", "Hello, World!")];
@@ -101,8 +101,8 @@ pub use key::{Key, UserKey};
 pub use net::{Host, ToHosts};
 pub use operations::{MapPolicy, MapReturnType, MapWriteMode};
 pub use policy::{
-    BatchPolicy, ClientPolicy, CommitLevel, Concurrency, ConsistencyLevel, Expiration,
-    GenerationPolicy, Policy, Priority, ReadPolicy, RecordExistsAction, ScanPolicy, WritePolicy,
+    BasePolicy, BatchPolicy, ClientPolicy, CommitLevel, Concurrency, ConsistencyLevel, Expiration,
+    GenerationPolicy, Policy, Priority, RecordExistsAction, ScanPolicy, WritePolicy,
 };
 pub use query::{CollectionIndexType, IndexType, Recordset, Statement};
 pub use record::Record;
