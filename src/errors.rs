@@ -11,7 +11,7 @@
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+//!     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
 //!         .await
 //!         .expect("Failed to connect to cluster");
 //!

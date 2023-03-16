@@ -51,10 +51,7 @@ impl<'a> SingleCommand<'a> {
     // EXECUTE
     //
 
-    pub(super) async fn execute(
-        policy: &(dyn Policy + Send + Sync),
-        cmd: &'a mut (dyn Command + Send),
-    ) -> Result<()> {
+    pub(super) async fn execute(policy: &impl Policy, cmd: &mut impl Command) -> Result<()> {
         let mut iterations = 0;
 
         // set timeout outside the loop

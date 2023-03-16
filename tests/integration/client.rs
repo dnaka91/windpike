@@ -8,7 +8,7 @@ async fn cluster_name() {
         cluster_name: Some("notTheRealClusterName".into()),
         ..ClientPolicy::default()
     };
-    let err = Client::new(&policy, &HOSTS).await.unwrap_err();
+    let err = Client::new(&policy, HOSTS).await.unwrap_err();
     assert!(matches!(err, Error::Cluster(ClusterError::Connection)));
 }
 

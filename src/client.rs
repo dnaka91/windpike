@@ -68,12 +68,12 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     /// }
     /// ```
-    pub async fn new(policy: &ClientPolicy, hosts: &(dyn ToHosts + Send + Sync)) -> Result<Self> {
+    pub async fn new(policy: &ClientPolicy, hosts: impl ToHosts) -> Result<Self> {
         let hosts = hosts.to_hosts()?;
         let cluster = Cluster::new(policy.clone(), &hosts).await?;
 
@@ -124,7 +124,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -148,7 +148,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -198,7 +198,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -242,7 +242,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -262,7 +262,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -305,7 +305,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -385,7 +385,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -415,7 +415,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -456,7 +456,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -495,7 +495,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///
@@ -643,7 +643,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+    ///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
     ///         .await
     ///         .unwrap();
     ///

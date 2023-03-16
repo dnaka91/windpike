@@ -20,7 +20,7 @@ macro_rules! as_bin {
 ///
 /// #[tokio::main]
 /// async fn main() {
-///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
 ///         .await
 ///         .unwrap();
 ///
@@ -61,7 +61,7 @@ macro_rules! as_values {
 
 /// #[tokio::main]
 /// async fn main() {
-///     let client = Client::new(&ClientPolicy::default(), &"localhost:3000")
+///     let client = Client::new(&ClientPolicy::default(), "localhost:3000")
 ///         .await
 ///         .unwrap();
 ///

@@ -6,7 +6,7 @@ pub const HOSTS: &str = "127.0.0.1";
 pub const NAMESPACE: &str = "test";
 
 pub async fn client() -> Client {
-    Client::new(&ClientPolicy::default(), &HOSTS).await.unwrap()
+    Client::new(&ClientPolicy::default(), HOSTS).await.unwrap()
 }
 
 pub fn rand_str(sz: usize) -> String {
