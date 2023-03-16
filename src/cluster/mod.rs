@@ -282,7 +282,7 @@ impl Cluster {
 
         if let Some(node_array) = partitions.get(namespace) {
             for (i, tnode) in node_array.iter().enumerate() {
-                if node == tnode.as_ref() {
+                if node.name() == tnode.name() {
                     res.push(i as u16);
                 }
             }
@@ -481,7 +481,7 @@ impl Cluster {
         let partitions = self.partition_write_map.read().await;
         (*partitions)
             .values()
-            .any(|map| map.iter().any(|node| *node == filter))
+            .any(|map| map.iter().any(|node| node.name() == filter.name()))
     }
 
     async fn add_nodes(&self, friend_list: &[Arc<Node>]) {
@@ -499,16 +499,14 @@ impl Cluster {
             return;
         }
 
-        let nodes = self.nodes().await;
-        let mut node_array: Vec<Arc<Node>> = vec![];
+        let nodes = self
+            .nodes()
+            .await
+            .into_iter()
+            .filter(|node| nodes_to_remove.iter().all(|rem| rem.name() != node.name()))
+            .collect();
 
-        for node in &nodes {
-            if !nodes_to_remove.contains(node) {
-                node_array.push(Arc::clone(node));
-            }
-        }
-
-        self.set_nodes(node_array).await;
+        self.set_nodes(nodes).await;
     }
 
     pub async fn is_connected(&self) -> bool {

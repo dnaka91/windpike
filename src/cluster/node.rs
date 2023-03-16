@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    hash::{Hash, Hasher},
     str::FromStr,
     sync::{
         atomic::{AtomicBool, AtomicIsize, AtomicUsize, Ordering},
@@ -294,17 +293,3 @@ impl Node {
         self.partition_generation.load(Ordering::Relaxed)
     }
 }
-
-impl Hash for Node {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-    }
-}
-
-impl PartialEq for Node {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-impl Eq for Node {}
