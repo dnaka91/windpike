@@ -3,13 +3,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use once_cell::sync::Lazy;
-
 use crate::{Key, Value};
-
-// Fri Jan  1 00:00:00 UTC 2010
-pub static CITRUSLEAF_EPOCH: Lazy<SystemTime> =
-    Lazy::new(|| UNIX_EPOCH + Duration::new(1_262_304_000, 0));
 
 /// Container object for a database record.
 #[derive(Clone, Debug)]
@@ -52,7 +46,7 @@ impl Record {
         match self.expiration {
             0 => None,
             secs_since_epoch => {
-                let expiration = *CITRUSLEAF_EPOCH + Duration::new(u64::from(secs_since_epoch), 0);
+                let expiration = citrusleaf_epoch() + Duration::new(u64::from(secs_since_epoch), 0);
                 Some(
                     expiration
                         .duration_since(SystemTime::now())
@@ -64,6 +58,12 @@ impl Record {
     }
 }
 
+/// Aerospike's own epoch time, which is `Fri Jan  1 00:00:00 UTC 2010`.
+#[inline]
+fn citrusleaf_epoch() -> SystemTime {
+    UNIX_EPOCH + Duration::new(1_262_304_000, 0)
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -71,13 +71,13 @@ mod tests {
         time::{Duration, SystemTime},
     };
 
-    use super::{Record, CITRUSLEAF_EPOCH};
+    use super::{citrusleaf_epoch, Record};
 
     #[test]
     fn ttl_expiration_future() {
         let expiration = SystemTime::now() + Duration::new(1000, 0);
         let secs_since_epoch = expiration
-            .duration_since(*CITRUSLEAF_EPOCH)
+            .duration_since(citrusleaf_epoch())
             .unwrap()
             .as_secs();
         let record = Record::new(None, HashMap::new(), 0, secs_since_epoch as u32);
