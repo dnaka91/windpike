@@ -848,6 +848,10 @@ impl Buffer {
         self.buffer[self.offset]
     }
 
+    pub fn read_bool(&mut self, pos: Option<usize>) -> bool {
+        self.read_u8(pos) != 0
+    }
+
     #[allow(clippy::option_if_let_else)]
     pub fn read_u8(&mut self, pos: Option<usize>) -> u8 {
         if let Some(pos) = pos {
@@ -1034,7 +1038,7 @@ impl Write for Buffer {
     }
 
     fn write_bool(&mut self, v: bool) -> usize {
-        self.write_i64(v.into())
+        self.write_u8(v.into())
     }
 
     fn write_geo(&mut self, v: &str) -> usize {

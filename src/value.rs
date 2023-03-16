@@ -160,7 +160,8 @@ impl Value {
     pub(crate) fn particle_type(&self) -> ParticleType {
         match *self {
             Self::Nil => ParticleType::Null,
-            Self::Int(_) | Self::Bool(_) => ParticleType::Integer,
+            Self::Bool(_) => ParticleType::Bool,
+            Self::Int(_) => ParticleType::Integer,
             Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
@@ -269,7 +270,8 @@ impl Value {
     pub(crate) fn estimate_size(&self) -> usize {
         match self {
             Self::Nil => 0,
-            Self::Int(_) | Self::Bool(_) | Self::Float(_) => 8,
+            Self::Bool(_) => 1,
+            Self::Int(_) | Self::Float(_) => 8,
             Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
@@ -550,6 +552,11 @@ pub(crate) fn bytes_to_particle(
         ParticleType::Integer => Ok(Value::Int(buf.read_i64(None))),
         ParticleType::Float => Ok(Value::Float(buf.read_f64(None).into())),
         ParticleType::String => Ok(Value::String(buf.read_str(len)?)),
+        ParticleType::Blob => Ok(Value::Blob(buf.read_blob(len))),
+        ParticleType::Bool => Ok(Value::Bool(buf.read_bool(None))),
+        ParticleType::Hll => Ok(Value::Hll(buf.read_blob(len))),
+        ParticleType::Map => Ok(decoder::unpack_value_map(buf)?),
+        ParticleType::List => Ok(decoder::unpack_value_list(buf)?),
         ParticleType::GeoJson => {
             buf.skip(1);
             let ncells = buf.read_u16(None) as usize;
@@ -559,12 +566,6 @@ pub(crate) fn bytes_to_particle(
             let val = buf.read_str(len - header_size - 3)?;
             Ok(Value::GeoJson(val))
         }
-        ParticleType::Blob => Ok(Value::Blob(buf.read_blob(len))),
-        ParticleType::List => Ok(decoder::unpack_value_list(buf)?),
-        ParticleType::Map => Ok(decoder::unpack_value_map(buf)?),
-        ParticleType::Digest => Ok(Value::from("A DIGEST, NOT IMPLEMENTED YET!")),
-        ParticleType::Ldt => Ok(Value::from("A LDT, NOT IMPLEMENTED YET!")),
-        ParticleType::Hll => Ok(Value::Hll(buf.read_blob(len))),
     }
 }
 
