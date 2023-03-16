@@ -30,8 +30,9 @@ impl Key {
     ///
     /// Only integers, strings and blobs (`Vec<u8>`) can be used as user keys. The constructor will
     /// panic if any other value type is passed.
-    pub fn new<S, K>(namespace: S, set_name: S, key: K) -> Self
+    pub fn new<N, S, K>(namespace: N, set_name: S, key: K) -> Self
     where
+        N: Into<Cow<'static, str>>,
         S: Into<Cow<'static, str>>,
         K: Into<UserKey>,
     {

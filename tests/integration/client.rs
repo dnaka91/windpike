@@ -1,13 +1,14 @@
-use aerospike::{cluster::ClusterError, errors::Error, Client};
+use aerospike::{cluster::ClusterError, errors::Error, Client, ClientPolicy};
 
-use crate::common;
+use crate::common::{self, HOSTS};
 
 #[tokio::test]
 async fn cluster_name() {
-    let policy = &mut common::client_policy().clone();
-    policy.cluster_name = Some(String::from("notTheRealClusterName"));
-    let err = Client::new(policy, &common::hosts()).await.unwrap_err();
-    eprintln!("{err:?}");
+    let policy = ClientPolicy {
+        cluster_name: Some("notTheRealClusterName".into()),
+        ..ClientPolicy::default()
+    };
+    let err = Client::new(&policy, &HOSTS).await.unwrap_err();
     assert!(matches!(err, Error::Cluster(ClusterError::Connection)));
 }
 
@@ -39,9 +40,7 @@ async fn get_node() {
 
 #[tokio::test]
 async fn close() {
-    let client = Client::new(common::client_policy(), &common::hosts())
-        .await
-        .unwrap();
+    let client = common::client().await;
     assert!(client.is_connected().await, "The client is not connected");
 
     if let Ok(()) = client.close().await {

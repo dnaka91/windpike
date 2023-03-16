@@ -6,17 +6,16 @@ use std::sync::{
 use aerospike::*;
 use tokio::sync::Mutex;
 
-use crate::common;
+use crate::common::{self, NAMESPACE};
 
 const EXPECTED: usize = 1000;
 
 async fn create_test_set(client: &Client, no_records: usize) -> String {
-    let namespace = common::namespace().to_owned();
     let set_name = common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
     for i in 0..no_records as i64 {
-        let key = Key::new(namespace.to_owned(), set_name.clone(), i);
+        let key = Key::new(NAMESPACE, set_name.clone(), i);
         let wbin = as_bin!("bin", i);
         let bins = vec![wbin];
         client.delete(&wpolicy, &key).await.unwrap();
@@ -31,12 +30,11 @@ async fn scan_single_consumer() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace();
     let set_name = create_test_set(&client, EXPECTED).await;
 
     let spolicy = ScanPolicy::default();
     let mut rs = client
-        .scan(&spolicy, namespace, &set_name, Bins::All)
+        .scan(&spolicy, NAMESPACE, &set_name, Bins::All)
         .await
         .unwrap();
 
@@ -51,7 +49,6 @@ async fn scan_multi_consumer() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace();
     let set_name = create_test_set(&client, EXPECTED).await;
 
     let spolicy = ScanPolicy {
@@ -59,7 +56,7 @@ async fn scan_multi_consumer() {
         ..ScanPolicy::default()
     };
     let rs = client
-        .scan(&spolicy, namespace, &set_name, Bins::All)
+        .scan(&spolicy, NAMESPACE, &set_name, Bins::All)
         .await
         .unwrap();
     let rs = Arc::new(Mutex::new(rs));
@@ -90,7 +87,6 @@ async fn scan_node() {
     common::init_logger();
 
     let client = Arc::new(common::client().await);
-    let namespace = common::namespace();
     let set_name = create_test_set(&client, EXPECTED).await;
 
     let count = Arc::new(AtomicUsize::new(0));
@@ -103,7 +99,7 @@ async fn scan_node() {
         threads.push(tokio::spawn(async move {
             let spolicy = ScanPolicy::default();
             let mut rs = client
-                .scan_node(&spolicy, node, namespace, &set_name, Bins::All)
+                .scan_node(&spolicy, node, NAMESPACE, &set_name, Bins::All)
                 .await
                 .unwrap();
             let ok = count_results(&mut rs).await;

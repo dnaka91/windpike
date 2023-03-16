@@ -6,18 +6,16 @@ use aerospike::{
     Key, Value, WritePolicy,
 };
 
-use crate::common;
+use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn cdt_bitwise() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace().to_owned();
-    let set_name = common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
-    let key = Key::new(namespace, set_name, -1);
+    let key = Key::new(NAMESPACE, common::rand_str(10), -1);
     let val = Value::Blob(vec![
         0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101,
     ]);

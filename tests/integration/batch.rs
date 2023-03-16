@@ -1,13 +1,12 @@
 use aerospike::{as_bin, BatchPolicy, BatchRead, Bins, Concurrency, Key, WritePolicy};
 
-use crate::common;
+use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn batch_get() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace().to_owned();
     let set_name = common::rand_str(10);
     let bpolicy = BatchPolicy {
         concurrency: Concurrency::Parallel,
@@ -19,16 +18,16 @@ async fn batch_get() {
     let bin2 = as_bin!("b", "another value");
     let bin3 = as_bin!("c", 42);
     let bins = [bin1, bin2, bin3];
-    let key1 = Key::new(namespace.clone(), set_name.clone(), 1);
+    let key1 = Key::new(NAMESPACE, set_name.clone(), 1);
     client.put(&wpolicy, &key1, &bins).await.unwrap();
 
-    let key2 = Key::new(namespace.clone(), set_name.clone(), 2);
+    let key2 = Key::new(NAMESPACE, set_name.clone(), 2);
     client.put(&wpolicy, &key2, &bins).await.unwrap();
 
-    let key3 = Key::new(namespace.clone(), set_name.clone(), 3);
+    let key3 = Key::new(NAMESPACE, set_name.clone(), 3);
     client.put(&wpolicy, &key3, &bins).await.unwrap();
 
-    let key4 = Key::new(namespace, set_name, -1);
+    let key4 = Key::new(NAMESPACE, set_name, -1);
     // key does not exist
 
     let selected = Bins::from(["a"]);

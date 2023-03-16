@@ -7,20 +7,18 @@ use aerospike::{
     BasePolicy, Bins, Key, Value, WritePolicy,
 };
 
-use crate::common;
+use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn cdt_list() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace().to_owned();
-    let set_name = common::rand_str(10);
 
     let policy = BasePolicy::default();
 
     let wpolicy = WritePolicy::default();
-    let key = Key::new(namespace, set_name, -1);
+    let key = Key::new(NAMESPACE, common::rand_str(10), -1);
     let val = as_list!("0", 1, 2.1f64);
     let wbin = as_bin!("bin", val.clone());
     let bins = vec![wbin];

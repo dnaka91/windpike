@@ -9,22 +9,20 @@ use aerospike::{
     BasePolicy, Bins, Key, MapPolicy, MapReturnType, Value, WritePolicy,
 };
 
-use crate::common;
+use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn map_operations() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace().to_owned();
-    let set_name = common::rand_str(10);
 
     let wpolicy = WritePolicy::default();
     let mpolicy = MapPolicy::default();
     let rpolicy = BasePolicy::default();
 
     let key = common::rand_str(10);
-    let key = Key::new(namespace, set_name, key);
+    let key = Key::new(NAMESPACE, common::rand_str(10), key);
 
     client.delete(&wpolicy, &key).await.unwrap();
 

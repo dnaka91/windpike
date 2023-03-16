@@ -4,17 +4,15 @@ use aerospike::{
     BasePolicy, Bins, FloatValue, Key, Value, WritePolicy,
 };
 
-use crate::common;
+use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn hll() {
     common::init_logger();
 
     let client = common::client().await;
-    let namespace = common::namespace().to_owned();
-    let set_name = common::rand_str(10);
 
-    let key = Key::new(namespace, set_name, "test");
+    let key = Key::new(NAMESPACE, common::rand_str(10), "test");
 
     let hpolicy = HllPolicy::default();
     let wpolicy = WritePolicy::default();
