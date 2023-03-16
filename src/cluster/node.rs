@@ -44,7 +44,6 @@ pub struct Node {
 }
 
 impl Node {
-    #![allow(missing_docs)]
     #[must_use]
     pub fn new(client_policy: ClientPolicy, nv: &NodeValidator) -> Self {
         Self {

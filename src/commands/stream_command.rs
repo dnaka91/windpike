@@ -173,8 +173,7 @@ impl Command for StreamCommand {
         conn.flush().await.map_err(Into::into)
     }
 
-    #[allow(unused_variables)]
-    fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
+    fn prepare_buffer(&mut self, _conn: &mut Connection) -> Result<()> {
         // should be implemented downstream
         unreachable!()
     }

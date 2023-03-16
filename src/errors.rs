@@ -31,8 +31,6 @@
 //! }
 //! ```
 
-#![allow(missing_docs)]
-
 use crate::result_code::ResultCode;
 pub use crate::{
     cluster::ClusterError,

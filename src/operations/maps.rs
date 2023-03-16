@@ -170,8 +170,7 @@ impl Default for MapPolicy {
 
 /// Determines the correct operation to use when setting one or more map values, depending on the
 /// map policy.
-#[allow(clippy::trivially_copy_pass_by_ref)]
-pub(crate) const fn map_write_op(policy: &MapPolicy, multi: bool) -> CdtMapOpType {
+pub(crate) const fn map_write_op(policy: MapPolicy, multi: bool) -> CdtMapOpType {
     match policy.write_mode {
         MapWriteMode::Update => {
             if multi {
@@ -196,8 +195,7 @@ pub(crate) const fn map_write_op(policy: &MapPolicy, multi: bool) -> CdtMapOpTyp
         }
     }
 }
-#[allow(clippy::trivially_copy_pass_by_ref)]
-const fn map_order_arg(policy: &MapPolicy) -> Option<CdtArgument<'_>> {
+const fn map_order_arg(policy: MapPolicy) -> Option<CdtArgument<'static>> {
     match policy.write_mode {
         MapWriteMode::UpdateOnly => None,
         _ => Some(CdtArgument::Byte(policy.order as u8)),
@@ -238,12 +236,7 @@ pub fn set_order(bin: &str, map_order: MapOrder) -> Operation<'_> {
 /// The required map policy dictates the type of map to create when it does not exist. The map
 /// policy also specifies the mode used when writing items to the map.
 #[must_use]
-pub fn put<'a>(
-    policy: &'a MapPolicy,
-    bin: &'a str,
-    key: &'a Value,
-    val: &'a Value,
-) -> Operation<'a> {
+pub fn put<'a>(policy: MapPolicy, bin: &'a str, key: &'a Value, val: &'a Value) -> Operation<'a> {
     let mut args = vec![CdtArgument::Value(key)];
     if *val != Value::Nil {
         args.push(CdtArgument::Value(val));
@@ -272,7 +265,7 @@ pub fn put<'a>(
 #[allow(clippy::implicit_hasher)]
 #[must_use]
 pub fn put_items<'a>(
-    policy: &'a MapPolicy,
+    policy: MapPolicy,
     bin: &'a str,
     items: &'a HashMap<Value, Value>,
 ) -> Operation<'a> {
@@ -300,7 +293,7 @@ pub fn put_items<'a>(
 /// policy also specifies the mode used when writing items to the map.
 #[must_use]
 pub fn increment_value<'a>(
-    policy: &'a MapPolicy,
+    policy: MapPolicy,
     bin: &'a str,
     key: &'a Value,
     incr: &'a Value,
@@ -332,7 +325,7 @@ pub fn increment_value<'a>(
 /// policy also specifies the mode used when writing items to the map.
 #[must_use]
 pub fn decrement_value<'a>(
-    policy: &'a MapPolicy,
+    policy: MapPolicy,
     bin: &'a str,
     key: &'a Value,
     decr: &'a Value,

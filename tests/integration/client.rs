@@ -1,6 +1,6 @@
 use aerospike::{cluster::ClusterError, errors::Error, Client};
 
-mod common;
+use crate::common;
 
 #[tokio::test]
 async fn cluster_name() {

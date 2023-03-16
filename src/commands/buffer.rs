@@ -852,7 +852,6 @@ impl Buffer {
         self.read_u8(pos) != 0
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn read_u8(&mut self, pos: Option<usize>) -> u8 {
         if let Some(pos) = pos {
             self.buffer[pos]
@@ -863,7 +862,6 @@ impl Buffer {
         }
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn read_i8(&mut self, pos: Option<usize>) -> i8 {
         if let Some(pos) = pos {
             self.buffer[pos] as i8
@@ -874,7 +872,6 @@ impl Buffer {
         }
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn read_u16(&mut self, pos: Option<usize>) -> u16 {
         self.read_int(pos, u16::from_be_bytes)
     }
@@ -884,7 +881,6 @@ impl Buffer {
         val as i16
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn read_u32(&mut self, pos: Option<usize>) -> u32 {
         self.read_int(pos, u32::from_be_bytes)
     }
@@ -894,7 +890,6 @@ impl Buffer {
         val as i32
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn read_u64(&mut self, pos: Option<usize>) -> u64 {
         self.read_int(pos, u64::from_be_bytes)
     }
@@ -910,12 +905,10 @@ impl Buffer {
         size as usize
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn read_f32(&mut self, pos: Option<usize>) -> f32 {
         self.read_int(pos, f32::from_be_bytes)
     }
 
-    #[allow(clippy::option_if_let_else)]
     pub fn read_f64(&mut self, pos: Option<usize>) -> f64 {
         self.read_int(pos, f64::from_be_bytes)
     }

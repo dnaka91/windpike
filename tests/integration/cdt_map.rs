@@ -36,7 +36,7 @@ async fn map_operations() {
     client.put(&wpolicy, &key, &bins).await.unwrap();
 
     let (k, v) = (Value::from("c"), Value::from(3));
-    let op = maps::put(&mpolicy, bin_name, &k, &v);
+    let op = maps::put(mpolicy, bin_name, &k, &v);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
     // returns size of map after put
     assert_eq!(*rec.bins.get(bin_name).unwrap(), Value::from(3));
@@ -55,7 +55,7 @@ async fn map_operations() {
     let mut items = HashMap::new();
     items.insert(Value::from("d"), Value::from(4));
     items.insert(Value::from("e"), Value::from(5));
-    let op = maps::put_items(&mpolicy, bin_name, &items);
+    let op = maps::put_items(mpolicy, bin_name, &items);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
     // returns size of map after put
     assert_eq!(*rec.bins.get(bin_name).unwrap(), Value::from(5));
@@ -66,21 +66,21 @@ async fn map_operations() {
     assert_eq!(*rec.bins.get(bin_name).unwrap(), Value::from(5));
 
     let (k, i) = (Value::from("a"), Value::from(19));
-    let op = maps::increment_value(&mpolicy, bin_name, &k, &i);
+    let op = maps::increment_value(mpolicy, bin_name, &k, &i);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
     // returns value of the key after increment
     assert_eq!(*rec.bins.get(bin_name).unwrap(), Value::from(20));
 
     let (k, i) = (Value::from("a"), Value::from(10));
-    let op = maps::decrement_value(&mpolicy, bin_name, &k, &i);
+    let op = maps::decrement_value(mpolicy, bin_name, &k, &i);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
     // returns value of the key after decrement
     assert_eq!(*rec.bins.get(bin_name).unwrap(), Value::from(10));
 
     let (k, i) = (Value::from("a"), Value::from(5));
-    let dec = maps::decrement_value(&mpolicy, bin_name, &k, &i);
+    let dec = maps::decrement_value(mpolicy, bin_name, &k, &i);
     let (k, i) = (Value::from("a"), Value::from(7));
-    let inc = maps::increment_value(&mpolicy, bin_name, &k, &i);
+    let inc = maps::increment_value(mpolicy, bin_name, &k, &i);
     let rec = client.operate(&wpolicy, &key, &[dec, inc]).await.unwrap();
     // returns values from multiple ops returned as list
     assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(5, 12));
@@ -278,7 +278,7 @@ async fn map_operations() {
 
     let mkey = Value::from("ctxtest");
     let mval = as_map!("x" => 7, "y" => 8, "z" => 9);
-    let op = maps::put(&mpolicy, bin_name, &mkey, &mval);
+    let op = maps::put(mpolicy, bin_name, &mkey, &mval);
     client.operate(&wpolicy, &key, &[op]).await.unwrap();
 
     let ctx = &vec![ctx_map_key(mkey)];
@@ -291,7 +291,7 @@ async fn map_operations() {
     let ctx = &vec![ctx_map_key_create(mkey.clone(), MapOrder::KeyOrdered)];
     let xkey = Value::from("y");
     let xval = Value::from(8);
-    let op = [maps::put(&mpolicy, bin_name, &xkey, &xval).set_context(ctx)];
+    let op = [maps::put(mpolicy, bin_name, &xkey, &xval).set_context(ctx)];
     client.operate(&wpolicy, &key, &op).await.unwrap();
     let op = [maps::get_by_key(bin_name, &xkey, MapReturnType::Value).set_context(ctx)];
     let rec = client.operate(&wpolicy, &key, &op).await.unwrap();
@@ -304,7 +304,7 @@ async fn map_operations() {
     ];
     let xkey = Value::from("c");
     let xval = Value::from(9);
-    let op = [maps::put(&mpolicy, bin_name, &xkey, &xval).set_context(ctx)];
+    let op = [maps::put(mpolicy, bin_name, &xkey, &xval).set_context(ctx)];
     client.operate(&wpolicy, &key, &op).await.unwrap();
     let op = [maps::get_by_key(bin_name, &xkey, MapReturnType::Value).set_context(ctx)];
     let rec = client.operate(&wpolicy, &key, &op).await.unwrap();

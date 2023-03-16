@@ -2,6 +2,8 @@ mod batch;
 mod cdt_bitwise;
 mod cdt_list;
 mod cdt_map;
+mod client;
+mod common;
 mod hll;
 mod index;
 mod kv;

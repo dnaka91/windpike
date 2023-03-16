@@ -1,5 +1,4 @@
 //! Policy types encapsulate optional parameters for various client operations.
-#![allow(clippy::missing_errors_doc)]
 
 use std::{collections::HashMap, option::Option};
 

@@ -1,5 +1,3 @@
-#![allow(clippy::mutable_key_type)]
-
 use std::{cmp, collections::HashMap, sync::Arc};
 
 use tokio::sync::Mutex;
