@@ -1,7 +1,6 @@
 //! Policy types encapsulate optional parameters for various client operations.
 #![allow(clippy::missing_errors_doc)]
 
-mod admin_policy;
 mod batch_policy;
 mod client_policy;
 mod commit_level;
@@ -21,11 +20,11 @@ use std::option::Option;
 use tokio::time::{Duration, Instant};
 
 pub use self::{
-    admin_policy::AdminPolicy, batch_policy::BatchPolicy, client_policy::ClientPolicy,
-    commit_level::CommitLevel, concurrency::Concurrency, consistency_level::ConsistencyLevel,
-    expiration::Expiration, generation_policy::GenerationPolicy, priority::Priority,
-    query_policy::QueryPolicy, read_policy::ReadPolicy, record_exists_action::RecordExistsAction,
-    scan_policy::ScanPolicy, write_policy::WritePolicy,
+    batch_policy::BatchPolicy, client_policy::ClientPolicy, commit_level::CommitLevel,
+    concurrency::Concurrency, consistency_level::ConsistencyLevel, expiration::Expiration,
+    generation_policy::GenerationPolicy, priority::Priority, query_policy::QueryPolicy,
+    read_policy::ReadPolicy, record_exists_action::RecordExistsAction, scan_policy::ScanPolicy,
+    write_policy::WritePolicy,
 };
 
 /// Trait implemented by most policy types; policies that implement this trait typically encompass
