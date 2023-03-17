@@ -96,18 +96,10 @@
 pub use batch::BatchRead;
 pub use bin::{Bin, Bins};
 pub use client::Client;
-pub use cluster::Node;
 pub use key::{Key, UserKey};
 pub use net::{Host, ToHosts};
-pub use operations::{MapPolicy, MapReturnType, MapWriteMode};
-pub use policy::{
-    BasePolicy, BatchPolicy, ClientPolicy, CommitLevel, Concurrency, ConsistencyLevel, Expiration,
-    GenerationPolicy, Policy, Priority, RecordExistsAction, ScanPolicy, WritePolicy,
-};
-pub use query::{CollectionIndexType, IndexType, Recordset, Statement};
 pub use record::Record;
 pub use result_code::ResultCode;
-pub use task::{IndexTask, Task};
 pub use user::User;
 pub use value::{FloatValue, Value};
 

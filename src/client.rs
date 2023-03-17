@@ -14,7 +14,7 @@ use crate::{
     operations::{Operation, OperationType},
     policy::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
     task::IndexTask,
-    BatchRead, Bin, Bins, CollectionIndexType, IndexType, Key, Record, Recordset, ResultCode,
+    BatchRead, Bin, Bins, Key, Record, ResultCode, query::{Recordset, IndexType, CollectionIndexType},
 };
 
 /// Instantiate a Client instance to access an Aerospike database cluster and perform database
