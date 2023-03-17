@@ -3,7 +3,12 @@ use std::sync::{
     Arc,
 };
 
-use aerospike::*;
+use aerospike::{
+    self, as_bin,
+    policy::{ScanPolicy, WritePolicy},
+    query::Recordset,
+    Bins, Client, Key,
+};
 use tokio::sync::Mutex;
 
 use crate::common::{self, NAMESPACE};

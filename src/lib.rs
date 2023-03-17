@@ -1,8 +1,22 @@
+#![forbid(unsafe_code)]
 #![warn(
     rust_2018_idioms,
     clippy::all,
     clippy::pedantic,
-    clippy::clone_on_ref_ptr
+    clippy::clone_on_ref_ptr,
+    clippy::format_push_string,
+    clippy::get_unwrap,
+    clippy::mem_forget,
+    clippy::mutex_atomic,
+    clippy::rc_buffer,
+    clippy::rc_mutex,
+    clippy::self_named_module_files,
+    clippy::str_to_string,
+    clippy::wildcard_imports,
+    clippy::string_add,
+    clippy::string_to_string,
+    clippy::try_err,
+    clippy::unreachable
 )]
 #![allow(
     clippy::cast_possible_truncation,
@@ -37,7 +51,11 @@
 //! ```rust
 //! use std::{sync::Arc, time::Instant};
 //!
-//! use aerospike::{as_bin, operations, BasePolicy, Bins, Client, ClientPolicy, Key, WritePolicy};
+//! use aerospike::{
+//!     as_bin, operations,
+//!     policy::{BasePolicy, ClientPolicy, WritePolicy},
+//!     Bins, Client, Key,
+//! };
 //!
 //! #[tokio::main]
 //! async fn main() {

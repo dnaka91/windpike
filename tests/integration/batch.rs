@@ -1,4 +1,8 @@
-use aerospike::{as_bin, BatchPolicy, BatchRead, Bins, Concurrency, Key, WritePolicy};
+use aerospike::{
+    as_bin,
+    policy::{BatchPolicy, Concurrency, WritePolicy},
+    BatchRead, Bins, Key,
+};
 
 use crate::common::{self, NAMESPACE};
 

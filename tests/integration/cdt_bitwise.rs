@@ -3,7 +3,8 @@ use aerospike::{
         bitwise,
         bitwise::{BitPolicy, BitwiseOverflowActions},
     },
-    Key, Value, WritePolicy,
+    policy::WritePolicy,
+    Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};

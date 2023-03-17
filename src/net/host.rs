@@ -20,7 +20,7 @@ impl Host {
     #[must_use]
     pub fn new(name: &str, port: u16) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.to_owned(),
             port,
         }
     }

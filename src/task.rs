@@ -40,14 +40,14 @@ pub trait Task {
 
             match self.query_status().await {
                 Ok(Status::NotFound) => {
-                    return Err(Error::BadResponse("task status not found".to_string()))
+                    return Err(Error::BadResponse("task status not found".to_owned()))
                 }
                 Ok(Status::InProgress) => {} // do nothing and wait
                 error_or_complete => return error_or_complete,
             }
 
             if timeout.map_or(false, timeout_elapsed) {
-                return Err(Error::Timeout("Task timeout reached".to_string()));
+                return Err(Error::Timeout("Task timeout reached".to_owned()));
             }
         }
     }
@@ -107,7 +107,7 @@ impl IndexTask {
                     Ok(100) => Ok(Status::Complete),
                     Ok(_) => Ok(Status::InProgress),
                     Err(_) => Err(Error::BadResponse(
-                        "Unexpected load_pct value from server".to_string(),
+                        "Unexpected load_pct value from server".to_owned(),
                     )),
                 }
             }
@@ -122,7 +122,7 @@ impl Task for IndexTask {
         let nodes = self.cluster.nodes().await;
 
         if nodes.is_empty() {
-            return Err(Error::Connection("No connected node".to_string()));
+            return Err(Error::Connection("No connected node".to_owned()));
         }
 
         for node in &nodes {

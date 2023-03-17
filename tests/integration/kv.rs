@@ -1,4 +1,8 @@
-use aerospike::{as_bin, as_list, as_map, operations, BasePolicy, Bins, Key, Value, WritePolicy};
+use aerospike::{
+    as_bin, as_list, as_map, operations,
+    policy::{BasePolicy, WritePolicy},
+    Bins, Key, Value,
+};
 
 use crate::common::{self, NAMESPACE};
 

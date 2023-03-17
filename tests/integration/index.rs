@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use aerospike::{Task, *};
+use aerospike::{as_bin, policy::WritePolicy, query::IndexType, task::Task, Client, Key};
 
 use crate::common::{self, NAMESPACE};
 

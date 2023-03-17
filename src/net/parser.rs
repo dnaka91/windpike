@@ -95,15 +95,15 @@ mod tests {
     #[test]
     fn read_addr_part() {
         assert_eq!(
-            "foo".to_string(),
+            "foo".to_owned(),
             Parser::new("foo:bar", 3000).read_addr_part().unwrap()
         );
         assert_eq!(
-            "foo".to_string(),
+            "foo".to_owned(),
             Parser::new("foo,bar", 3000).read_addr_part().unwrap()
         );
         assert_eq!(
-            "foo".to_string(),
+            "foo".to_owned(),
             Parser::new("foo", 3000).read_addr_part().unwrap()
         );
         assert!(Parser::new("", 3000).read_addr_part().is_err());
@@ -114,15 +114,15 @@ mod tests {
     #[test]
     fn read_addr_tuple() {
         assert_eq!(
-            vec!["foo".to_string()],
+            vec!["foo".to_owned()],
             Parser::new("foo", 3000).read_addr_tuple().unwrap()
         );
         assert_eq!(
-            vec!["foo".to_string(), "bar".to_string()],
+            vec!["foo".to_owned(), "bar".to_owned()],
             Parser::new("foo:bar", 3000).read_addr_tuple().unwrap()
         );
         assert_eq!(
-            vec!["foo".to_string()],
+            vec!["foo".to_owned()],
             Parser::new("foo,", 3000).read_addr_tuple().unwrap()
         );
         assert!(Parser::new("", 3000).read_addr_tuple().is_err());

@@ -4,9 +4,10 @@ use aerospike::{
     as_bin, as_list, as_map,
     operations::{
         cdt_context::{ctx_map_key, ctx_map_key_create},
-        maps, MapOrder,
+        maps, MapOrder, MapPolicy, MapReturnType,
     },
-    BasePolicy, Bins, Key, MapPolicy, MapReturnType, Value, WritePolicy,
+    policy::{BasePolicy, WritePolicy},
+    Bins, Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};

@@ -1,4 +1,4 @@
-use aerospike::{cluster::ClusterError, errors::Error, Client, ClientPolicy};
+use aerospike::{cluster::ClusterError, errors::Error, policy::ClientPolicy, Client};
 
 use crate::common::{self, HOSTS};
 

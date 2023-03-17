@@ -382,7 +382,7 @@ impl<'a> From<&'a String> for Value {
 
 impl<'a> From<&'a str> for Value {
     fn from(val: &'a str) -> Self {
-        Self::String(val.to_string())
+        Self::String(val.to_owned())
     }
 }
 

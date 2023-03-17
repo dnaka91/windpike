@@ -51,7 +51,7 @@ impl PartitionTokenizer {
             match (parts.next(), parts.next()) {
                 (Some(ns), Some(part)) => {
                     let restore_buffer = general_purpose::STANDARD.decode(part)?;
-                    match amap.entry(ns.to_string()) {
+                    match amap.entry(ns.to_owned()) {
                         Vacant(entry) => {
                             entry.insert(vec![Arc::clone(&node); node::PARTITIONS]);
                         }

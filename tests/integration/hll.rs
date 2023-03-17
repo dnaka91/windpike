@@ -1,7 +1,8 @@
 use aerospike::{
     as_list,
     operations::{hll, hll::HllPolicy},
-    BasePolicy, Bins, FloatValue, Key, Value, WritePolicy,
+    policy::{BasePolicy, WritePolicy},
+    Bins, FloatValue, Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};

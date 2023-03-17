@@ -4,7 +4,8 @@ use aerospike::{
         lists,
         lists::{ListPolicy, ListReturnType, ListSortFlags},
     },
-    BasePolicy, Bins, Key, Value, WritePolicy,
+    policy::{BasePolicy, WritePolicy},
+    Bins, Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};

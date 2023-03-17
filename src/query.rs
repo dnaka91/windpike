@@ -27,7 +27,7 @@ impl Statement {
     /// "age" bins for each matching record.
     ///
     /// ```rust
-    /// use aerospike::*;
+    /// use aerospike::{query::Statement, Bins};
     ///
     /// let stmt = Statement::new("foo", "bar", Bins::from(["name", "age"]));
     /// ```

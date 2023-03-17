@@ -36,15 +36,16 @@ impl Key {
         S: Into<Cow<'static, str>>,
         K: Into<UserKey>,
     {
-        let mut key = Self {
-            namespace: namespace.into(),
-            set_name: set_name.into(),
-            digest: [0; 20],
-            user_key: Some(key.into()),
-        };
+        let set_name = set_name.into();
+        let user_key = key.into();
+        let digest = Self::compute_digest(&set_name, &user_key);
 
-        key.compute_digest();
-        key
+        Self {
+            namespace: namespace.into(),
+            set_name,
+            digest,
+            user_key: Some(user_key),
+        }
     }
 
     #[must_use]
@@ -52,16 +53,13 @@ impl Key {
         self.digest
     }
 
-    fn compute_digest(&mut self) {
+    fn compute_digest(set_name: &str, user_key: &UserKey) -> [u8; 20] {
         let mut hash = Ripemd160::new();
-        hash.update(self.set_name.as_bytes());
-        if let Some(user_key) = &self.user_key {
-            hash.update([user_key.particle_type() as u8]);
-            user_key.write_key_bytes(&mut hash);
-        } else {
-            unreachable!();
-        }
-        self.digest = hash.finalize().into();
+        hash.update(set_name.as_bytes());
+        hash.update([user_key.particle_type() as u8]);
+        user_key.write_key_bytes(&mut hash);
+
+        hash.finalize().into()
     }
 }
 
@@ -314,7 +312,7 @@ mod tests {
 
         assert_eq!(digest!("haha"), "36eb02a807dbade8cd784e7800d76308b4e89212");
         assert_eq!(
-            digest!("haha".to_string()),
+            digest!("haha".to_owned()),
             "36eb02a807dbade8cd784e7800d76308b4e89212"
         );
     }

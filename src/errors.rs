@@ -6,7 +6,9 @@
 //!
 //! ```rust
 //! use aerospike::{
-//!     errors::CommandError, BasePolicy, Bins, Client, ClientPolicy, Key, ResultCode,
+//!     errors::CommandError,
+//!     policy::{BasePolicy, ClientPolicy},
+//!     Bins, Client, Key, ResultCode,
 //! };
 //!
 //! #[tokio::main]

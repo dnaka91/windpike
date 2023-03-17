@@ -16,7 +16,11 @@ pub struct Message {
 
 impl Message {
     pub async fn info(conn: &mut Connection, commands: &[&str]) -> Result<HashMap<String, String>> {
-        let cmd = commands.join("\n") + "\n";
+        let cmd = {
+            let mut cmd = commands.join("\n");
+            cmd.push('\n');
+            cmd
+        };
         let mut msg = Self::new(&cmd.into_bytes())?;
 
         msg.send(conn).await?;
@@ -78,8 +82,8 @@ impl Message {
             let val = kv.next();
 
             match (key, val) {
-                (Some(key), Some(val)) => result.insert(key.to_string(), val.to_string()),
-                (Some(key), None) => result.insert(key.to_string(), String::new()),
+                (Some(key), Some(val)) => result.insert(key.to_owned(), val.to_owned()),
+                (Some(key), None) => result.insert(key.to_owned(), String::new()),
                 _ => return Err(CommandError::Parse("Parsing Info command failed")),
             };
         }

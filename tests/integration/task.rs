@@ -1,7 +1,9 @@
 use aerospike::{
     as_bin,
+    policy::WritePolicy,
+    query::IndexType,
     task::{Status, Task},
-    IndexType, Key, WritePolicy,
+    Key,
 };
 
 use crate::common::{self, NAMESPACE};

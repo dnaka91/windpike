@@ -1,4 +1,4 @@
-use aerospike::{Client, ClientPolicy};
+use aerospike::{policy::ClientPolicy, Client};
 use rand::{distributions::Alphanumeric, Rng};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 

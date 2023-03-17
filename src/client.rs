@@ -1,4 +1,4 @@
-use std::{str, sync::Arc, vec::Vec};
+use std::{fmt::Write, str, sync::Arc, vec::Vec};
 
 use tokio::sync::mpsc;
 
@@ -13,8 +13,9 @@ use crate::{
     net::ToHosts,
     operations::{Operation, OperationType},
     policy::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
+    query::{CollectionIndexType, IndexType, Recordset},
     task::IndexTask,
-    BatchRead, Bin, Bins, Key, Record, ResultCode, query::{Recordset, IndexType, CollectionIndexType},
+    BatchRead, Bin, Bins, Key, Record, ResultCode,
 };
 
 /// Instantiate a Client instance to access an Aerospike database cluster and perform database
@@ -64,7 +65,7 @@ impl Client {
     /// Using an environment variable to set the list of seed hosts.
     ///
     /// ```rust
-    /// use aerospike::{Client, ClientPolicy};
+    /// use aerospike::{policy::ClientPolicy, Client};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -120,7 +121,11 @@ impl Client {
     /// Fetch specified bins for a record with the given key.
     ///
     /// ```rust
-    /// use aerospike::{errors::CommandError, BasePolicy, Client, ClientPolicy, Key, ResultCode};
+    /// use aerospike::{
+    ///     errors::CommandError,
+    ///     policy::{BasePolicy, ClientPolicy},
+    ///     Client, Key, ResultCode,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -143,7 +148,9 @@ impl Client {
     ///
     /// ```rust
     /// use aerospike::{
-    ///     errors::CommandError, BasePolicy, Bins, Client, ClientPolicy, Key, ResultCode,
+    ///     errors::CommandError,
+    ///     policy::{BasePolicy, ClientPolicy},
+    ///     Bins, Client, Key, ResultCode,
     /// };
     ///
     /// #[tokio::main]
@@ -194,7 +201,10 @@ impl Client {
     /// Fetch multiple records in a single client request
     ///
     /// ```rust
-    /// use aerospike::{BatchPolicy, BatchRead, Bins, Client, ClientPolicy, Key};
+    /// use aerospike::{
+    ///     policy::{BatchPolicy, ClientPolicy},
+    ///     BatchRead, Bins, Client, Key,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -238,7 +248,11 @@ impl Client {
     /// Write a record with a single integer bin.
     ///
     /// ```rust
-    /// use aerospike::{as_bin, Client, ClientPolicy, Key, WritePolicy};
+    /// use aerospike::{
+    ///     as_bin,
+    ///     policy::{ClientPolicy, WritePolicy},
+    ///     Client, Key,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -258,7 +272,11 @@ impl Client {
     /// Write a record with an expiration of 10 seconds.
     ///
     /// ```rust
-    /// use aerospike::{as_bin, policy, Client, ClientPolicy, Key, WritePolicy};
+    /// use aerospike::{
+    ///     as_bin, policy,
+    ///     policy::{ClientPolicy, WritePolicy},
+    ///     Client, Key,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -301,7 +319,11 @@ impl Client {
     /// Add two integer values to two existing bin values.
     ///
     /// ```rust
-    /// use aerospike::{as_bin, Client, ClientPolicy, Key, WritePolicy};
+    /// use aerospike::{
+    ///     as_bin,
+    ///     policy::{ClientPolicy, WritePolicy},
+    ///     Client, Key,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -381,7 +403,10 @@ impl Client {
     /// Delete a record.
     ///
     /// ```rust
-    /// use aerospike::{Client, ClientPolicy, Key, WritePolicy};
+    /// use aerospike::{
+    ///     policy::{ClientPolicy, WritePolicy},
+    ///     Client, Key,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -411,7 +436,11 @@ impl Client {
     /// Reset a record's time to expiration to the default ttl for the namespace.
     ///
     /// ```rust
-    /// use aerospike::{policy, Client, ClientPolicy, Key, WritePolicy};
+    /// use aerospike::{
+    ///     policy,
+    ///     policy::{ClientPolicy, WritePolicy},
+    ///     Client, Key,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -452,7 +481,11 @@ impl Client {
     /// call.
     ///
     /// ```rust
-    /// use aerospike::{as_bin, operations, Client, ClientPolicy, Key, WritePolicy};
+    /// use aerospike::{
+    ///     as_bin, operations,
+    ///     policy::{ClientPolicy, WritePolicy},
+    ///     Client, Key,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -491,7 +524,10 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use aerospike::{Bins, Client, ClientPolicy, ScanPolicy};
+    /// use aerospike::{
+    ///     policy::{ClientPolicy, ScanPolicy},
+    ///     Bins, Client,
+    /// };
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -622,7 +658,7 @@ impl Client {
         }
 
         if before_nanos > 0 {
-            cmd.push_str(&format!(";lut={before_nanos}"));
+            let _ = write!(cmd, ";lut={before_nanos}");
         }
 
         self.send_info_cmd(&cmd)
@@ -639,7 +675,7 @@ impl Client {
     /// within set `bar` and bin `baz`:
     ///
     /// ```rust
-    /// use aerospike::{Client, ClientPolicy, IndexType};
+    /// use aerospike::{policy::ClientPolicy, query::IndexType, Client};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -668,8 +704,8 @@ impl Client {
             .await?;
         Ok(IndexTask::new(
             Arc::clone(&self.cluster),
-            namespace.to_string(),
-            index_name.to_string(),
+            namespace.to_owned(),
+            index_name.to_owned(),
         ))
     }
 
@@ -729,7 +765,7 @@ impl Client {
         }
 
         Err(Error::BadResponse(
-            "Unexpected sindex info command response".to_string(),
+            "Unexpected sindex info command response".to_owned(),
         ))
     }
 }

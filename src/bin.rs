@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn into_bins() {
-        let bin_names = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let bin_names = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
         let expected = Bins::Some(bin_names);
 
         assert_eq!(expected, Bins::from(["a", "b", "c"]));
