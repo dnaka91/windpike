@@ -3,7 +3,7 @@ use std::fmt;
 use rand::Rng;
 use tokio::sync::mpsc;
 
-use crate::{Record, commands::CommandError, Bins};
+use crate::{commands::CommandError, Bins, Record};
 
 /// Query statement parameters.
 pub struct Statement {
