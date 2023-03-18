@@ -96,12 +96,10 @@ impl<'a> SingleCommand<'a> {
 
             cmd.prepare_buffer(&mut conn)
                 .map_err(|e| CommandError::PrepareBuffer(Box::new(e)))?;
-            cmd.write_timeout(&mut conn, policy.timeout())
-                .await
-                .map_err(|e| CommandError::SetTimeout(Box::new(e)))?;
+            conn.buffer().write_timeout(policy.timeout());
 
             // Send command.
-            if let Err(err) = cmd.write_buffer(&mut conn).await {
+            if let Err(err) = conn.flush().await {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
                 conn.invalidate().await;

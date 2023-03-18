@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
 
 use tokio::sync::mpsc;
 use tracing::warn;
@@ -160,19 +160,6 @@ impl StreamCommand {
 
 #[async_trait::async_trait]
 impl Command for StreamCommand {
-    async fn write_timeout(
-        &mut self,
-        conn: &mut Connection,
-        timeout: Option<Duration>,
-    ) -> Result<()> {
-        conn.buffer().write_timeout(timeout);
-        Ok(())
-    }
-
-    async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await.map_err(Into::into)
-    }
-
     fn prepare_buffer(&mut self, _conn: &mut Connection) -> Result<()> {
         // should be implemented downstream
         unreachable!()

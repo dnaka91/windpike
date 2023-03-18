@@ -15,7 +15,7 @@ mod write_command;
 
 mod field_type;
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 pub use self::particle_type::ParseParticleError;
 pub(crate) use self::{
@@ -33,8 +33,6 @@ pub type Result<T, E = CommandError> = crate::errors::Result<T, E>;
 pub enum CommandError {
     #[error("Failed to prepare send buffer")]
     PrepareBuffer(#[source] Box<Self>),
-    #[error("Failed to set timeout for send buffer")]
-    SetTimeout(#[source] Box<Self>),
     #[error("Invalid size for buffer: {size} (max {max})")]
     BufferSize { size: usize, max: usize },
     #[error("Timeout")]
@@ -64,15 +62,9 @@ pub enum CommandError {
 // Command interface describes all commands available
 #[async_trait::async_trait]
 trait Command {
-    async fn write_timeout(
-        &mut self,
-        conn: &mut Connection,
-        timeout: Option<Duration>,
-    ) -> Result<()>;
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()>;
     async fn get_node(&self) -> Option<Arc<Node>>;
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()>;
-    async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()>;
 }
 
 #[must_use]

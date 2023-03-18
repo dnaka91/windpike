@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use tracing::warn;
 
@@ -32,19 +32,6 @@ impl<'a> ExistsCommand<'a> {
 
 #[async_trait::async_trait]
 impl<'a> Command for ExistsCommand<'a> {
-    async fn write_timeout(
-        &mut self,
-        conn: &mut Connection,
-        timeout: Option<Duration>,
-    ) -> Result<()> {
-        conn.buffer().write_timeout(timeout);
-        Ok(())
-    }
-
-    async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await.map_err(Into::into)
-    }
-
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()
             .set_exists(self.policy, self.single_command.key)

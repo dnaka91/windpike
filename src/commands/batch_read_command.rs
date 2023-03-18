@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use tokio::time::{Duration, Instant};
+use tokio::time::Instant;
 use tracing::warn;
 
 use super::{buffer::InfoAttr, Command, CommandError, Result};
@@ -80,12 +80,10 @@ impl BatchReadCommand {
 
             self.prepare_buffer(&mut conn)
                 .map_err(|e| CommandError::PrepareBuffer(Box::new(e)))?;
-            self.write_timeout(&mut conn, base_policy.timeout())
-                .await
-                .map_err(|e| CommandError::SetTimeout(Box::new(e)))?;
+            conn.buffer().write_timeout(base_policy.timeout());
 
             // Send command.
-            if let Err(err) = self.write_buffer(&mut conn).await {
+            if let Err(err) = conn.flush().await {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
                 conn.invalidate().await;
@@ -184,19 +182,6 @@ impl BatchReadCommand {
 
 #[async_trait::async_trait]
 impl Command for BatchReadCommand {
-    async fn write_timeout(
-        &mut self,
-        conn: &mut Connection,
-        timeout: Option<Duration>,
-    ) -> Result<()> {
-        conn.buffer().write_timeout(timeout);
-        Ok(())
-    }
-
-    async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await.map_err(Into::into)
-    }
-
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()
             .set_batch_read(&self.policy, &self.batch_reads)

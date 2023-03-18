@@ -1,4 +1,4 @@
-use std::{str, sync::Arc, time::Duration};
+use std::{str, sync::Arc};
 
 use tokio::sync::mpsc;
 
@@ -43,19 +43,6 @@ impl<'a> ScanCommand<'a> {
 
 #[async_trait::async_trait]
 impl<'a> Command for ScanCommand<'a> {
-    async fn write_timeout(
-        &mut self,
-        conn: &mut Connection,
-        timeout: Option<Duration>,
-    ) -> Result<()> {
-        conn.buffer().write_timeout(timeout);
-        Ok(())
-    }
-
-    async fn write_buffer(&mut self, conn: &mut Connection) -> Result<()> {
-        conn.flush().await.map_err(Into::into)
-    }
-
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()
             .set_scan(
