@@ -13,7 +13,7 @@ use std::{
 };
 
 use tokio::{
-    sync::{mpsc, Mutex, RwLock},
+    sync::RwLock,
     task::JoinError,
     time::{Duration, Instant},
 };
@@ -107,13 +107,11 @@ pub struct Cluster {
 
     client_policy: ClientPolicy,
 
-    tend_channel: Mutex<mpsc::Sender<()>>,
     closed: AtomicBool,
 }
 
 impl Cluster {
     pub async fn new(policy: ClientPolicy, hosts: &[Host]) -> Result<Arc<Self>> {
-        let (tx, rx) = mpsc::channel(100);
         let cluster = Arc::new(Self {
             client_policy: policy,
 
@@ -124,7 +122,6 @@ impl Cluster {
             partition_write_map: Arc::new(RwLock::new(HashMap::new())),
             node_index: AtomicUsize::new(0),
 
-            tend_channel: Mutex::new(tx),
             closed: AtomicBool::new(false),
         });
         // try to seed connections for first use
@@ -136,31 +133,22 @@ impl Cluster {
         }
 
         let cluster_for_tend = Arc::clone(&cluster);
-        let _res = tokio::spawn(Self::tend_thread(cluster_for_tend, rx));
+        tokio::spawn(Self::tend_thread(cluster_for_tend));
+
         debug!("New cluster initialized and ready to be used...");
+
         Ok(cluster)
     }
 
-    async fn tend_thread(cluster: Arc<Self>, mut rx: mpsc::Receiver<()>) {
+    async fn tend_thread(cluster: Arc<Self>) {
         let tend_interval = cluster.client_policy.tend_interval;
 
-        loop {
-            if rx.try_recv().is_ok() {
-                unreachable!();
-            } else if let Err(err) = cluster.tend().await {
+        while !cluster.closed.load(Ordering::Relaxed) {
+            if let Err(err) = cluster.tend().await {
                 error!(error = ?err, "Error tending cluster");
             }
             tokio::time::sleep(tend_interval).await;
         }
-
-        // close all nodes
-        //let nodes = cluster.nodes().await;
-        //for mut node in nodes {
-        //    if let Some(node) = Arc::get_mut(&mut node) {
-        //        node.close().await;
-        //    }
-        //}
-        //cluster.set_nodes(vec![]).await;
     }
 
     async fn tend(&self) -> Result<()> {
@@ -554,16 +542,12 @@ impl Cluster {
         let node_array = self.nodes().await;
         let length = node_array.len();
 
-        for _ in 0..length {
-            let index = (self.node_index.fetch_add(1, Ordering::Relaxed) + 1) % length;
-            if let Some(node) = node_array.get(index) {
-                if node.is_active() {
-                    return Some(Arc::clone(node));
-                }
-            }
-        }
-
-        None
+        (0..length)
+            .find_map(|_| {
+                let index = (self.node_index.fetch_add(1, Ordering::Relaxed) + 1) % length;
+                node_array.get(index).filter(|node| node.is_active())
+            })
+            .map(Arc::clone)
     }
 
     pub async fn get_node_by_name(&self, node_name: &str) -> Option<Arc<Node>> {
@@ -574,14 +558,7 @@ impl Cluster {
             .cloned()
     }
 
-    pub async fn close(&self) -> Result<()> {
-        if !self.closed.load(Ordering::Relaxed) {
-            // close tend by closing the channel
-            let tx = self.tend_channel.lock().await;
-            drop(tx);
-            self.closed.store(true, Ordering::Relaxed);
-        }
-
-        Ok(())
+    pub fn close(&self) {
+        self.closed.store(true, Ordering::Relaxed);
     }
 }

@@ -309,5 +309,5 @@ async fn map_operations() {
     let rec = client.operate(&wpolicy, &key, &op).await.unwrap();
     assert_eq!(*rec.bins.get(bin_name).unwrap(), Value::from(9));
 
-    client.close().await.unwrap();
+    client.close();
 }

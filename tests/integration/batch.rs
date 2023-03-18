@@ -65,5 +65,5 @@ async fn batch_get() {
     assert_eq!(result.key, key4);
     let record = result.record;
     assert!(record.is_none());
-    client.close().await.unwrap();
+    client.close();
 }

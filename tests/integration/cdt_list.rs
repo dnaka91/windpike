@@ -435,5 +435,5 @@ async fn cdt_list() {
     )];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(*rec.bins.get("bin").unwrap(), as_list!(8, 9));
-    client.close().await.unwrap();
+    client.close();
 }

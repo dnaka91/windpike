@@ -12,5 +12,5 @@ async fn truncate() {
         .await;
     assert!(result.is_ok());
 
-    client.close().await.unwrap();
+    client.close();
 }

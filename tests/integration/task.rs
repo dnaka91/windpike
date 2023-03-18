@@ -40,5 +40,5 @@ async fn index_task_test() {
         Ok(Status::Complete)
     ));
 
-    client.close().await.unwrap();
+    client.close();
 }

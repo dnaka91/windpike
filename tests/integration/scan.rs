@@ -46,7 +46,7 @@ async fn scan_single_consumer() {
     let count = count_results(&mut rs).await;
     assert_eq!(count, EXPECTED);
 
-    client.close().await.unwrap();
+    client.close();
 }
 
 #[tokio::test]
@@ -84,7 +84,7 @@ async fn scan_multi_consumer() {
 
     assert_eq!(count.load(Ordering::Relaxed), EXPECTED);
 
-    client.close().await.unwrap();
+    client.close();
 }
 
 #[tokio::test]
@@ -118,7 +118,7 @@ async fn scan_node() {
 
     assert_eq!(count.load(Ordering::Relaxed), EXPECTED);
 
-    client.close().await.unwrap();
+    client.close();
 }
 
 async fn count_results(rs: &mut Recordset) -> usize {

@@ -17,7 +17,7 @@ async fn node_names() {
     let client = common::client().await;
     let names = client.node_names().await;
     assert!(!names.is_empty());
-    client.close().await.unwrap();
+    client.close();
 }
 
 #[tokio::test]
@@ -25,7 +25,7 @@ async fn nodes() {
     let client = common::client().await;
     let nodes = client.nodes().await;
     assert!(!nodes.is_empty());
-    client.close().await.unwrap();
+    client.close();
 }
 
 #[tokio::test]
@@ -35,7 +35,7 @@ async fn get_node() {
         let node = client.get_node(&name).await;
         assert!(node.is_some());
     }
-    client.close().await.unwrap();
+    client.close();
 }
 
 #[tokio::test]
@@ -43,12 +43,9 @@ async fn close() {
     let client = common::client().await;
     assert!(client.is_connected().await, "The client is not connected");
 
-    if let Ok(()) = client.close().await {
-        assert!(
-            !client.is_connected().await,
-            "The client did not disconnect"
-        );
-    } else {
-        panic!("Failed to close client");
-    }
+    client.close();
+    assert!(
+        !client.is_connected().await,
+        "The client did not disconnect"
+    );
 }

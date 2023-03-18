@@ -82,9 +82,8 @@ impl Client {
     }
 
     /// Closes the connection to the Aerospike cluster.
-    pub async fn close(&self) -> Result<()> {
-        self.cluster.close().await?;
-        Ok(())
+    pub fn close(&self) {
+        self.cluster.close();
     }
 
     /// Returns `true` if the client is connected to any cluster nodes.
