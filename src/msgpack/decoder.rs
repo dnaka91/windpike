@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use tracing::warn;
 
-use super::{MsgpackError, Result};
+use super::{Marker, MsgpackError, Result};
 use crate::{
     commands::{buffer::Buffer, ParticleType},
     value::Value,
@@ -10,40 +10,28 @@ use crate::{
 
 pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
     if buf.buffer.is_empty() {
-        return Ok(Value::List(vec![]));
+        return Ok(Value::List(Vec::new()));
     }
 
-    let ltype = buf.read_u8(None);
+    let value = unpack_value(buf)?;
+    assert!(matches!(value, Value::List(_)));
 
-    let count = match ltype {
-        0x90..=0x9f => (ltype & 0x0f) as usize,
-        0xdc => buf.read_u16(None) as usize,
-        0xdd => buf.read_u32(None) as usize,
-        _ => unreachable!(),
-    };
-
-    unpack_list(buf, count)
+    Ok(value)
 }
 
 pub fn unpack_value_map(buf: &mut Buffer) -> Result<Value> {
     if buf.buffer.is_empty() {
-        return Ok(Value::from(HashMap::with_capacity(0)));
+        return Ok(Value::from(HashMap::new()));
     }
 
-    let ltype = buf.read_u8(None);
+    let value = unpack_value(buf)?;
+    assert!(matches!(value, Value::HashMap(_)));
 
-    let count = match ltype {
-        0x80..=0x8f => (ltype & 0x0f) as usize,
-        0xde => buf.read_u16(None) as usize,
-        0xdf => buf.read_u32(None) as usize,
-        _ => unreachable!(),
-    };
-
-    unpack_map(buf, count)
+    Ok(value)
 }
 
-fn unpack_list(buf: &mut Buffer, mut count: usize) -> Result<Value> {
-    if count > 0 && is_ext(buf.peek()) {
+fn unpack_array(buf: &mut Buffer, mut count: usize) -> Result<Value> {
+    if count > 0 && is_ext(buf.peek().into()) {
         let _uv = unpack_value(buf);
         count -= 1;
     }
@@ -58,7 +46,7 @@ fn unpack_list(buf: &mut Buffer, mut count: usize) -> Result<Value> {
 }
 
 fn unpack_map(buf: &mut Buffer, mut count: usize) -> Result<Value> {
-    if count > 0 && is_ext(buf.peek()) {
+    if count > 0 && is_ext(buf.peek().into()) {
         let _uv = unpack_value(buf);
         let _uv = unpack_value(buf);
         count -= 1;
@@ -83,123 +71,125 @@ fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
             let val = buf.read_str(count)?;
             Ok(Value::String(val))
         }
-
         ParticleType::Blob => Ok(Value::Blob(buf.read_blob(count))),
-
         ParticleType::GeoJson => {
             let val = buf.read_str(count)?;
             Ok(Value::GeoJson(val))
         }
-
         _ => Err(MsgpackError::UnrecognizedCode(vtype)),
     }
 }
 
 fn unpack_value(buf: &mut Buffer) -> Result<Value> {
-    let obj_type = buf.read_u8(None);
+    let marker = Marker::from(buf.read_u8(None));
 
-    match obj_type {
-        0x00..=0x7f => Ok(Value::from(obj_type)),
-        0x80..=0x8f => unpack_map(buf, (obj_type & 0x0f) as usize),
-        0x90..=0x9f => unpack_list(buf, (obj_type & 0x0f) as usize),
-        0xa0..=0xbf => unpack_blob(buf, (obj_type & 0x1f) as usize),
-        0xc0 => Ok(Value::Nil),
-        0xc2 => Ok(Value::from(false)),
-        0xc3 => Ok(Value::from(true)),
-        0xc4 | 0xd9 => {
+    match marker {
+        Marker::Pfix(value) => Ok(Value::from(value)),
+        Marker::FixMap(len) => unpack_map(buf, len as usize),
+        Marker::FixArray(len) => unpack_array(buf, len as usize),
+        Marker::FixStr(len) => unpack_blob(buf, len as usize),
+        Marker::Nil => Ok(Value::Nil),
+        Marker::Reserved => {
+            warn!("Skipping over reserved type");
+            Ok(Value::Nil)
+        }
+        Marker::False => Ok(Value::from(false)),
+        Marker::True => Ok(Value::from(true)),
+        Marker::Bin8 | Marker::Str8 => {
             let count = buf.read_u8(None);
-            Ok(unpack_blob(buf, count as usize)?)
+            unpack_blob(buf, count as usize)
         }
-        0xc5 | 0xda => {
+        Marker::Bin16 | Marker::Str16 => {
             let count = buf.read_u16(None);
-            Ok(unpack_blob(buf, count as usize)?)
+            unpack_blob(buf, count as usize)
         }
-        0xc6 | 0xdb => {
+        Marker::Bin32 | Marker::Str32 => {
             let count = buf.read_u32(None);
-            Ok(unpack_blob(buf, count as usize)?)
+            unpack_blob(buf, count as usize)
         }
-        0xc7 => {
+        Marker::Ext8 => {
             warn!("Skipping over type extension with 8 bit header and bytes");
-            let count = 1 + buf.read_u8(None);
-            buf.skip_bytes(count as usize);
+            let count = 1 + buf.read_u8(None) as usize;
+            buf.skip_bytes(count);
             Ok(Value::Nil)
         }
-        0xc8 => {
+        Marker::Ext16 => {
             warn!("Skipping over type extension with 16 bit header and bytes");
-            let count = 1 + buf.read_u16(None);
-            buf.skip_bytes(count as usize);
+            let count = 1 + buf.read_u16(None) as usize;
+            buf.skip_bytes(count);
             Ok(Value::Nil)
         }
-        0xc9 => {
+        Marker::Ext32 => {
             warn!("Skipping over type extension with 32 bit header and bytes");
-            let count = 1 + buf.read_u32(None);
-            buf.skip_bytes(count as usize);
+            let count = 1 + buf.read_u32(None) as usize;
+            buf.skip_bytes(count);
             Ok(Value::Nil)
         }
-        0xca => Ok(Value::from(buf.read_f32(None))),
-        0xcb => Ok(Value::from(buf.read_f64(None))),
-        0xcc => Ok(Value::from(buf.read_u8(None))),
-        0xcd => Ok(Value::from(buf.read_u16(None))),
-        0xce => Ok(Value::from(buf.read_u32(None))),
-        0xcf => Ok(Value::from(buf.read_u64(None))),
-        0xd0 => Ok(Value::from(buf.read_i8(None))),
-        0xd1 => Ok(Value::from(buf.read_i16(None))),
-        0xd2 => Ok(Value::from(buf.read_i32(None))),
-        0xd3 => Ok(Value::from(buf.read_i64(None))),
-        0xd4 => {
+        Marker::F32 => Ok(Value::from(buf.read_f32(None))),
+        Marker::F64 => Ok(Value::from(buf.read_f64(None))),
+        Marker::U8 => Ok(Value::from(buf.read_u8(None))),
+        Marker::U16 => Ok(Value::from(buf.read_u16(None))),
+        Marker::U32 => Ok(Value::from(buf.read_u32(None))),
+        Marker::U64 => Ok(Value::from(buf.read_u64(None))),
+        Marker::I8 => Ok(Value::from(buf.read_i8(None))),
+        Marker::I16 => Ok(Value::from(buf.read_i16(None))),
+        Marker::I32 => Ok(Value::from(buf.read_i32(None))),
+        Marker::I64 => Ok(Value::from(buf.read_i64(None))),
+        Marker::FixExt1 => {
             warn!("Skipping over type extension with 1 byte");
-            let count = (1 + 1) as usize;
-            buf.skip_bytes(count);
+            buf.skip_bytes(2);
             Ok(Value::Nil)
         }
-        0xd5 => {
+        Marker::FixExt2 => {
             warn!("Skipping over type extension with 2 bytes");
-            let count = (1 + 2) as usize;
-            buf.skip_bytes(count);
+            buf.skip_bytes(3);
             Ok(Value::Nil)
         }
-        0xd6 => {
+        Marker::FixExt4 => {
             warn!("Skipping over type extension with 4 bytes");
-            let count = (1 + 4) as usize;
-            buf.skip_bytes(count);
+            buf.skip_bytes(5);
             Ok(Value::Nil)
         }
-        0xd7 => {
+        Marker::FixExt8 => {
             warn!("Skipping over type extension with 8 bytes");
-            let count = (1 + 8) as usize;
-            buf.skip_bytes(count);
+            buf.skip_bytes(9);
             Ok(Value::Nil)
         }
-        0xd8 => {
+        Marker::FixExt16 => {
             warn!("Skipping over type extension with 16 bytes");
-            let count = (1 + 16) as usize;
-            buf.skip_bytes(count);
+            buf.skip_bytes(17);
             Ok(Value::Nil)
         }
-        0xdc => {
+        Marker::Array16 => {
             let count = buf.read_u16(None);
-            unpack_list(buf, count as usize)
+            unpack_array(buf, count as usize)
         }
-        0xdd => {
+        Marker::Array32 => {
             let count = buf.read_u32(None);
-            unpack_list(buf, count as usize)
+            unpack_array(buf, count as usize)
         }
-        0xde => {
+        Marker::Map16 => {
             let count = buf.read_u16(None);
             unpack_map(buf, count as usize)
         }
-        0xdf => {
+        Marker::Map32 => {
             let count = buf.read_u32(None);
             unpack_map(buf, count as usize)
         }
-        0xe0..=0xff => {
-            let value = i16::from(obj_type) - 0xe0 - 32;
-            Ok(Value::from(value))
-        }
-        _ => Err(MsgpackError::UnrecognizedCode(obj_type)),
+        Marker::Nfix(value) => Ok(Value::from(value)),
     }
 }
 
-const fn is_ext(byte: u8) -> bool {
-    matches!(byte, 0xc7 | 0xc8 | 0xc9 | 0xd4 | 0xd5 | 0xd6 | 0xd7 | 0xd8)
+const fn is_ext(marker: Marker) -> bool {
+    matches!(
+        marker,
+        Marker::Ext8
+            | Marker::Ext16
+            | Marker::Ext32
+            | Marker::FixExt1
+            | Marker::FixExt2
+            | Marker::FixExt4
+            | Marker::FixExt8
+            | Marker::FixExt16
+    )
 }
