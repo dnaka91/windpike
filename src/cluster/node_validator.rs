@@ -48,7 +48,7 @@ impl NodeValidator {
             match self.validate_alias(cluster, alias).await {
                 Ok(_) => return Ok(()),
                 Err(err) => {
-                    debug!(%alias, ?err, "Alias failed");
+                    debug!(%alias, ?err, "Alias validation failed");
                     last_err = Some(err);
                 }
             }

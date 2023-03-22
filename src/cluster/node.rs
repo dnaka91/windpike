@@ -245,7 +245,7 @@ impl Node {
     }
 
     // Adds a failure to the failure count
-    pub fn increase_failures(&self) -> usize {
+    pub(crate) fn increase_failures(&self) -> usize {
         self.failures.fetch_add(1, Ordering::Relaxed)
     }
 
