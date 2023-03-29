@@ -53,7 +53,11 @@ impl NodeValidator {
                 }
             }
         }
-        last_err.map_or_else(|| unreachable!(), Err)
+
+        match last_err {
+            None => Ok(()),
+            Some(err) => Err(err),
+        }
     }
 
     #[must_use]

@@ -140,7 +140,7 @@ impl StreamCommand {
                         particle_bytes_size,
                     )?);
                 }
-                _ => unreachable!(),
+                _ => panic!("invalid field type `{field_type}`"),
             }
         }
 
@@ -160,8 +160,7 @@ impl StreamCommand {
 #[async_trait::async_trait]
 impl Command for StreamCommand {
     fn prepare_buffer(&mut self, _conn: &mut Connection) -> Result<()> {
-        // should be implemented downstream
-        unreachable!()
+        panic!("stream command doesn't write the buffer itself")
     }
 
     async fn get_node(&self) -> Option<Arc<Node>> {
