@@ -36,9 +36,10 @@
 use crate::result_code::ResultCode;
 pub use crate::{
     cluster::ClusterError,
-    commands::{CommandError, ParseParticleError},
+    commands::{buffer::BufferError, CommandError, ParseParticleError},
     msgpack::MsgpackError,
-    net::ParseHostError,
+    net::{NetError, ParseHostError},
+    value::ParticleError,
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
