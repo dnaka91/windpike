@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tracing::warn;
 
-use super::{buffer, Command, CommandError, Result, SingleCommand};
+use super::{Command, CommandError, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
     net::Connection,
@@ -43,27 +43,20 @@ impl<'a> Command for ExistsCommand<'a> {
     }
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {
-        // Read header.
-        if let Err(err) = conn
-            .read_buffer(buffer::MSG_TOTAL_HEADER_SIZE as usize)
-            .await
-        {
+        let header = conn.read_header().await.map_err(|err| {
             warn!(%err, "Parse result error");
-            return Err(err.into());
+            err
+        })?;
+
+        if !matches!(
+            header.result_code,
+            ResultCode::Ok | ResultCode::KeyNotFoundError
+        ) {
+            return Err(CommandError::ServerError(header.result_code));
         }
 
-        conn.buffer().reset_offset();
+        self.exists = header.result_code == ResultCode::Ok;
 
-        // A number of these are commented out because we just don't care enough to read
-        // that section of the header. If we do care, uncomment and check!
-        let result_code = ResultCode::from(conn.buffer().read_u8(Some(13)));
-
-        if result_code != ResultCode::Ok && result_code != ResultCode::KeyNotFoundError {
-            return Err(CommandError::ServerError(result_code));
-        }
-
-        self.exists = result_code == ResultCode::Ok;
-
-        SingleCommand::empty_socket(conn).await
+        SingleCommand::empty_socket(conn, header.size).await
     }
 }

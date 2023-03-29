@@ -4,7 +4,7 @@ use tokio::sync::mpsc;
 use tracing::warn;
 
 use super::{
-    buffer::{self, InfoAttr},
+    buffer::{InfoAttr, MessageHeader},
     field_type::FieldType,
     Command, CommandError, Result,
 };
@@ -25,7 +25,11 @@ impl StreamCommand {
     }
 
     async fn parse_record(conn: &mut Connection, size: usize) -> Result<(Option<Record>, bool)> {
-        let result_code = ResultCode::from(conn.buffer().read_u8(Some(5)));
+        conn.buffer().advance(3);
+        let info3 = InfoAttr::from_bits_truncate(conn.buffer().read_u8());
+
+        conn.buffer().advance(1);
+        let result_code = ResultCode::from(conn.buffer().read_u8());
         if result_code != ResultCode::Ok {
             if conn.bytes_read() < size {
                 let remaining = size - conn.bytes_read();
@@ -39,17 +43,15 @@ impl StreamCommand {
         }
 
         // if cmd is the end marker of the response, do not proceed further
-        let info3 = InfoAttr::from_bits_truncate(conn.buffer().read_u8(Some(3)));
         if info3.contains(InfoAttr::LAST) {
             return Ok((None, false));
         }
 
-        conn.buffer().skip(6);
-        let generation = conn.buffer().read_u32(None);
-        let expiration = conn.buffer().read_u32(None);
-        conn.buffer().skip(4);
-        let field_count = conn.buffer().read_u16(None) as usize; // almost certainly 0
-        let op_count = conn.buffer().read_u16(None) as usize;
+        let generation = conn.buffer().read_u32();
+        let expiration = conn.buffer().read_u32();
+        conn.buffer().advance(4);
+        let field_count = conn.buffer().read_u16() as usize; // almost certainly 0
+        let op_count = conn.buffer().read_u16() as usize;
 
         let key = Self::parse_key(conn, field_count).await?;
 
@@ -62,11 +64,11 @@ impl StreamCommand {
 
         for _ in 0..op_count {
             conn.read_buffer(8).await?;
-            let op_size = conn.buffer().read_u32(None) as usize;
-            conn.buffer().skip(1);
-            let particle_type = conn.buffer().read_u8(None);
-            conn.buffer().skip(1);
-            let name_size = conn.buffer().read_u8(None) as usize;
+            let op_size = conn.buffer().read_u32() as usize;
+            conn.buffer().advance(1);
+            let particle_type = conn.buffer().read_u8();
+            conn.buffer().advance(1);
+            let name_size = conn.buffer().read_u8() as usize;
             conn.read_buffer(name_size).await?;
             let name = conn.buffer().read_str(name_size)?;
 
@@ -84,10 +86,7 @@ impl StreamCommand {
     async fn parse_stream(&mut self, conn: &mut Connection, size: usize) -> Result<bool> {
         while !self.tx.is_closed() && conn.bytes_read() < size {
             // Read header.
-            if let Err(err) = conn
-                .read_buffer(buffer::MSG_REMAINING_HEADER_SIZE as usize)
-                .await
-            {
+            if let Err(err) = conn.read_buffer(MessageHeader::SIZE).await {
                 warn!(%err, "Parse result error");
                 return Err(err.into());
             }
@@ -118,9 +117,9 @@ impl StreamCommand {
 
         for _ in 0..field_count {
             conn.read_buffer(4).await?;
-            let field_len = conn.buffer().read_u32(None) as usize;
+            let field_len = conn.buffer().read_u32() as usize;
             conn.read_buffer(field_len).await?;
-            let field_type = conn.buffer().read_u8(None);
+            let field_type = conn.buffer().read_u8();
 
             match field_type {
                 x if x == FieldType::DigestRipe as u8 => {
@@ -133,7 +132,7 @@ impl StreamCommand {
                     set_name = conn.buffer().read_str(field_len - 1)?;
                 }
                 x if x == FieldType::Key as u8 => {
-                    let particle_type = conn.buffer().read_u8(None);
+                    let particle_type = conn.buffer().read_u8();
                     let particle_bytes_size = field_len - 2;
                     orig_key = Some(UserKey::read_from(
                         particle_type,
@@ -174,7 +173,7 @@ impl Command for StreamCommand {
 
         while status {
             conn.read_buffer(8).await?;
-            let size = conn.buffer().read_msg_size(None);
+            let size = conn.buffer().read_msg_size();
             conn.bookmark();
 
             status = false;

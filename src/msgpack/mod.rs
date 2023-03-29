@@ -4,6 +4,8 @@
     clippy::cast_sign_loss
 )]
 
+use bytes::BufMut;
+
 use crate::commands::ParseParticleError;
 
 pub(crate) mod decoder;
@@ -43,60 +45,147 @@ pub(crate) trait Write {
 pub(crate) struct Sink;
 
 impl Write for Sink {
+    #[inline]
     fn write_u8(&mut self, _: u8) -> usize {
         std::mem::size_of::<u8>()
     }
 
+    #[inline]
     fn write_u16(&mut self, _: u16) -> usize {
         std::mem::size_of::<u16>()
     }
 
+    #[inline]
     fn write_u32(&mut self, _: u32) -> usize {
         std::mem::size_of::<u32>()
     }
 
+    #[inline]
     fn write_u64(&mut self, _: u64) -> usize {
         std::mem::size_of::<u64>()
     }
 
+    #[inline]
     fn write_i8(&mut self, _: i8) -> usize {
         std::mem::size_of::<i8>()
     }
 
+    #[inline]
     fn write_i16(&mut self, _: i16) -> usize {
         std::mem::size_of::<i16>()
     }
 
+    #[inline]
     fn write_i32(&mut self, _: i32) -> usize {
         std::mem::size_of::<i32>()
     }
 
+    #[inline]
     fn write_i64(&mut self, _: i64) -> usize {
         std::mem::size_of::<i64>()
     }
 
+    #[inline]
     fn write_f32(&mut self, _: f32) -> usize {
         std::mem::size_of::<f32>()
     }
 
+    #[inline]
     fn write_f64(&mut self, _: f64) -> usize {
         std::mem::size_of::<f64>()
     }
 
+    #[inline]
     fn write_bytes(&mut self, v: &[u8]) -> usize {
         v.len()
     }
 
+    #[inline]
     fn write_str(&mut self, v: &str) -> usize {
         v.as_bytes().len()
     }
 
+    #[inline]
     fn write_bool(&mut self, _: bool) -> usize {
-        std::mem::size_of::<i64>()
+        std::mem::size_of::<u8>()
+    }
+
+    #[inline]
+    fn write_geo(&mut self, v: &str) -> usize {
+        3 + v.len()
+    }
+}
+
+impl<T: BufMut> Write for T {
+    fn write_u8(&mut self, v: u8) -> usize {
+        self.put_u8(v);
+        Sink.write_u8(v)
+    }
+
+    fn write_u16(&mut self, v: u16) -> usize {
+        self.put_u16(v);
+        Sink.write_u16(v)
+    }
+
+    fn write_u32(&mut self, v: u32) -> usize {
+        self.put_u32(v);
+        Sink.write_u32(v)
+    }
+
+    fn write_u64(&mut self, v: u64) -> usize {
+        self.put_u64(v);
+        Sink.write_u64(v)
+    }
+
+    fn write_i8(&mut self, v: i8) -> usize {
+        self.put_i8(v);
+        Sink.write_i8(v)
+    }
+
+    fn write_i16(&mut self, v: i16) -> usize {
+        self.put_i16(v);
+        Sink.write_i16(v)
+    }
+
+    fn write_i32(&mut self, v: i32) -> usize {
+        self.put_i32(v);
+        Sink.write_i32(v)
+    }
+
+    fn write_i64(&mut self, v: i64) -> usize {
+        self.put_i64(v);
+        Sink.write_i64(v)
+    }
+
+    fn write_f32(&mut self, v: f32) -> usize {
+        self.put_f32(v);
+        Sink.write_f32(v)
+    }
+
+    fn write_f64(&mut self, v: f64) -> usize {
+        self.put_f64(v);
+        Sink.write_f64(v)
+    }
+
+    fn write_bytes(&mut self, v: &[u8]) -> usize {
+        self.put_slice(v);
+        Sink.write_bytes(v)
+    }
+
+    fn write_str(&mut self, v: &str) -> usize {
+        self.put_slice(v.as_bytes());
+        Sink.write_str(v)
+    }
+
+    fn write_bool(&mut self, v: bool) -> usize {
+        self.put_u8(v.into());
+        Sink.write_bool(v)
     }
 
     fn write_geo(&mut self, v: &str) -> usize {
-        3 + v.len()
+        self.put_bytes(0, 3);
+        self.put_slice(v.as_bytes());
+        Sink.write_geo(v)
     }
 }
 

@@ -8,7 +8,7 @@ use std::{
 
 use tracing::warn;
 
-use super::{buffer, Command, CommandError, Result, SingleCommand};
+use super::{Command, CommandError, Result, SingleCommand};
 use crate::{
     as_list,
     cluster::{Cluster, Node},
@@ -41,26 +41,26 @@ impl<'a> ReadCommand<'a> {
 
     fn parse_record(
         conn: &mut Connection,
-        op_count: usize,
-        field_count: usize,
+        op_count: u16,
+        field_count: u16,
         generation: u32,
         expiration: u32,
     ) -> Result<Record> {
-        let mut bins: HashMap<String, Value> = HashMap::with_capacity(op_count);
+        let mut bins: HashMap<String, Value> = HashMap::with_capacity(op_count.into());
 
         // There can be fields in the response (setname etc). For now, ignore them. Expose them to
         // the API if needed in the future.
         for _ in 0..field_count {
-            let field_size = conn.buffer().read_u32(None) as usize;
-            conn.buffer().skip(4 + field_size);
+            let field_size = conn.buffer().read_u32() as usize;
+            conn.buffer().advance(4 + field_size);
         }
 
         for _ in 0..op_count {
-            let op_size = conn.buffer().read_u32(None) as usize;
-            conn.buffer().skip(1);
-            let particle_type = conn.buffer().read_u8(None);
-            conn.buffer().skip(1);
-            let name_size = conn.buffer().read_u8(None) as usize;
+            let op_size = conn.buffer().read_u32() as usize;
+            conn.buffer().advance(1);
+            let particle_type = conn.buffer().read_u8();
+            conn.buffer().advance(1);
+            let name_size = conn.buffer().read_u8() as usize;
             let name = conn.buffer().read_str(name_size)?;
 
             let particle_bytes_size = op_size - (4 + name_size);
@@ -99,38 +99,35 @@ impl<'a> Command for ReadCommand<'a> {
     }
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {
-        if let Err(err) = conn
-            .read_buffer(buffer::MSG_TOTAL_HEADER_SIZE as usize)
-            .await
-        {
+        let header = conn.read_header().await.map_err(|err| {
             warn!(%err, "Parse result error");
-            return Err(err.into());
+            err
+        })?;
+
+        if header.result_code != ResultCode::Ok {
+            return Err(CommandError::ServerError(header.result_code));
         }
 
-        conn.buffer().reset_offset();
-        let sz = conn.buffer().read_u64(Some(0));
-        let header_length = conn.buffer().read_u8(Some(8));
-        let result_code = conn.buffer().read_u8(Some(13));
-        let generation = conn.buffer().read_u32(Some(14));
-        let expiration = conn.buffer().read_u32(Some(18));
-        let field_count = conn.buffer().read_u16(Some(26)) as usize; // almost certainly 0
-        let op_count = conn.buffer().read_u16(Some(28)) as usize;
-        let receive_size = ((sz & 0xFFFF_FFFF_FFFF) - u64::from(header_length)) as usize;
-
         // Read remaining message bytes
-        if receive_size > 0 {
-            if let Err(err) = conn.read_buffer(receive_size).await {
+        if header.size > 0 {
+            if let Err(err) = conn.read_buffer(header.size).await {
                 warn!(%err, "Parse result error");
                 return Err(err.into());
             }
         }
 
-        match ResultCode::from(result_code) {
+        match header.result_code {
             ResultCode::Ok => {
                 let record = if self.bins == Bins::None {
-                    Record::new(None, HashMap::new(), generation, expiration)
+                    Record::new(None, HashMap::new(), header.generation, header.expiration)
                 } else {
-                    Self::parse_record(conn, op_count, field_count, generation, expiration)?
+                    Self::parse_record(
+                        conn,
+                        header.operation_count,
+                        header.field_count,
+                        header.generation,
+                        header.expiration,
+                    )?
                 };
                 self.record = Some(record);
                 Ok(())

@@ -549,20 +549,20 @@ pub(crate) fn bytes_to_particle(
 ) -> Result<Value, ParticleError> {
     match ParticleType::try_from(ptype)? {
         ParticleType::Null => Ok(Value::Nil),
-        ParticleType::Integer => Ok(Value::Int(buf.read_i64(None))),
-        ParticleType::Float => Ok(Value::Float(buf.read_f64(None).into())),
+        ParticleType::Integer => Ok(Value::Int(buf.read_i64())),
+        ParticleType::Float => Ok(Value::Float(buf.read_f64().into())),
         ParticleType::String => Ok(Value::String(buf.read_str(len)?)),
         ParticleType::Blob => Ok(Value::Blob(buf.read_blob(len))),
-        ParticleType::Bool => Ok(Value::Bool(buf.read_bool(None))),
+        ParticleType::Bool => Ok(Value::Bool(buf.read_bool())),
         ParticleType::Hll => Ok(Value::Hll(buf.read_blob(len))),
         ParticleType::Map => Ok(decoder::unpack_value_map(buf)?),
         ParticleType::List => Ok(decoder::unpack_value_list(buf)?),
         ParticleType::GeoJson => {
-            buf.skip(1);
-            let ncells = buf.read_u16(None) as usize;
+            buf.advance(1);
+            let ncells = buf.read_u16() as usize;
             let header_size = ncells * 8;
 
-            buf.skip(header_size);
+            buf.advance(header_size);
             let val = buf.read_str(len - header_size - 3)?;
             Ok(Value::GeoJson(val))
         }

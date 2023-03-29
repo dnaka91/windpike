@@ -19,11 +19,19 @@ use std::sync::Arc;
 
 pub use self::particle_type::ParseParticleError;
 pub(crate) use self::{
-    admin_command::AdminCommand, batch_read_command::BatchReadCommand,
-    delete_command::DeleteCommand, exists_command::ExistsCommand, info_command::Message,
-    operate_command::OperateCommand, particle_type::ParticleType, read_command::ReadCommand,
-    scan_command::ScanCommand, single_command::SingleCommand, stream_command::StreamCommand,
-    touch_command::TouchCommand, write_command::WriteCommand,
+    admin_command::{hash_password, AdminCommand},
+    batch_read_command::BatchReadCommand,
+    delete_command::DeleteCommand,
+    exists_command::ExistsCommand,
+    info_command::Message,
+    operate_command::OperateCommand,
+    particle_type::ParticleType,
+    read_command::ReadCommand,
+    scan_command::ScanCommand,
+    single_command::SingleCommand,
+    stream_command::StreamCommand,
+    touch_command::TouchCommand,
+    write_command::WriteCommand,
 };
 use crate::{cluster::Node, net::Connection, ResultCode};
 

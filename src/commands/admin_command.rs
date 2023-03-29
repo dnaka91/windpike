@@ -2,7 +2,7 @@
 
 use std::str;
 
-use super::{CommandError, Result};
+use super::{buffer::Buffer, CommandError, Result};
 use crate::{
     cluster::Cluster,
     msgpack::Write,
@@ -10,33 +10,35 @@ use crate::{
     ResultCode,
 };
 
-// Commands
-const AUTHENTICATE: u8 = 0;
-const CREATE_USER: u8 = 1;
-const DROP_USER: u8 = 2;
-const SET_PASSWORD: u8 = 3;
-const CHANGE_PASSWORD: u8 = 4;
-const GRANT_ROLES: u8 = 5;
-const REVOKE_ROLES: u8 = 6;
-const REPLACE_ROLES: u8 = 7;
-const QUERY_USERS: u8 = 9;
-const LOGIN: u8 = 20;
+#[derive(Clone, Copy)]
+enum Command {
+    Authenticate,
+    CreateUser,
+    DropUser,
+    SetPassword,
+    ChangePassword,
+    GrantRoles,
+    RevokeRoles,
+    ReplaceRoles,
+    QueryUsers = 9,
+    Login = 20,
+}
 
-// Field IDs
-const USER: u8 = 0;
-const PASSWORD: u8 = 1;
-const OLD_PASSWORD: u8 = 2;
-const CREDENTIAL: u8 = 3;
-const ROLES: u8 = 10;
+#[derive(Clone, Copy)]
+enum FieldId {
+    User,
+    Password,
+    OldPassword,
+    Credential,
+    Roles = 10,
+}
 
 // Misc
-const MSG_VERSION: i64 = 0;
-const MSG_TYPE: i64 = 2;
+const MSG_VERSION: u64 = 2;
+const MSG_TYPE: u64 = 2;
 
 const HEADER_SIZE: usize = 24;
-const HEADER_REMAINING: usize = 16;
-const RESULT_CODE: usize = 9;
-const QUERY_END: usize = 50;
+const HEADER_REMAINING: usize = HEADER_SIZE - std::mem::size_of::<i64>();
 
 pub struct AdminCommand {}
 
@@ -47,12 +49,6 @@ impl AdminCommand {
     }
 
     async fn execute(mut conn: PooledConnection) -> Result<()> {
-        // Write the message header
-        conn.buffer().size_buffer()?;
-        let size = conn.buffer().offset;
-        conn.buffer().reset_offset();
-        Self::write_size(&mut conn, size as i64);
-
         // Send command.
         if let Err(err) = conn.flush().await {
             conn.invalidate().await;
@@ -65,8 +61,10 @@ impl AdminCommand {
             return Err(err.into());
         }
 
-        let result_code = conn.buffer().read_u8(Some(RESULT_CODE));
-        let result_code = ResultCode::from(result_code);
+        let buf = conn.buffer();
+        buf.advance(9);
+        let result_code = ResultCode::from(buf.read_u8());
+
         if result_code != ResultCode::Ok {
             return Err(CommandError::ServerError(result_code));
         }
@@ -75,28 +73,33 @@ impl AdminCommand {
     }
 
     pub async fn authenticate(conn: &mut Connection, user: &str, password: &str) -> Result<()> {
-        conn.buffer().resize_buffer(1024)?;
-        conn.buffer().reset_offset();
-        Self::write_header(conn, LOGIN, 2);
-        Self::write_field_str(conn, USER, user);
-        Self::write_field_bytes(conn, CREDENTIAL, password.as_bytes());
-        conn.buffer().size_buffer()?;
-        let size = conn.buffer().offset;
-        conn.buffer().reset_offset();
-        Self::write_size(conn, size as i64);
+        let buf = conn.buffer();
+        buf.clear(1024)?;
+        write_size(
+            buf,
+            HEADER_SIZE + estimate_field_size(user) + estimate_field_size(password),
+        );
+        write_header(buf, Command::Login, 2);
+        write_field_str(buf, FieldId::User, user);
+        write_field_bytes(buf, FieldId::Credential, password);
 
         conn.flush().await?;
         conn.read_buffer(HEADER_SIZE).await?;
-        let result_code = conn.buffer().read_u8(Some(RESULT_CODE));
-        let result_code = ResultCode::from(result_code);
+
+        let buf = conn.buffer();
+        let size = buf.read_u64();
+        let size = (size & 0xffff_ffff_ffff) - HEADER_REMAINING as u64;
+
+        buf.advance(1);
+        let result_code = ResultCode::from(buf.read_u8());
+
         if ResultCode::SecurityNotEnabled != result_code && ResultCode::Ok != result_code {
             return Err(CommandError::ServerError(result_code));
         }
 
         // consume the rest of the buffer
-        let sz = conn.buffer().read_u64(Some(0));
-        let receive_size = (sz & 0xFFFF_FFFF_FFFF) - HEADER_REMAINING as u64;
-        conn.read_buffer(receive_size as usize).await?;
+        buf.advance(HEADER_REMAINING - 2);
+        conn.read_buffer(size as usize).await?;
 
         Ok(())
     }
@@ -107,18 +110,27 @@ impl AdminCommand {
         password: &str,
         roles: &[&str],
     ) -> Result<()> {
+        let password = hash_password(password)?;
+
         let node = cluster
             .get_random_node()
             .await
             .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
-        conn.buffer().resize_buffer(1024)?;
-        conn.buffer().reset_offset();
-        Self::write_header(&mut conn, CREATE_USER, 3);
-        Self::write_field_str(&mut conn, USER, user);
-        Self::write_field_str(&mut conn, PASSWORD, &Self::hash_password(password)?);
-        Self::write_roles(&mut conn, roles);
+        let buf = conn.buffer();
+        buf.clear(1024)?;
+        write_size(
+            buf,
+            HEADER_SIZE
+                + estimate_field_size(user)
+                + estimate_field_size(&password)
+                + estimate_roles_size(roles),
+        );
+        write_header(buf, Command::CreateUser, 3);
+        write_field_str(buf, FieldId::User, user);
+        write_field_str(buf, FieldId::Password, password);
+        write_roles(buf, roles);
 
         Self::execute(conn).await
     }
@@ -130,50 +142,66 @@ impl AdminCommand {
             .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
-        conn.buffer().resize_buffer(1024)?;
-        conn.buffer().reset_offset();
-        Self::write_header(&mut conn, DROP_USER, 1);
-        Self::write_field_str(&mut conn, USER, user);
+        let buf = conn.buffer();
+        buf.clear(1024)?;
+        write_size(buf, HEADER_SIZE + estimate_field_size(user));
+        write_header(buf, Command::DropUser, 1);
+        write_field_str(buf, FieldId::User, user);
 
         Self::execute(conn).await
     }
 
     pub async fn set_password(cluster: &Cluster, user: &str, password: &str) -> Result<()> {
+        let password = hash_password(password)?;
+
         let node = cluster
             .get_random_node()
             .await
             .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
-        conn.buffer().resize_buffer(1024)?;
-        conn.buffer().reset_offset();
-        Self::write_header(&mut conn, SET_PASSWORD, 2);
-        Self::write_field_str(&mut conn, USER, user);
-        Self::write_field_str(&mut conn, PASSWORD, &Self::hash_password(password)?);
+        let buf = conn.buffer();
+        buf.clear(1024)?;
+        write_size(
+            buf,
+            HEADER_SIZE + estimate_field_size(user) + estimate_field_size(&password),
+        );
+        write_header(buf, Command::SetPassword, 2);
+        write_field_str(buf, FieldId::User, user);
+        write_field_str(buf, FieldId::Password, password);
 
         Self::execute(conn).await
     }
 
     pub async fn change_password(cluster: &Cluster, user: &str, password: &str) -> Result<()> {
+        let old_password = cluster
+            .client_policy()
+            .user_password
+            .as_ref()
+            .map(|(_, password)| hash_password(password))
+            .transpose()?
+            .unwrap_or_default();
+        let password = hash_password(password)?;
+
         let node = cluster
             .get_random_node()
             .await
             .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
-        conn.buffer().resize_buffer(1024)?;
-        conn.buffer().reset_offset();
-        Self::write_header(&mut conn, CHANGE_PASSWORD, 3);
-        Self::write_field_str(&mut conn, USER, user);
-        match &cluster.client_policy().user_password {
-            Some((_, password)) => {
-                Self::write_field_str(&mut conn, OLD_PASSWORD, &Self::hash_password(password)?);
-            }
-
-            None => Self::write_field_str(&mut conn, OLD_PASSWORD, ""),
-        };
-
-        Self::write_field_str(&mut conn, PASSWORD, &Self::hash_password(password)?);
+        let buf = conn.buffer();
+        buf.clear(1024)?;
+        write_size(
+            buf,
+            HEADER_SIZE
+                + estimate_field_size(user)
+                + estimate_field_size(&old_password)
+                + estimate_field_size(&password),
+        );
+        write_header(buf, Command::ChangePassword, 3);
+        write_field_str(buf, FieldId::User, user);
+        write_field_str(buf, FieldId::OldPassword, old_password);
+        write_field_str(buf, FieldId::Password, password);
 
         Self::execute(conn).await
     }
@@ -185,11 +213,15 @@ impl AdminCommand {
             .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
-        conn.buffer().resize_buffer(1024)?;
-        conn.buffer().reset_offset();
-        Self::write_header(&mut conn, GRANT_ROLES, 2);
-        Self::write_field_str(&mut conn, USER, user);
-        Self::write_roles(&mut conn, roles);
+        let buf = conn.buffer();
+        buf.clear(1024)?;
+        write_size(
+            buf,
+            HEADER_SIZE + estimate_field_size(user) + estimate_roles_size(roles),
+        );
+        write_header(buf, Command::GrantRoles, 2);
+        write_field_str(buf, FieldId::User, user);
+        write_roles(buf, roles);
 
         Self::execute(conn).await
     }
@@ -201,73 +233,81 @@ impl AdminCommand {
             .ok_or(CommandError::NoConnection)?;
         let mut conn = node.get_connection().await?;
 
-        conn.buffer().resize_buffer(1024)?;
-        conn.buffer().reset_offset();
-        Self::write_header(&mut conn, REVOKE_ROLES, 2);
-        Self::write_field_str(&mut conn, USER, user);
-        Self::write_roles(&mut conn, roles);
+        let buf = conn.buffer();
+        buf.clear(1024)?;
+        write_size(
+            buf,
+            HEADER_SIZE + estimate_field_size(user) + estimate_roles_size(roles),
+        );
+        write_header(buf, Command::RevokeRoles, 2);
+        write_field_str(buf, FieldId::User, user);
+        write_roles(buf, roles);
 
         Self::execute(conn).await
     }
+}
 
-    // Utility methods
+fn write_size(buf: &mut Buffer, size: usize) {
+    let size = (size as u64 - 8) | (MSG_VERSION << 56) | (MSG_TYPE << 48);
+    buf.write_u64(size);
+}
 
-    fn write_size(conn: &mut Connection, size: i64) {
-        // Write total size of message which is the current offset.
-        let size = (size - 8) | (MSG_VERSION << 56) | (MSG_TYPE << 48);
-        conn.buffer().write_i64(size);
+fn write_header(buf: &mut Buffer, command: Command, field_count: u8) {
+    buf.write_u8(0);
+    buf.write_u8(0);
+    buf.write_u8(command as u8);
+    buf.write_u8(field_count);
+    buf.write_bytes(&[0; 12]);
+}
+
+const FIELD_HEADER_SIZE: usize = 5;
+
+fn write_field_header(buf: &mut Buffer, id: FieldId, size: usize) {
+    buf.write_u32(size as u32 + 1);
+    buf.write_u8(id as u8);
+}
+
+fn estimate_field_size(s: impl AsRef<[u8]>) -> usize {
+    FIELD_HEADER_SIZE + s.as_ref().len()
+}
+
+fn write_field_str(buf: &mut Buffer, id: FieldId, s: impl AsRef<str>) {
+    let s = s.as_ref();
+    write_field_header(buf, id, s.len());
+    buf.write_str(s);
+}
+
+fn write_field_bytes(buf: &mut Buffer, id: FieldId, b: impl AsRef<[u8]>) {
+    let b = b.as_ref();
+    write_field_header(buf, id, b.len());
+    buf.write_bytes(b);
+}
+
+fn estimate_roles_size(roles: &[&str]) -> usize {
+    FIELD_HEADER_SIZE + roles.iter().map(|role| 1 + role.len()).sum::<usize>()
+}
+
+fn write_roles(buf: &mut Buffer, roles: &[&str]) {
+    let mut size = 0;
+    for role in roles {
+        size += role.len() + 1; // size + len
     }
 
-    fn write_header(conn: &mut Connection, command: u8, field_count: u8) {
-        conn.buffer().offset = 8;
-        conn.buffer().write_u8(0);
-        conn.buffer().write_u8(0);
-        conn.buffer().write_u8(command);
-        conn.buffer().write_u8(field_count);
-
-        // Authenticate header is almost all zeros
-        for _ in 0..(16 - 4) {
-            conn.buffer().write_u8(0);
-        }
+    write_field_header(buf, FieldId::Roles, size);
+    buf.write_u8(roles.len() as u8);
+    for role in roles {
+        buf.write_u8(role.len() as u8);
+        buf.write_str(role);
     }
+}
 
-    fn write_field_header(conn: &mut Connection, id: u8, size: usize) {
-        conn.buffer().write_u32(size as u32 + 1);
-        conn.buffer().write_u8(id);
-    }
+pub fn hash_password(password: &str) -> Result<String> {
+    const COST: u32 = 10;
+    const SALT: [u8; 16] = [
+        0xf4, 0x6b, 0x0b, 0xbe, 0xcf, 0xfe, 0x8d, 0x1b, 0x06, 0x67, 0xd8, 0x4f, 0x6d, 0xc1, 0xd8,
+        0xa9,
+    ];
+    const VERSION: bcrypt::Version = bcrypt::Version::TwoA;
 
-    fn write_field_str(conn: &mut Connection, id: u8, s: &str) {
-        Self::write_field_header(conn, id, s.len());
-        conn.buffer().write_str(s);
-    }
-
-    fn write_field_bytes(conn: &mut Connection, id: u8, b: &[u8]) {
-        Self::write_field_header(conn, id, b.len());
-        conn.buffer().write_bytes(b);
-    }
-
-    fn write_roles(conn: &mut Connection, roles: &[&str]) {
-        let mut size = 0;
-        for role in roles {
-            size += role.len() + 1; // size + len
-        }
-
-        Self::write_field_header(conn, ROLES, size);
-        conn.buffer().write_u8(roles.len() as u8);
-        for role in roles {
-            conn.buffer().write_u8(role.len() as u8);
-            conn.buffer().write_str(role);
-        }
-    }
-
-    pub fn hash_password(password: &str) -> Result<String> {
-        const COST: u32 = 10;
-        const SALT: [u8; 16] = [
-            0xf4, 0x6b, 0x0b, 0xbe, 0xcf, 0xfe, 0x8d, 0x1b, 0x06, 0x67, 0xd8, 0x4f, 0x6d, 0xc1,
-            0xd8, 0xa9,
-        ];
-        const VERSION: bcrypt::Version = bcrypt::Version::TwoA;
-
-        Ok(bcrypt::hash_with_salt(password, COST, SALT)?.format_for_version(VERSION))
-    }
+    Ok(bcrypt::hash_with_salt(password, COST, SALT)?.format_for_version(VERSION))
 }

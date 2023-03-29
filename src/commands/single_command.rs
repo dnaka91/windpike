@@ -31,17 +31,10 @@ impl<'a> SingleCommand<'a> {
         self.cluster.get_node(&self.partition).await
     }
 
-    pub async fn empty_socket(conn: &mut Connection) -> Result<()> {
+    pub async fn empty_socket(conn: &mut Connection, receive_size: usize) -> Result<()> {
         // There should not be any more bytes.
         // Empty the socket to be safe.
-        let sz = conn.buffer().read_i64(None);
-        let header_length = i64::from(conn.buffer().read_u8(None));
-        #[allow(clippy::cast_sign_loss)]
-        let receive_size = ((sz & 0xFFFF_FFFF_FFFF) - header_length) as usize;
-
-        // Read remaining message bytes.
         if receive_size > 0 {
-            conn.buffer().resize_buffer(receive_size)?;
             conn.read_buffer(receive_size).await?;
         }
 
@@ -96,7 +89,6 @@ impl<'a> SingleCommand<'a> {
 
             cmd.prepare_buffer(&mut conn)
                 .map_err(|e| CommandError::PrepareBuffer(Box::new(e)))?;
-            conn.buffer().write_timeout(policy.timeout());
 
             // Send command.
             if let Err(err) = conn.flush().await {

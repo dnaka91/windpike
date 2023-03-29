@@ -8,7 +8,10 @@ use tokio::{
 
 use super::{NetError, Result};
 use crate::{
-    commands::{buffer::Buffer, AdminCommand},
+    commands::{
+        buffer::{Buffer, MessageHeader, TOTAL_HEADER_SIZE},
+        AdminCommand,
+    },
     policy::ClientPolicy,
 };
 
@@ -52,18 +55,22 @@ impl Connection {
     }
 
     pub async fn flush(&mut self) -> Result<()> {
-        self.conn.write_all(&self.buffer.buffer).await?;
+        self.conn.write_all(self.buffer.as_ref()).await?;
         self.refresh();
         Ok(())
     }
 
     pub async fn read_buffer(&mut self, size: usize) -> Result<()> {
-        self.buffer.resize_buffer(size)?;
-        self.conn.read_exact(&mut self.buffer.buffer).await?;
+        self.buffer.resize(size)?;
+        self.conn.read_exact(self.buffer.as_mut()).await?;
         self.bytes_read += size;
-        self.buffer.reset_offset();
         self.refresh();
         Ok(())
+    }
+
+    pub async fn read_header(&mut self) -> Result<MessageHeader> {
+        self.read_buffer(TOTAL_HEADER_SIZE).await?;
+        Ok(self.buffer.read_header())
     }
 
     pub async fn write(&mut self, buf: &[u8]) -> Result<()> {

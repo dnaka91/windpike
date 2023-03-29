@@ -4,7 +4,7 @@ use std::{collections::HashMap, option::Option};
 
 use tokio::time::{Duration, Instant};
 
-use crate::commands::{AdminCommand, CommandError};
+use crate::commands::{self, CommandError};
 
 /// Trait implemented by most policy types; policies that implement this trait typically encompass
 /// an instance of `BasePolicy`.
@@ -341,7 +341,7 @@ impl ClientPolicy {
         username: String,
         password: &str,
     ) -> Result<(), CommandError> {
-        let password = AdminCommand::hash_password(password)?;
+        let password = commands::hash_password(password)?;
         self.user_password = Some((username, password));
         Ok(())
     }
@@ -421,7 +421,7 @@ pub struct ScanPolicy {
     /// Maximum time in milliseconds to wait when polling socket for availability prior to
     /// performing an operation on the socket on the server side. Zero means there is no socket
     /// timeout. Default: 10,000 ms.
-    pub socket_timeout: u32,
+    pub socket_timeout: Duration,
 }
 
 impl ScanPolicy {
@@ -440,7 +440,7 @@ impl Default for ScanPolicy {
             max_concurrent_nodes: 0,
             record_queue_size: 1024,
             fail_on_cluster_change: true,
-            socket_timeout: 10000,
+            socket_timeout: Duration::from_secs(10),
         }
     }
 }
@@ -580,8 +580,8 @@ pub enum Expiration {
 }
 
 impl From<Expiration> for u32 {
-    fn from(exp: Expiration) -> Self {
-        match exp {
+    fn from(value: Expiration) -> Self {
+        match value {
             Expiration::Seconds(secs) => secs,
             Expiration::NamespaceDefault => 0,
             Expiration::Never => u32::MAX,

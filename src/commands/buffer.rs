@@ -4,19 +4,20 @@
     clippy::cast_sign_loss
 )]
 
-use std::{str, time::Duration};
+use std::{mem, str, time::Duration};
 
 use bitflags::bitflags;
+use bytes::{Buf, BufMut, BytesMut};
 
 use crate::{
     commands::field_type::FieldType,
     msgpack::Write,
     operations::{Operation, OperationBin, OperationData, OperationType},
     policy::{
-        BasePolicy, BatchPolicy, CommitLevel, ConsistencyLevel, GenerationPolicy,
-        RecordExistsAction, ScanPolicy, WritePolicy,
+        BasePolicy, BatchPolicy, CommitLevel, ConsistencyLevel, Expiration, GenerationPolicy,
+        Policy, RecordExistsAction, ScanPolicy, WritePolicy,
     },
-    BatchRead, Bin, Bins, Key, UserKey,
+    BatchRead, Bin, Bins, Key, ResultCode, UserKey,
 };
 
 bitflags! {
@@ -87,13 +88,11 @@ bitflags! {
     }
 }
 
-pub const MSG_TOTAL_HEADER_SIZE: u8 = 30;
-const FIELD_HEADER_SIZE: u8 = 5;
-const OPERATION_HEADER_SIZE: u8 = 8;
-pub const MSG_REMAINING_HEADER_SIZE: u8 = 22;
-const DIGEST_SIZE: u8 = 20;
-const CL_MSG_VERSION: u8 = 2;
-const AS_MSG_TYPE: u8 = 3;
+pub const TOTAL_HEADER_SIZE: usize = ProtoHeader::SIZE + MessageHeader::SIZE;
+
+const FIELD_HEADER_SIZE: usize = mem::size_of::<u32>() + mem::size_of::<u8>();
+const OPERATION_HEADER_SIZE: usize = mem::size_of::<i32>() + mem::size_of::<[u8; 4]>();
+const DIGEST_SIZE: usize = 20;
 
 // MAX_BUFFER_SIZE protects against allocating massive memory blocks
 // for buffers. Tweak this number if you are returning a lot of
@@ -106,38 +105,39 @@ pub type Result<T, E = BufferError> = std::result::Result<T, E>;
 pub enum BufferError {
     #[error("Invalid size for buffer: {size} (max {max})")]
     SizeExceeded { size: usize, max: usize },
-    #[error("Invalid UTF-8 content ecountered")]
-    InvalidUtf8(#[from] std::str::Utf8Error),
+    #[error("Invalid UTF-8 content encountered")]
+    InvalidUtf8(#[from] std::string::FromUtf8Error),
 }
 
 // Holds data buffer for the command
 #[derive(Debug, Default)]
 pub struct Buffer {
-    pub buffer: Vec<u8>,
-    pub offset: usize,
-    pub reclaim_threshold: usize,
+    buffer: BytesMut,
+    reclaim_threshold: usize,
 }
 
 impl Buffer {
     #[must_use]
     pub fn new(reclaim_threshold: usize) -> Self {
         Self {
-            buffer: Vec::with_capacity(1024),
-            offset: 0,
+            buffer: BytesMut::with_capacity(4096),
             reclaim_threshold,
         }
     }
 
-    fn begin(&mut self) {
-        self.offset = MSG_TOTAL_HEADER_SIZE as usize;
+    pub fn advance(&mut self, cnt: usize) {
+        self.buffer.advance(cnt);
     }
 
-    pub fn size_buffer(&mut self) -> Result<()> {
-        let offset = self.offset;
-        self.resize_buffer(offset)
+    pub fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
     }
 
-    pub fn resize_buffer(&mut self, size: usize) -> Result<()> {
+    pub fn peek(&self) -> Option<u8> {
+        self.buffer.first().copied()
+    }
+
+    pub fn clear(&mut self, size: usize) -> Result<()> {
         // Corrupted data streams can result in a huge length.
         // Do a sanity check here.
         if size > MAX_BUFFER_SIZE {
@@ -147,28 +147,30 @@ impl Buffer {
             });
         }
 
-        let mem_size = self.buffer.capacity();
-        self.buffer.resize(size, 0);
-        if mem_size > self.reclaim_threshold && size < mem_size {
-            self.buffer.shrink_to_fit();
-        }
+        self.buffer.clear();
+        self.buffer.reserve(size);
 
         Ok(())
     }
 
-    pub fn reset_offset(&mut self) {
-        // reset data offset
-        self.offset = 0;
-    }
+    pub fn resize(&mut self, size: usize) -> Result<()> {
+        // Corrupted data streams can result in a huge length.
+        // Do a sanity check here.
+        if size > MAX_BUFFER_SIZE {
+            return Err(BufferError::SizeExceeded {
+                size,
+                max: MAX_BUFFER_SIZE,
+            });
+        }
 
-    pub fn end(&mut self) {
-        let size = ((self.offset - 8) as i64)
-            | (i64::from(CL_MSG_VERSION) << 56)
-            | (i64::from(AS_MSG_TYPE) << 48);
+        let capacity = self.buffer.capacity();
+        self.buffer.resize(size, 0);
 
-        // reset data offset
-        self.reset_offset();
-        self.write_i64(size);
+        if self.reclaim_threshold < capacity && capacity > size {
+            self.buffer = BytesMut::from(&*self.buffer);
+        }
+
+        Ok(())
     }
 
     // Writes the command for write operations
@@ -179,80 +181,95 @@ impl Buffer {
         key: &Key,
         bins: &[A],
     ) -> Result<()> {
-        self.begin();
-        let field_count = self.estimate_key_size(key, policy.as_ref().send_key);
+        let (key_size, field_count) = estimate_key_size(key, policy.as_ref().send_key);
+        let op_size = bins
+            .iter()
+            .map(|bin| estimate_operation_size_for_bin(bin.as_ref()))
+            .sum::<usize>();
 
-        for bin in bins {
-            self.estimate_operation_size_for_bin(bin.as_ref());
-        }
+        self.clear(TOTAL_HEADER_SIZE + key_size + op_size)?;
 
-        self.size_buffer()?;
-        self.write_header_with_policy(
+        MessageHeader::for_write(
+            key_size + op_size,
             policy,
             ReadAttr::empty(),
             WriteAttr::WRITE,
             field_count,
             bins.len() as u16,
-        );
+        )
+        .write_to(&mut self.buffer);
+
         self.write_key(key, policy.as_ref().send_key);
 
         for bin in bins {
             self.write_operation_for_bin(bin.as_ref(), op_type);
         }
 
-        self.end();
         Ok(())
     }
 
     // Writes the command for write operations
     pub fn set_delete(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
-        self.begin();
-        let field_count = self.estimate_key_size(key, false);
+        let (key_size, field_count) = estimate_key_size(key, false);
 
-        self.size_buffer()?;
-        self.write_header_with_policy(
+        self.clear(TOTAL_HEADER_SIZE + key_size)?;
+
+        MessageHeader::for_write(
+            key_size,
             policy,
             ReadAttr::empty(),
             WriteAttr::WRITE | WriteAttr::DELETE,
             field_count,
             0,
-        );
+        )
+        .write_to(&mut self.buffer);
+
         self.write_key(key, false);
 
-        self.end();
         Ok(())
     }
 
     // Writes the command for touch operations
     pub fn set_touch(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
-        self.begin();
-        let field_count = self.estimate_key_size(key, policy.as_ref().send_key);
-        self.estimate_operation_size();
-        self.size_buffer()?;
-        self.write_header_with_policy(policy, ReadAttr::empty(), WriteAttr::WRITE, field_count, 1);
+        let (key_size, field_count) = estimate_key_size(key, policy.as_ref().send_key);
+
+        self.clear(TOTAL_HEADER_SIZE + key_size + OPERATION_HEADER_SIZE)?;
+
+        MessageHeader::for_write(
+            key_size + OPERATION_HEADER_SIZE,
+            policy,
+            ReadAttr::empty(),
+            WriteAttr::WRITE,
+            field_count,
+            1,
+        )
+        .write_to(&mut self.buffer);
+
         self.write_key(key, policy.as_ref().send_key);
 
         self.write_operation_for_operation_type(OperationType::Touch);
-        self.end();
+
         Ok(())
     }
 
     // Writes the command for exist operations
     pub fn set_exists(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
-        self.begin();
-        let field_count = self.estimate_key_size(key, false);
+        let (key_size, field_count) = estimate_key_size(key, false);
 
-        self.size_buffer()?;
-        self.write_header(
+        self.clear(TOTAL_HEADER_SIZE + key_size)?;
+
+        MessageHeader::for_read(
+            key_size,
             policy.as_ref(),
             ReadAttr::READ | ReadAttr::GET_NO_BINS,
             WriteAttr::empty(),
             field_count,
             0,
-        );
+        )
+        .write_to(&mut self.buffer);
+
         self.write_key(key, false);
 
-        self.end();
         Ok(())
     }
 
@@ -262,27 +279,30 @@ impl Buffer {
             Bins::None => self.set_read_header(policy, key),
             Bins::All => self.set_read_for_key_only(policy, key),
             Bins::Some(bin_names) => {
-                self.begin();
-                let field_count = self.estimate_key_size(key, policy.send_key);
-                for bin_name in bin_names {
-                    self.estimate_operation_size_for_bin_name(bin_name);
-                }
+                let (key_size, field_count) = estimate_key_size(key, policy.send_key);
+                let op_size = bin_names
+                    .iter()
+                    .map(|name| estimate_operation_size_for_bin_name(name))
+                    .sum::<usize>();
 
-                self.size_buffer()?;
-                self.write_header(
+                self.clear(TOTAL_HEADER_SIZE + key_size + op_size)?;
+
+                MessageHeader::for_read(
+                    key_size + op_size,
                     policy,
                     ReadAttr::READ,
                     WriteAttr::empty(),
                     field_count,
                     bin_names.len() as u16,
-                );
+                )
+                .write_to(&mut self.buffer);
+
                 self.write_key(key, policy.send_key);
 
                 for bin_name in bin_names {
                     self.write_operation_for_bin_name(bin_name, OperationType::Read);
                 }
 
-                self.end();
                 Ok(())
             }
         }
@@ -290,41 +310,45 @@ impl Buffer {
 
     // Writes the command for getting metadata operations
     pub fn set_read_header(&mut self, policy: &BasePolicy, key: &Key) -> Result<()> {
-        self.begin();
-        let field_count = self.estimate_key_size(key, policy.send_key);
+        let (key_size, field_count) = estimate_key_size(key, policy.send_key);
+        let op_size = estimate_operation_size_for_bin_name("");
 
-        self.estimate_operation_size_for_bin_name("");
-        self.size_buffer()?;
-        self.write_header(
+        self.clear(TOTAL_HEADER_SIZE + key_size + op_size)?;
+
+        MessageHeader::for_read(
+            key_size + op_size,
             policy,
             ReadAttr::READ | ReadAttr::GET_NO_BINS,
             WriteAttr::empty(),
             field_count,
             1,
-        );
+        )
+        .write_to(&mut self.buffer);
+
         self.write_key(key, policy.send_key);
 
         self.write_operation_for_bin_name("", OperationType::Read);
-        self.end();
+
         Ok(())
     }
 
     pub fn set_read_for_key_only(&mut self, policy: &BasePolicy, key: &Key) -> Result<()> {
-        self.begin();
+        let (key_size, field_count) = estimate_key_size(key, policy.send_key);
 
-        let field_count = self.estimate_key_size(key, policy.send_key);
+        self.clear(TOTAL_HEADER_SIZE + key_size)?;
 
-        self.size_buffer()?;
-        self.write_header(
+        MessageHeader::for_read(
+            key_size,
             policy,
             ReadAttr::READ | ReadAttr::GET_ALL,
             WriteAttr::empty(),
             field_count,
             0,
-        );
+        )
+        .write_to(&mut self.buffer);
+
         self.write_key(key, policy.send_key);
 
-        self.end();
         Ok(())
     }
 
@@ -336,49 +360,53 @@ impl Buffer {
     ) -> Result<()> {
         let field_count_row = if policy.send_set_name { 2 } else { 1 };
 
-        self.begin();
         let field_count = 1;
-        self.offset += FIELD_HEADER_SIZE as usize + 5;
+        let mut field_size = FIELD_HEADER_SIZE + 5;
 
         let mut prev: Option<&BatchRead> = None;
         for batch_read in batch_reads {
-            self.offset += batch_read.key.digest.len() + 4;
+            field_size += batch_read.key.digest.len() + 4;
             match prev {
                 Some(prev) if batch_read.match_header(prev, policy.send_set_name) => {
-                    self.offset += 1;
+                    field_size += 1;
                 }
                 _ => {
                     let key = &batch_read.key;
-                    self.offset += key.namespace.len() + FIELD_HEADER_SIZE as usize + 6;
+                    field_size += FIELD_HEADER_SIZE + 6 + key.namespace.len();
                     if policy.send_set_name {
-                        self.offset += key.set_name.len() + FIELD_HEADER_SIZE as usize;
+                        field_size += FIELD_HEADER_SIZE + key.set_name.len();
                     }
                     if let Bins::Some(bin_names) = &batch_read.bins {
-                        for name in bin_names {
-                            self.estimate_operation_size_for_bin_name(name);
-                        }
+                        field_size += bin_names
+                            .iter()
+                            .map(|name| estimate_operation_size_for_bin_name(name))
+                            .sum::<usize>();
                     }
                 }
             }
             prev = Some(batch_read);
         }
 
-        self.size_buffer()?;
-        self.write_header(
+        self.clear(TOTAL_HEADER_SIZE + field_size)?;
+
+        MessageHeader::for_read(
+            field_size,
             policy.as_ref(),
             ReadAttr::READ | ReadAttr::BATCH,
             WriteAttr::empty(),
             field_count,
             0,
-        );
+        )
+        .write_to(&mut self.buffer);
 
-        let field_size_offset = self.offset;
-        let field_type = if policy.send_set_name {
-            FieldType::BatchIndexWithSet
-        } else {
-            FieldType::BatchIndex
-        };
-        self.write_field_header(0, field_type);
+        self.write_field_header(
+            field_size - 4,
+            if policy.send_set_name {
+                FieldType::BatchIndexWithSet
+            } else {
+                FieldType::BatchIndex
+            },
+        );
         self.write_u32(batch_reads.len() as u32);
         self.write_u8(u8::from(policy.allow_inline));
 
@@ -430,11 +458,6 @@ impl Buffer {
             prev = Some(batch_read);
         }
 
-        let field_size = self.offset - MSG_TOTAL_HEADER_SIZE as usize - 4;
-        self.buffer[field_size_offset..field_size_offset + 4]
-            .copy_from_slice(&(field_size as u32).to_be_bytes());
-
-        self.end();
         Ok(())
     }
 
@@ -445,73 +468,81 @@ impl Buffer {
         key: &Key,
         operations: &'a [Operation<'a>],
     ) -> Result<()> {
-        self.begin();
-
         let mut read_attr = ReadAttr::empty();
         let mut write_attr = WriteAttr::empty();
 
-        for operation in operations {
-            match *operation {
-                Operation {
-                    op: OperationType::Read,
-                    bin: OperationBin::None,
-                    ..
-                } => read_attr |= ReadAttr::READ | ReadAttr::GET_NO_BINS,
-                Operation {
-                    op: OperationType::Read,
-                    bin: OperationBin::All,
-                    ..
-                } => read_attr |= ReadAttr::READ | ReadAttr::GET_ALL,
-                Operation {
-                    op:
-                        OperationType::Read
-                        | OperationType::CdtRead
-                        | OperationType::BitRead
-                        | OperationType::HllRead,
-                    ..
-                } => read_attr |= ReadAttr::READ,
-                _ => write_attr |= WriteAttr::WRITE,
-            }
+        let op_size = operations
+            .iter()
+            .map(|operation| {
+                match *operation {
+                    Operation {
+                        op: OperationType::Read,
+                        bin: OperationBin::None,
+                        ..
+                    } => read_attr |= ReadAttr::READ | ReadAttr::GET_NO_BINS,
+                    Operation {
+                        op: OperationType::Read,
+                        bin: OperationBin::All,
+                        ..
+                    } => read_attr |= ReadAttr::READ | ReadAttr::GET_ALL,
+                    Operation {
+                        op:
+                            OperationType::Read
+                            | OperationType::CdtRead
+                            | OperationType::BitRead
+                            | OperationType::HllRead,
+                        ..
+                    } => read_attr |= ReadAttr::READ,
+                    _ => write_attr |= WriteAttr::WRITE,
+                }
 
-            let each_op = matches!(
-                operation.data,
-                OperationData::CdtMapOp(_) | OperationData::CdtBitOp(_) | OperationData::HllOp(_)
-            );
+                let each_op = matches!(
+                    operation.data,
+                    OperationData::CdtMapOp(_)
+                        | OperationData::CdtBitOp(_)
+                        | OperationData::HllOp(_)
+                );
 
-            if policy.respond_per_each_op || each_op {
-                write_attr |= WriteAttr::RESPOND_ALL_OPS;
-            }
+                if policy.respond_per_each_op || each_op {
+                    write_attr |= WriteAttr::RESPOND_ALL_OPS;
+                }
 
-            self.offset += operation.estimate_size() + OPERATION_HEADER_SIZE as usize;
-        }
+                OPERATION_HEADER_SIZE + operation.estimate_size()
+            })
+            .sum::<usize>();
 
-        let field_count =
-            self.estimate_key_size(key, policy.as_ref().send_key && !write_attr.is_empty());
-        self.size_buffer()?;
+        let (key_size, field_count) =
+            estimate_key_size(key, policy.as_ref().send_key && !write_attr.is_empty());
+
+        self.clear(TOTAL_HEADER_SIZE + key_size + op_size)?;
 
         if write_attr.is_empty() {
-            self.write_header(
+            MessageHeader::for_read(
+                key_size + op_size,
                 policy.as_ref(),
                 read_attr,
                 write_attr,
                 field_count,
                 operations.len() as u16,
-            );
+            )
         } else {
-            self.write_header_with_policy(
+            MessageHeader::for_write(
+                key_size + op_size,
                 policy,
                 read_attr,
                 write_attr,
                 field_count,
                 operations.len() as u16,
-            );
+            )
         }
+        .write_to(&mut self.buffer);
+
         self.write_key(key, policy.as_ref().send_key && !write_attr.is_empty());
 
         for operation in operations {
             operation.write_to(self);
         }
-        self.end();
+
         Ok(())
     }
 
@@ -524,60 +555,55 @@ impl Buffer {
         task_id: u64,
         partitions: &[u16],
     ) -> Result<()> {
-        self.begin();
-
+        let mut field_size = 0;
         let mut field_count = 0;
 
         if !namespace.is_empty() {
-            self.offset += namespace.len() + FIELD_HEADER_SIZE as usize;
+            field_size += FIELD_HEADER_SIZE + namespace.len();
             field_count += 1;
         }
 
         if !set_name.is_empty() {
-            self.offset += set_name.len() + FIELD_HEADER_SIZE as usize;
+            field_size += FIELD_HEADER_SIZE + set_name.len();
             field_count += 1;
         }
 
-        // // Estimate scan options size.
-        // self.data_offset += 2 + FIELD_HEADER_SIZE as usize;
-        // field_count += 1;
+        // Estimate pid, scan timeout and task_id size
+        field_size += FIELD_HEADER_SIZE
+            + partitions.len() * 2
+            + FIELD_HEADER_SIZE
+            + 4
+            + FIELD_HEADER_SIZE
+            + 8;
+        field_count += 3;
 
-        // Estimate pid size
-        self.offset += partitions.len() * 2 + FIELD_HEADER_SIZE as usize;
-        field_count += 1;
-
-        // Estimate scan timeout size.
-        self.offset += 4 + FIELD_HEADER_SIZE as usize;
-        field_count += 1;
-
-        // Allocate space for task_id field.
-        self.offset += 8 + FIELD_HEADER_SIZE as usize;
-        field_count += 1;
-
-        let bin_count = match bins {
-            Bins::All | Bins::None => 0,
-            Bins::Some(bin_names) => {
-                for bin_name in bin_names {
-                    self.estimate_operation_size_for_bin_name(bin_name);
-                }
-                bin_names.len()
-            }
+        let (bin_size, bin_count) = match bins {
+            Bins::All | Bins::None => (0, 0),
+            Bins::Some(bin_names) => (
+                bin_names
+                    .iter()
+                    .map(|name| estimate_operation_size_for_bin_name(name))
+                    .sum::<usize>(),
+                bin_names.len(),
+            ),
         };
 
-        self.size_buffer()?;
+        self.clear(TOTAL_HEADER_SIZE + field_size + bin_size)?;
 
         let mut read_attr = ReadAttr::READ;
         if *bins == Bins::None {
             read_attr |= ReadAttr::GET_NO_BINS;
         }
 
-        self.write_header(
+        MessageHeader::for_read(
+            field_size + bin_size,
             policy.as_ref(),
             read_attr,
             WriteAttr::empty(),
             field_count,
             bin_count as u16,
-        );
+        )
+        .write_to(&mut self.buffer);
 
         if !namespace.is_empty() {
             self.write_field_string(namespace, FieldType::Namespace);
@@ -588,25 +614,15 @@ impl Buffer {
         }
 
         self.write_field_header(partitions.len() * 2, FieldType::PidArray);
-        for pid in partitions {
-            self.write_u16_little_endian(*pid);
+        for &pid in partitions {
+            self.write_u16_le(pid);
         }
-
-        // self.write_field_header(2, FieldType::ScanOptions);
-
-        // let mut priority: u8 = policy.base_policy.priority.clone() as u8;
-        // priority <<= 4;
-
-        // if policy.fail_on_cluster_change {
-        //     priority |= 0x08;
-        // }
-
-        // self.write_u8(priority);
-        // self.write_u8(policy.scan_percent);
 
         // Write scan timeout
         self.write_field_header(4, FieldType::ScanTimeout);
-        self.write_u32(policy.socket_timeout);
+        self.write_u32(
+            policy.socket_timeout.as_secs() as u32 * 1000 + policy.socket_timeout.subsec_millis(),
+        );
 
         self.write_field_header(8, FieldType::TranId);
         self.write_u64(task_id);
@@ -617,146 +633,10 @@ impl Buffer {
             }
         }
 
-        self.end();
         Ok(())
     }
 
-    fn estimate_key_size(&mut self, key: &Key, send_key: bool) -> u16 {
-        let mut field_count: u16 = 0;
-
-        if !key.namespace.is_empty() {
-            self.offset += key.namespace.len() + FIELD_HEADER_SIZE as usize;
-            field_count += 1;
-        }
-
-        if !key.set_name.is_empty() {
-            self.offset += key.set_name.len() + FIELD_HEADER_SIZE as usize;
-            field_count += 1;
-        }
-
-        self.offset += (DIGEST_SIZE + FIELD_HEADER_SIZE) as usize;
-        field_count += 1;
-
-        if send_key {
-            if let Some(user_key) = &key.user_key {
-                // field header size + key size
-                self.offset += user_key.estimate_size() + FIELD_HEADER_SIZE as usize + 1;
-                field_count += 1;
-            }
-        }
-
-        field_count
-    }
-
-    fn estimate_operation_size_for_bin(&mut self, bin: &Bin<'_>) {
-        self.offset += bin.name.len() + OPERATION_HEADER_SIZE as usize;
-        self.offset += bin.value.estimate_size();
-    }
-
-    fn estimate_operation_size_for_bin_name(&mut self, bin_name: &str) {
-        self.offset += bin_name.len() + OPERATION_HEADER_SIZE as usize;
-    }
-
-    fn estimate_operation_size(&mut self) {
-        self.offset += OPERATION_HEADER_SIZE as usize;
-    }
-
-    fn write_header(
-        &mut self,
-        policy: &BasePolicy,
-        read_attr: ReadAttr,
-        write_attr: WriteAttr,
-        field_count: u16,
-        operation_count: u16,
-    ) {
-        let mut read_attr = read_attr;
-
-        if policy.consistency_level == ConsistencyLevel::ConsistencyAll {
-            read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
-        }
-
-        // Write all header data except total size which must be written last.
-        self.buffer[8] = MSG_REMAINING_HEADER_SIZE; // Message header length.
-        self.buffer[9] = read_attr.bits();
-        self.buffer[10] = write_attr.bits();
-
-        for i in 11..26 {
-            self.buffer[i] = 0;
-        }
-
-        self.offset = 26;
-        self.write_u16(field_count);
-        self.write_u16(operation_count);
-
-        self.offset = MSG_TOTAL_HEADER_SIZE as usize;
-    }
-
     // Header write for write operations.
-    fn write_header_with_policy(
-        &mut self,
-        policy: &WritePolicy,
-        read_attr: ReadAttr,
-        write_attr: WriteAttr,
-        field_count: u16,
-        operation_count: u16,
-    ) {
-        // Set flags.
-        let mut generation: u32 = 0;
-        let mut info_attr = InfoAttr::empty();
-        let mut read_attr = read_attr;
-        let mut write_attr = write_attr;
-
-        match policy.record_exists_action {
-            RecordExistsAction::Update => (),
-            RecordExistsAction::UpdateOnly => info_attr |= InfoAttr::UPDATE_ONLY,
-            RecordExistsAction::Replace => info_attr |= InfoAttr::CREATE_OR_REPLACE,
-            RecordExistsAction::ReplaceOnly => info_attr |= InfoAttr::REPLACE_ONLY,
-            RecordExistsAction::CreateOnly => write_attr |= WriteAttr::CREATE_ONLY,
-        }
-
-        match policy.generation_policy {
-            GenerationPolicy::None => (),
-            GenerationPolicy::ExpectGenEqual => {
-                generation = policy.generation;
-                write_attr |= WriteAttr::GENERATION;
-            }
-            GenerationPolicy::ExpectGenGreater => {
-                generation = policy.generation;
-                write_attr |= WriteAttr::GENERATION_GT;
-            }
-        }
-
-        if policy.commit_level == CommitLevel::CommitMaster {
-            info_attr |= InfoAttr::COMMIT_LEVEL_MASTER;
-        }
-
-        if policy.base_policy.consistency_level == ConsistencyLevel::ConsistencyAll {
-            read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
-        }
-
-        if policy.durable_delete {
-            write_attr |= WriteAttr::DURABLE_DELETE;
-        }
-
-        // Write all header data except total size which must be written last.
-        self.offset = 8;
-        self.write_u8(MSG_REMAINING_HEADER_SIZE); // Message header length.
-        self.write_u8(read_attr.bits());
-        self.write_u8(write_attr.bits());
-        self.write_u8(info_attr.bits());
-        self.write_u8(0); // unused
-        self.write_u8(0); // clear the result code
-
-        self.write_u32(generation);
-        self.write_u32(policy.expiration.into());
-
-        // Initialize timeout. It will be written later.
-        self.write_u32(0);
-
-        self.write_u16(field_count);
-        self.write_u16(operation_count);
-        self.offset = MSG_TOTAL_HEADER_SIZE as usize;
-    }
 
     fn write_key(&mut self, key: &Key, send_key: bool) {
         // Write key into buffer.
@@ -831,109 +711,62 @@ impl Buffer {
     // Data buffer implementations
 
     #[must_use]
-    pub const fn data_offset(&self) -> usize {
-        self.offset
+    pub fn data_offset(&self) -> usize {
+        self.buffer.len()
     }
 
-    pub fn skip_bytes(&mut self, count: usize) {
-        self.offset += count;
+    pub fn read_bool(&mut self) -> bool {
+        self.buffer.get_u8() != 0
     }
 
-    pub fn skip(&mut self, count: usize) {
-        self.offset += count;
+    pub fn read_u8(&mut self) -> u8 {
+        self.buffer.get_u8()
     }
 
-    #[must_use]
-    pub fn peek(&self) -> u8 {
-        self.buffer[self.offset]
+    pub fn read_u16(&mut self) -> u16 {
+        self.buffer.get_u16()
     }
 
-    pub fn read_bool(&mut self, pos: Option<usize>) -> bool {
-        self.read_u8(pos) != 0
+    pub fn read_u32(&mut self) -> u32 {
+        self.buffer.get_u32()
     }
 
-    pub fn read_u8(&mut self, pos: Option<usize>) -> u8 {
-        if let Some(pos) = pos {
-            self.buffer[pos]
-        } else {
-            let res = self.buffer[self.offset];
-            self.offset += 1;
-            res
-        }
+    pub fn read_u64(&mut self) -> u64 {
+        self.buffer.get_u64()
     }
 
-    pub fn read_i8(&mut self, pos: Option<usize>) -> i8 {
-        if let Some(pos) = pos {
-            self.buffer[pos] as i8
-        } else {
-            let res = self.buffer[self.offset] as i8;
-            self.offset += 1;
-            res
-        }
+    pub fn read_i8(&mut self) -> i8 {
+        self.buffer.get_i8()
     }
 
-    pub fn read_u16(&mut self, pos: Option<usize>) -> u16 {
-        self.read_int(pos, u16::from_be_bytes)
+    pub fn read_i16(&mut self) -> i16 {
+        self.buffer.get_i16()
     }
 
-    pub fn read_i16(&mut self, pos: Option<usize>) -> i16 {
-        let val = self.read_u16(pos);
-        val as i16
+    pub fn read_i32(&mut self) -> i32 {
+        self.buffer.get_i32()
     }
 
-    pub fn read_u32(&mut self, pos: Option<usize>) -> u32 {
-        self.read_int(pos, u32::from_be_bytes)
+    pub fn read_i64(&mut self) -> i64 {
+        self.buffer.get_i64()
     }
 
-    pub fn read_i32(&mut self, pos: Option<usize>) -> i32 {
-        let val = self.read_u32(pos);
-        val as i32
+    pub fn read_f32(&mut self) -> f32 {
+        self.buffer.get_f32()
     }
 
-    pub fn read_u64(&mut self, pos: Option<usize>) -> u64 {
-        self.read_int(pos, u64::from_be_bytes)
+    pub fn read_f64(&mut self) -> f64 {
+        self.buffer.get_f64()
     }
 
-    pub fn read_i64(&mut self, pos: Option<usize>) -> i64 {
-        let val = self.read_u64(pos);
-        val as i64
-    }
-
-    pub fn read_msg_size(&mut self, pos: Option<usize>) -> usize {
-        let size = self.read_i64(pos);
-        let size = size & 0xFFFF_FFFF_FFFF;
-        size as usize
-    }
-
-    pub fn read_f32(&mut self, pos: Option<usize>) -> f32 {
-        self.read_int(pos, f32::from_be_bytes)
-    }
-
-    pub fn read_f64(&mut self, pos: Option<usize>) -> f64 {
-        self.read_int(pos, f64::from_be_bytes)
-    }
-
-    fn read_int<const LEN: usize, T>(
-        &mut self,
-        pos: Option<usize>,
-        convert: impl FnOnce([u8; LEN]) -> T,
-    ) -> T {
-        let mut buf = [0; LEN];
-
-        if let Some(pos) = pos {
-            buf.copy_from_slice(&self.buffer[pos..pos + LEN]);
-        } else {
-            buf.copy_from_slice(&self.buffer[self.offset..self.offset + LEN]);
-            self.offset += LEN;
-        }
-
-        (convert)(buf)
+    pub fn read_msg_size(&mut self) -> usize {
+        ProtoHeader::read_from(&mut self.buffer).size
     }
 
     pub fn read_str(&mut self, len: usize) -> Result<String> {
-        let s = str::from_utf8(&self.buffer[self.offset..self.offset + len])?;
-        self.offset += len;
-        Ok(s.to_owned())
+        let mut buf = vec![0; len];
+        self.buffer.copy_to_slice(&mut buf);
+        String::from_utf8(buf).map_err(Into::into)
     }
 
     pub fn read_bytes(&mut self, pos: usize, count: usize) -> &[u8] {
@@ -941,104 +774,470 @@ impl Buffer {
     }
 
     pub fn read_slice(&mut self, count: usize) -> &[u8] {
-        &self.buffer[self.offset..self.offset + count]
+        &self.buffer[..count]
     }
 
     pub fn read_blob(&mut self, len: usize) -> Vec<u8> {
-        let val = self.buffer[self.offset..self.offset + len].to_vec();
-        self.offset += len;
-        val
+        let mut buf = vec![0; len];
+        self.buffer.copy_to_slice(&mut buf);
+        buf
     }
 
-    pub fn write_u16_little_endian(&mut self, val: u16) -> usize {
-        self.buffer[self.offset..self.offset + 2].copy_from_slice(&val.to_le_bytes());
-        self.offset += 2;
-        2
+    pub fn write_u16_le(&mut self, val: u16) -> usize {
+        self.buffer.put_u16_le(val);
+        mem::size_of::<u16>()
     }
 
-    pub fn write_timeout(&mut self, val: Option<Duration>) {
-        if let Some(val) = val {
-            let millis = (val.as_secs() * 1_000) as i32 + val.subsec_millis() as i32;
-            self.buffer[22..22 + 4].copy_from_slice(&millis.to_be_bytes());
-        }
+    pub fn read_header(&mut self) -> MessageHeader {
+        MessageHeader::read_from(&mut self.buffer)
+    }
+}
+
+impl AsRef<[u8]> for Buffer {
+    fn as_ref(&self) -> &[u8] {
+        &self.buffer
+    }
+}
+
+impl AsMut<[u8]> for Buffer {
+    fn as_mut(&mut self) -> &mut [u8] {
+        &mut self.buffer
     }
 }
 
 impl Write for Buffer {
+    #[inline]
     fn write_u8(&mut self, v: u8) -> usize {
-        self.buffer[self.offset] = v;
-        self.offset += 1;
-        1
+        self.buffer.write_u8(v)
     }
 
+    #[inline]
     fn write_u16(&mut self, v: u16) -> usize {
-        self.buffer[self.offset..self.offset + 2].copy_from_slice(&v.to_be_bytes());
-        self.offset += 2;
-        2
+        self.buffer.write_u16(v)
     }
 
+    #[inline]
     fn write_u32(&mut self, v: u32) -> usize {
-        self.buffer[self.offset..self.offset + 4].copy_from_slice(&v.to_be_bytes());
-        self.offset += 4;
-        4
+        self.buffer.write_u32(v)
     }
 
+    #[inline]
     fn write_u64(&mut self, v: u64) -> usize {
-        self.buffer[self.offset..self.offset + 8].copy_from_slice(&v.to_be_bytes());
-        self.offset += 8;
-        8
+        self.buffer.write_u64(v)
     }
 
+    #[inline]
     fn write_i8(&mut self, v: i8) -> usize {
-        self.buffer[self.offset] = v as u8;
-        self.offset += 1;
-        1
+        self.buffer.write_i8(v)
     }
 
+    #[inline]
     fn write_i16(&mut self, v: i16) -> usize {
-        self.write_u16(v as u16)
+        self.buffer.write_i16(v)
     }
 
+    #[inline]
     fn write_i32(&mut self, v: i32) -> usize {
-        self.write_u32(v as u32)
+        self.buffer.write_i32(v)
     }
 
+    #[inline]
     fn write_i64(&mut self, v: i64) -> usize {
-        self.write_u64(v as u64)
+        self.buffer.write_i64(v)
     }
 
+    #[inline]
     fn write_f32(&mut self, v: f32) -> usize {
-        self.buffer[self.offset..self.offset + 4].copy_from_slice(&v.to_be_bytes());
-        self.offset += 4;
-        4
+        self.buffer.write_f32(v)
     }
 
+    #[inline]
     fn write_f64(&mut self, v: f64) -> usize {
-        self.buffer[self.offset..self.offset + 8].copy_from_slice(&v.to_be_bytes());
-        self.offset += 8;
-        8
+        self.buffer.write_f64(v)
     }
 
+    #[inline]
     fn write_bytes(&mut self, v: &[u8]) -> usize {
-        for b in v {
-            self.write_u8(*b);
-        }
-        v.len()
+        self.buffer.write_bytes(v)
     }
 
+    #[inline]
     fn write_str(&mut self, v: &str) -> usize {
-        self.write_bytes(v.as_bytes())
+        self.buffer.write_str(v)
     }
 
+    #[inline]
     fn write_bool(&mut self, v: bool) -> usize {
-        self.write_u8(v.into())
+        self.buffer.write_bool(v)
     }
 
+    #[inline]
     fn write_geo(&mut self, v: &str) -> usize {
-        self.write_u8(0);
-        self.write_u8(0);
-        self.write_u8(0);
-        self.write_bytes(v.as_bytes());
-        3 + v.len()
+        self.buffer.write_geo(v)
+    }
+}
+
+fn estimate_key_size(key: &Key, send_user_key: bool) -> (usize, u16) {
+    let mut size = 0;
+    let mut count = 0;
+
+    if !key.namespace.is_empty() {
+        size += FIELD_HEADER_SIZE + key.namespace.len();
+        count += 1;
+    }
+
+    if !key.set_name.is_empty() {
+        size += FIELD_HEADER_SIZE + key.set_name.len();
+        count += 1;
+    }
+
+    size += FIELD_HEADER_SIZE + DIGEST_SIZE;
+    count += 1;
+
+    if let Some(user_key) = key.user_key.as_ref().filter(|_| send_user_key) {
+        // field header size + key size
+        size += FIELD_HEADER_SIZE + 1 + user_key.estimate_size();
+        count += 1;
+    }
+
+    (size, count)
+}
+
+fn estimate_operation_size_for_bin(bin: &Bin<'_>) -> usize {
+    OPERATION_HEADER_SIZE + bin.name.len() + bin.value.estimate_size()
+}
+
+fn estimate_operation_size_for_bin_name(bin_name: &str) -> usize {
+    OPERATION_HEADER_SIZE + bin_name.len()
+}
+
+/// A protocol header that is present at the beginning of each message sent to or received from an
+/// Aerospike instance.
+///
+/// The header is 8 bytes long, basically a [`u64`] integer. The first few bytes have a special
+/// meaning and the rest defines the length of the data followed. Reading the bytes left to right,
+/// the meanings are:
+///
+/// - 1 byte: Version
+/// - 1 byte: Message type
+/// - 6 bytes: Data size
+pub struct ProtoHeader {
+    pub version: Version,
+    pub ty: ProtoType,
+    pub size: usize,
+}
+
+impl ProtoHeader {
+    pub const SIZE: usize = 8;
+
+    fn write_to(&self, buf: &mut impl BufMut) {
+        buf.put_u64(
+            (u64::from(self.version) << 56)
+                | (u64::from(self.ty) << 48)
+                | (self.size & 0xffff_ffff_ffff) as u64,
+        );
+    }
+
+    fn read_from(buf: &mut impl Buf) -> Self {
+        let value = buf.get_u64();
+
+        Self {
+            version: ((value >> 56 & 0xff) as u8).into(),
+            ty: ((value >> 48 & 0xff) as u8).into(),
+            size: (value & 0xffff_ffff_ffff) as usize,
+        }
+    }
+}
+
+/// Known possible protocol versions, although this implementation only supports the latest
+/// [`Self::V2`].
+#[derive(Clone, Copy, Debug)]
+pub enum Version {
+    /// Initial version.
+    V0,
+    /// Previous version.
+    V1,
+    /// Latest version.
+    V2,
+    /// Unknown possible future versions that are not supported yet.
+    Unknown(u8),
+}
+
+impl From<u8> for Version {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::V0,
+            1 => Self::V1,
+            2 => Self::V2,
+            _ => Self::Unknown(value),
+        }
+    }
+}
+
+impl From<Version> for u8 {
+    fn from(value: Version) -> Self {
+        match value {
+            Version::V0 => 0,
+            Version::V1 => 1,
+            Version::V2 => 2,
+            Version::Unknown(v) => v,
+        }
+    }
+}
+
+impl From<Version> for u64 {
+    fn from(value: Version) -> Self {
+        u8::from(value).into()
+    }
+}
+
+/// Known message types, which define the data followed after the [`ProtoHeader`].
+#[derive(Clone, Copy, Debug)]
+pub enum ProtoType {
+    /// Informational message.
+    Info,
+    /// Security related message like authentication.
+    Security,
+    /// Regular message.
+    Message,
+    /// Regular, but compressed message.
+    MessageCompressed,
+    /// Internal message, that should probably never been sent or received.
+    InternalXdr,
+    /// Unknown possible future messages that are not supported yet.
+    Unknown(u8),
+}
+
+impl From<u8> for ProtoType {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => Self::Info,
+            2 => Self::Security,
+            3 => Self::Message,
+            4 => Self::MessageCompressed,
+            5 => Self::InternalXdr,
+            _ => Self::Unknown(value),
+        }
+    }
+}
+
+impl From<ProtoType> for u8 {
+    fn from(value: ProtoType) -> Self {
+        match value {
+            ProtoType::Info => 1,
+            ProtoType::Security => 2,
+            ProtoType::Message => 3,
+            ProtoType::MessageCompressed => 4,
+            ProtoType::InternalXdr => 5,
+            ProtoType::Unknown(v) => v,
+        }
+    }
+}
+
+impl From<ProtoType> for u64 {
+    fn from(value: ProtoType) -> Self {
+        u8::from(value).into()
+    }
+}
+
+/// The header for a regular message, immediately followed after the [`ProtoHeader`], if its type is
+/// [`ProtoType::Message`].
+///
+/// This header is always 22 bytes long. Reading the bytes left to right, the meanings are:
+///
+/// - 1 byte: Length of this header.
+/// - 1 byte: Read attributes as bit flags.
+/// - 1 byte: Write attributes as bit flags.
+/// - 1 byte: Info attributes as bit flags.
+/// - 1 byte: _Unused_.
+/// - 1 byte: Result code for the operation done.
+/// - 4 bytes: Generation counter.
+/// - 4 bytes: Expiration of a record (if applicable).
+/// - 4 bytes: Timeout of the operation (if applicable).
+/// - 2 bytes: Field count in the payload.
+/// - 2 bytes: Operation count in the payload.
+pub struct MessageHeader {
+    /// Amount of payload data following this header.
+    pub size: usize,
+    header_length: u8,
+    /// Attributes relevant for reading operations.
+    read_attr: ReadAttr,
+    /// Attributes relevant for writing operations.
+    write_attr: WriteAttr,
+    /// Attributes relevant for any operation.
+    info_attr: InfoAttr,
+    _unused: u8,
+    pub result_code: ResultCode,
+    pub generation: u32,
+    pub expiration: u32,
+    pub timeout: Duration,
+    /// Amount of fields in the payload.
+    pub field_count: u16,
+    /// Amount of operations in the payload.
+    pub operation_count: u16,
+}
+
+impl MessageHeader {
+    pub const SIZE: usize = 22;
+
+    fn write_to(&self, buf: &mut impl BufMut) {
+        ProtoHeader {
+            version: Version::V2,
+            ty: ProtoType::Message,
+            size: Self::SIZE + self.size,
+        }
+        .write_to(buf);
+
+        buf.put_u8(self.header_length);
+        buf.put_u8(self.read_attr.bits());
+        buf.put_u8(self.write_attr.bits());
+        buf.put_u8(self.info_attr.bits());
+        buf.put_u8(0);
+        buf.put_u8(self.result_code.into());
+        buf.put_u32(self.generation);
+        buf.put_u32(self.expiration);
+        buf.put_u32(self.timeout.as_secs() as u32 * 1000 + self.timeout.subsec_millis());
+        buf.put_u16(self.field_count);
+        buf.put_u16(self.operation_count);
+    }
+
+    fn read_from(buf: &mut impl Buf) -> Self {
+        let ProtoHeader { version, ty, size } = ProtoHeader::read_from(buf);
+
+        assert!(
+            matches!(version, Version::V2),
+            "invalid message version {version:?}",
+        );
+        assert!(
+            matches!(ty, ProtoType::Info | ProtoType::Message),
+            "invalid message type {ty:?}",
+        );
+        assert!(size >= Self::SIZE, "invalid message length {size}");
+
+        MessageHeader {
+            size: size - Self::SIZE,
+            header_length: buf.get_u8(),
+            read_attr: ReadAttr::from_bits_truncate(buf.get_u8()),
+            write_attr: WriteAttr::from_bits_truncate(buf.get_u8()),
+            info_attr: InfoAttr::from_bits_truncate(buf.get_u8()),
+            _unused: buf.get_u8(),
+            result_code: buf.get_u8().into(),
+            generation: buf.get_u32(),
+            expiration: buf.get_u32(),
+            timeout: Duration::from_secs(buf.get_u32().into()),
+            field_count: buf.get_u16(),
+            operation_count: buf.get_u16(),
+        }
+    }
+
+    /// Create a new header for a read operation.
+    fn for_read(
+        size: usize,
+        policy: &BasePolicy,
+        mut read_attr: ReadAttr,
+        write_attr: WriteAttr,
+        field_count: u16,
+        operation_count: u16,
+    ) -> Self {
+        if policy.consistency_level == ConsistencyLevel::ConsistencyAll {
+            read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
+        }
+
+        Self {
+            size,
+            header_length: Self::SIZE as u8,
+            read_attr,
+            write_attr,
+            info_attr: InfoAttr::empty(),
+            _unused: 0,
+            result_code: ResultCode::Ok,
+            generation: 0,
+            expiration: Expiration::NamespaceDefault.into(),
+            timeout: policy.timeout.unwrap_or(Duration::ZERO),
+            field_count,
+            operation_count,
+        }
+    }
+
+    /// Create a new header for a write operation.
+    fn for_write(
+        size: usize,
+        policy: &WritePolicy,
+        mut read_attr: ReadAttr,
+        mut write_attr: WriteAttr,
+        field_count: u16,
+        operation_count: u16,
+    ) -> Self {
+        let mut generation: u32 = 0;
+        let mut info_attr = InfoAttr::empty();
+
+        match policy.record_exists_action {
+            RecordExistsAction::Update => (),
+            RecordExistsAction::UpdateOnly => info_attr |= InfoAttr::UPDATE_ONLY,
+            RecordExistsAction::Replace => info_attr |= InfoAttr::CREATE_OR_REPLACE,
+            RecordExistsAction::ReplaceOnly => info_attr |= InfoAttr::REPLACE_ONLY,
+            RecordExistsAction::CreateOnly => write_attr |= WriteAttr::CREATE_ONLY,
+        }
+
+        match policy.generation_policy {
+            GenerationPolicy::None => (),
+            GenerationPolicy::ExpectGenEqual => {
+                generation = policy.generation;
+                write_attr |= WriteAttr::GENERATION;
+            }
+            GenerationPolicy::ExpectGenGreater => {
+                generation = policy.generation;
+                write_attr |= WriteAttr::GENERATION_GT;
+            }
+        }
+
+        if policy.commit_level == CommitLevel::CommitMaster {
+            info_attr |= InfoAttr::COMMIT_LEVEL_MASTER;
+        }
+
+        if policy.base_policy.consistency_level == ConsistencyLevel::ConsistencyAll {
+            read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
+        }
+
+        if policy.durable_delete {
+            write_attr |= WriteAttr::DURABLE_DELETE;
+        }
+
+        Self {
+            size,
+            header_length: Self::SIZE as u8,
+            read_attr,
+            write_attr,
+            info_attr,
+            _unused: 0,
+            result_code: ResultCode::Ok,
+            generation,
+            expiration: policy.expiration.into(),
+            timeout: policy.timeout().unwrap_or(Duration::ZERO),
+            field_count,
+            operation_count,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resize_reclaim() {
+        let mut buf = Buffer::new(10);
+        buf.buffer.put_bytes(1, 10);
+
+        assert_eq!(&[1; 10], &buf.buffer[..10]);
+        assert_eq!(10, buf.buffer.len());
+        assert_eq!(4096, buf.buffer.capacity());
+
+        buf.resize(15).unwrap();
+
+        assert_eq!(15, buf.buffer.len());
+        assert_eq!(15, buf.buffer.capacity());
+        assert_eq!(&[1; 10], &buf.buffer[..10]);
+        assert_eq!(&[0; 5], &buf.buffer[10..]);
     }
 }

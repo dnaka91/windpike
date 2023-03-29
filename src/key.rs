@@ -114,7 +114,7 @@ impl UserKey {
         len: usize,
     ) -> Result<Self, ParticleError> {
         Ok(match ParticleType::try_from(ptype)? {
-            ParticleType::Integer => Self::Int(buf.read_i64(None)),
+            ParticleType::Integer => Self::Int(buf.read_i64()),
             ParticleType::String => Self::String(buf.read_str(len)?.into()),
             ParticleType::Blob => Self::Blob(buf.read_blob(len).into()),
             _ => return Err(ParticleError::Unsupported(ptype)),

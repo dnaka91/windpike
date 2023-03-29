@@ -43,18 +43,13 @@ impl Record {
     /// if the record never expires.
     #[must_use]
     pub fn time_to_live(&self) -> Option<Duration> {
-        match self.expiration {
-            0 => None,
-            secs_since_epoch => {
-                let expiration = citrusleaf_epoch() + Duration::new(u64::from(secs_since_epoch), 0);
-                Some(
-                    expiration
-                        .duration_since(SystemTime::now())
-                        .ok()
-                        .unwrap_or(Duration::new(1, 0)),
-                )
-            }
-        }
+        (self.expiration > 0).then(|| {
+            let expiration = citrusleaf_epoch() + Duration::new(u64::from(self.expiration), 0);
+            expiration
+                .duration_since(SystemTime::now())
+                .ok()
+                .unwrap_or(Duration::new(1, 0))
+        })
     }
 }
 

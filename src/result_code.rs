@@ -221,6 +221,82 @@ impl ResultCode {
         }
     }
 
+    /// Convert the result code to the server response.
+    #[must_use]
+    pub(crate) const fn to_u8(self) -> u8 {
+        match self {
+            Self::Ok => 0,
+            Self::ServerError => 1,
+            Self::KeyNotFoundError => 2,
+            Self::GenerationError => 3,
+            Self::ParameterError => 4,
+            Self::KeyExistsError => 5,
+            Self::BinExistsError => 6,
+            Self::ClusterKeyMismatch => 7,
+            Self::ServerMemError => 8,
+            Self::Timeout => 9,
+            Self::AlwaysForbidden => 10,
+            Self::PartitionUnavailable => 11,
+            Self::BinTypeError => 12,
+            Self::RecordTooBig => 13,
+            Self::KeyBusy => 14,
+            Self::ScanAbort => 15,
+            Self::UnsupportedFeature => 16,
+            Self::BinNotFound => 17,
+            Self::DeviceOverload => 18,
+            Self::KeyMismatch => 19,
+            Self::InvalidNamespace => 20,
+            Self::BinNameTooLong => 21,
+            Self::FailForbidden => 22,
+            Self::ElementNotFound => 23,
+            Self::ElementExists => 24,
+            Self::EnterpriseOnly => 25,
+            Self::OpNotApplicable => 26,
+            Self::FilteredOut => 27,
+            Self::LostConflict => 28,
+            Self::QueryEnd => 50,
+            Self::SecurityNotSupported => 51,
+            Self::SecurityNotEnabled => 52,
+            Self::SecuritySchemeNotSupported => 53,
+            Self::InvalidCommand => 54,
+            Self::InvalidField => 55,
+            Self::IllegalState => 56,
+            Self::InvalidUser => 60,
+            Self::UserAlreadyExists => 61,
+            Self::InvalidPassword => 62,
+            Self::ExpiredPassword => 63,
+            Self::ForbiddenPassword => 64,
+            Self::InvalidCredential => 65,
+            Self::InvalidSession => 66,
+            Self::InvalidRole => 70,
+            Self::RoleAlreadyExists => 71,
+            Self::InvalidPrivilege => 72,
+            Self::InvalidWhitelist => 73,
+            Self::QuotasNotEnabled => 74,
+            Self::InvalidQuota => 75,
+            Self::NotAuthenticated => 80,
+            Self::RoleViolation => 81,
+            Self::NotWhitelisted => 82,
+            Self::QuotaExceeded => 83,
+            Self::UdfBadResponse => 100,
+            Self::BatchDisabled => 150,
+            Self::BatchMaxRequestsExceeded => 151,
+            Self::BatchQueuesFull => 152,
+            Self::IndexAlreadyExists => 200,
+            Self::IndexNotFound => 201,
+            Self::IndexOom => 202,
+            Self::IndexNotReadable => 203,
+            Self::IndexGeneric => 204,
+            Self::IndexNameMaxLen => 205,
+            Self::IndexMaxCount => 206,
+            Self::QueryAborted => 210,
+            Self::QueryQueueFull => 211,
+            Self::QueryTimeout => 212,
+            Self::QueryGeneric => 213,
+            Self::Unknown(code) => code,
+        }
+    }
+
     /// Convert a result code into an string.
     #[must_use]
     pub fn into_string(self) -> Cow<'static, str> {
@@ -301,8 +377,14 @@ impl ResultCode {
 }
 
 impl From<u8> for ResultCode {
-    fn from(val: u8) -> Self {
-        Self::from_u8(val)
+    fn from(value: u8) -> Self {
+        Self::from_u8(value)
+    }
+}
+
+impl From<ResultCode> for u8 {
+    fn from(value: ResultCode) -> Self {
+        value.to_u8()
     }
 }
 

@@ -3,7 +3,10 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::time::Instant;
 use tracing::warn;
 
-use super::{buffer::InfoAttr, Command, CommandError, Result};
+use super::{
+    buffer::{InfoAttr, MessageHeader},
+    Command, CommandError, Result,
+};
 use crate::{
     cluster::Node,
     net::Connection,
@@ -80,7 +83,6 @@ impl BatchReadCommand {
 
             self.prepare_buffer(&mut conn)
                 .map_err(|e| CommandError::PrepareBuffer(Box::new(e)))?;
-            conn.buffer().write_timeout(base_policy.timeout());
 
             // Send command.
             if let Err(err) = conn.flush().await {
@@ -112,8 +114,7 @@ impl BatchReadCommand {
 
     async fn parse_group(&mut self, conn: &mut Connection, size: usize) -> Result<bool> {
         while conn.bytes_read() < size {
-            conn.read_buffer(super::buffer::MSG_REMAINING_HEADER_SIZE as usize)
-                .await?;
+            conn.read_buffer(MessageHeader::SIZE).await?;
             match self.parse_record(conn).await? {
                 None => return Ok(false),
                 Some(batch_record) => {
@@ -129,24 +130,26 @@ impl BatchReadCommand {
     }
 
     async fn parse_record(&mut self, conn: &mut Connection) -> Result<Option<BatchRecord>> {
-        let found_key = match ResultCode::from(conn.buffer().read_u8(Some(5))) {
+        conn.buffer().advance(3);
+        let info3 = InfoAttr::from_bits_truncate(conn.buffer().read_u8());
+
+        conn.buffer().advance(1);
+        let found_key = match ResultCode::from(conn.buffer().read_u8()) {
             ResultCode::Ok => true,
             ResultCode::KeyNotFoundError => false,
             rc => return Err(CommandError::ServerError(rc)),
         };
 
         // if cmd is the end marker of the response, do not proceed further
-        let info3 = InfoAttr::from_bits_truncate(conn.buffer().read_u8(Some(3)));
         if info3.contains(InfoAttr::LAST) {
             return Ok(None);
         }
 
-        conn.buffer().skip(6);
-        let generation = conn.buffer().read_u32(None);
-        let expiration = conn.buffer().read_u32(None);
-        let batch_index = conn.buffer().read_u32(None);
-        let field_count = conn.buffer().read_u16(None) as usize; // almost certainly 0
-        let op_count = conn.buffer().read_u16(None) as usize;
+        let generation = conn.buffer().read_u32();
+        let expiration = conn.buffer().read_u32();
+        let batch_index = conn.buffer().read_u32();
+        let field_count = conn.buffer().read_u16() as usize; // almost certainly 0
+        let op_count = conn.buffer().read_u16() as usize;
 
         let key = super::StreamCommand::parse_key(conn, field_count).await?;
 
@@ -155,11 +158,11 @@ impl BatchReadCommand {
 
             for _ in 0..op_count {
                 conn.read_buffer(8).await?;
-                let op_size = conn.buffer().read_u32(None) as usize;
-                conn.buffer().skip(1);
-                let particle_type = conn.buffer().read_u8(None);
-                conn.buffer().skip(1);
-                let name_size = conn.buffer().read_u8(None) as usize;
+                let op_size = conn.buffer().read_u32() as usize;
+                conn.buffer().advance(1);
+                let particle_type = conn.buffer().read_u8();
+                conn.buffer().advance(1);
+                let name_size = conn.buffer().read_u8() as usize;
                 conn.read_buffer(name_size).await?;
                 let name = conn.buffer().read_str(name_size)?;
                 let particle_bytes_size = op_size - (4 + name_size);
@@ -195,7 +198,7 @@ impl Command for BatchReadCommand {
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {
         loop {
             conn.read_buffer(8).await?;
-            let size = conn.buffer().read_msg_size(None);
+            let size = conn.buffer().read_msg_size();
             conn.bookmark();
             if size > 0 && !self.parse_group(conn, size).await? {
                 break;
