@@ -5,43 +5,6 @@ use tokio::sync::mpsc;
 
 use crate::{commands::CommandError, Bins, Record};
 
-/// Query statement parameters.
-pub struct Statement {
-    /// Namespace
-    pub namespace: String,
-    /// Set name
-    pub set_name: String,
-    /// Optional index name
-    pub index_name: Option<String>,
-    /// Optional list of bin names to return in query.
-    pub bins: Bins,
-}
-
-impl Statement {
-    /// Create a new query statement with the given namespace, set name and optional list of bin
-    /// names.
-    ///
-    /// # Examples
-    ///
-    /// Create a new statement to query the namespace "foo" and set "bar" and return the "name" and
-    /// "age" bins for each matching record.
-    ///
-    /// ```rust
-    /// use aerospike::{query::Statement, Bins};
-    ///
-    /// let stmt = Statement::new("foo", "bar", Bins::from(["name", "age"]));
-    /// ```
-    #[must_use]
-    pub fn new(namespace: &str, set_name: &str, bins: Bins) -> Self {
-        Self {
-            namespace: namespace.to_owned(),
-            set_name: set_name.to_owned(),
-            bins,
-            index_name: None,
-        }
-    }
-}
-
 /// Virtual collection of records retrieved through queries and scans. During a query/scan,
 /// multiple threads will retrieve records from the server nodes and put these records on an
 /// internal queue managed by the recordset. The single user thread consumes these records from the
