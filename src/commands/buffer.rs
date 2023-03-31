@@ -636,6 +636,26 @@ impl Buffer {
         Ok(())
     }
 
+    pub fn set_info(&mut self, commands: &[&str]) -> Result<()> {
+        let size = commands.iter().map(|cmd| cmd.len()).sum::<usize>() + commands.len();
+
+        self.clear(ProtoHeader::SIZE + size)?;
+
+        ProtoHeader {
+            version: Version::V2,
+            ty: ProtoType::Info,
+            size,
+        }
+        .write_to(&mut self.buffer);
+
+        for command in commands {
+            self.write_str(command);
+            self.write_u8(b'\n');
+        }
+
+        Ok(())
+    }
+
     // Header write for write operations.
 
     fn write_key(&mut self, key: &Key, send_key: bool) {
@@ -786,6 +806,10 @@ impl Buffer {
     pub fn write_u16_le(&mut self, val: u16) -> usize {
         self.buffer.put_u16_le(val);
         mem::size_of::<u16>()
+    }
+
+    pub fn read_proto_header(&mut self) -> ProtoHeader {
+        ProtoHeader::read_from(&mut self.buffer)
     }
 
     pub fn read_header(&mut self) -> MessageHeader {
