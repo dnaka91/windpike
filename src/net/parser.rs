@@ -90,6 +90,8 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use super::{Host, Parser};
 
     #[test]
@@ -160,5 +162,17 @@ mod tests {
         assert!(Parser::new("foo:", 3000).read_hosts().is_err());
         assert!(Parser::new("foo:bar:bar", 3000).read_hosts().is_err());
         assert!(Parser::new("foo:bar:1234:1234", 3000).read_hosts().is_err());
+    }
+
+    proptest! {
+        #[test]
+        fn read_random_hosts(name in any::<String>(), port in any::<u16>()) {
+            Parser::new(&name,port).read_hosts().ok();
+        }
+
+        #[test]
+        fn read_multiple_hosts(name in r#"\w+:\d{4}(,\w+:\d{4})+"#) {
+            Parser::new(&name, 3000).read_hosts().unwrap();
+        }
     }
 }
