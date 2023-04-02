@@ -3,7 +3,7 @@ use std::fmt;
 use rand::Rng;
 use tokio::sync::mpsc;
 
-use crate::{commands::CommandError, Bins, Record};
+use crate::{commands::CommandError, Record};
 
 /// Virtual collection of records retrieved through queries and scans. During a query/scan,
 /// multiple threads will retrieve records from the server nodes and put these records on an

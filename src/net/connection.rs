@@ -9,7 +9,7 @@ use tokio::{
 use super::{NetError, Result};
 use crate::{
     commands::{
-        buffer::{Buffer, MessageHeader, TOTAL_HEADER_SIZE, ProtoHeader},
+        buffer::{Buffer, MessageHeader, ProtoHeader, TOTAL_HEADER_SIZE},
         AdminCommand,
     },
     policy::ClientPolicy,
@@ -68,7 +68,7 @@ impl Connection {
         Ok(())
     }
 
-    pub async fn read_proto_header(&mut self) -> Result<ProtoHeader>{
+    pub async fn read_proto_header(&mut self) -> Result<ProtoHeader> {
         self.read_buffer(ProtoHeader::SIZE).await?;
         Ok(self.buffer.read_proto_header())
     }

@@ -87,40 +87,6 @@ async fn scan_multi_consumer() {
     client.close();
 }
 
-#[tokio::test]
-async fn scan_node() {
-    common::init_logger();
-
-    let client = Arc::new(common::client().await);
-    let set_name = create_test_set(&client, EXPECTED).await;
-
-    let count = Arc::new(AtomicUsize::new(0));
-    let mut threads = vec![];
-
-    for node in client.nodes().await {
-        let client = client.clone();
-        let count = count.clone();
-        let set_name = set_name.clone();
-        threads.push(tokio::spawn(async move {
-            let spolicy = ScanPolicy::default();
-            let mut rs = client
-                .scan_node(&spolicy, node, NAMESPACE, &set_name, Bins::All)
-                .await
-                .unwrap();
-            let ok = count_results(&mut rs).await;
-            count.fetch_add(ok, Ordering::Relaxed);
-        }));
-    }
-
-    for t in threads {
-        t.await.unwrap();
-    }
-
-    assert_eq!(count.load(Ordering::Relaxed), EXPECTED);
-
-    client.close();
-}
-
 async fn count_results(rs: &mut Recordset) -> usize {
     let mut count = 0;
     while let Some(Ok(_)) = rs.next().await {

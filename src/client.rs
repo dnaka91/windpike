@@ -4,7 +4,7 @@ use tokio::sync::mpsc;
 
 use crate::{
     batch::BatchExecutor,
-    cluster::{Cluster, Node},
+    cluster::Cluster,
     commands::{
         CommandError, DeleteCommand, ExistsCommand, OperateCommand, ReadCommand, ScanCommand,
         TouchCommand, WriteCommand,
@@ -99,16 +99,6 @@ impl Client {
             .iter()
             .map(|node| node.name().to_owned())
             .collect()
-    }
-
-    /// Return node given its name.
-    pub async fn get_node(&self, name: &str) -> Option<Arc<Node>> {
-        self.cluster.get_node_by_name(name).await
-    }
-
-    /// Returns a list of active server nodes in the cluster.
-    pub async fn nodes(&self) -> Vec<Arc<Node>> {
-        self.cluster.nodes().await
     }
 
     /// Read record for the specified key. Depending on the bins value provided, all record bins,
@@ -591,46 +581,6 @@ impl Client {
                 .unwrap();
             });
         }
-        Ok(recordset)
-    }
-
-    /// Read all records in the specified namespace and set for one node only and return a record
-    /// iterator. The scan executor puts records on a queue in separate threads. The calling thread
-    /// concurrently pops records off the queue through the record iterator. Up to
-    /// `policy.max_concurrent_nodes` nodes are scanned in parallel. If concurrent nodes is set to
-    /// zero, the server nodes are read in series.
-    ///
-    /// # Panics
-    /// panics if the async block fails
-    pub async fn scan_node<T>(
-        &self,
-        policy: &ScanPolicy,
-        node: Arc<Node>,
-        namespace: &str,
-        set_name: &str,
-        bins: T,
-    ) -> Result<Recordset>
-    where
-        T: Into<Bins> + Send + Sync + 'static,
-    {
-        let partitions = self.cluster.node_partitions(node.as_ref(), namespace).await;
-        let bins = bins.into();
-        let (queue_tx, queue_rx) = mpsc::channel(policy.record_queue_size);
-        let recordset = Recordset::new(queue_rx);
-        let policy = policy.clone();
-        let namespace = namespace.to_owned();
-        let set_name = set_name.to_owned();
-        let task_id = recordset.task_id();
-
-        tokio::spawn(async move {
-            ScanCommand::new(
-                &policy, node, &namespace, &set_name, bins, queue_tx, task_id, partitions,
-            )
-            .execute()
-            .await
-            .unwrap();
-        });
-
         Ok(recordset)
     }
 

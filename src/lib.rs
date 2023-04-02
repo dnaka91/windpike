@@ -124,7 +124,7 @@ pub use value::{FloatValue, Value};
 mod batch;
 mod bin;
 mod client;
-pub mod cluster;
+mod cluster;
 mod commands;
 pub mod errors;
 mod key;
