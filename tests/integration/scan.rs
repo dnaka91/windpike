@@ -6,7 +6,7 @@ use std::sync::{
 use aerospike::{
     self, as_bin,
     policy::{ScanPolicy, WritePolicy},
-    Bins, Client, Key, Recordset,
+    Bins, Client, Key, RecordSet,
 };
 use tokio::sync::Mutex;
 
@@ -86,7 +86,7 @@ async fn scan_multi_consumer() {
     client.close();
 }
 
-async fn count_results(rs: &mut Recordset) -> usize {
+async fn count_results(rs: &mut RecordSet) -> usize {
     let mut count = 0;
     while let Some(Ok(_)) = rs.next().await {
         count += 1;

@@ -14,7 +14,7 @@ use crate::{
     net::ToHosts,
     operations::{Operation, OperationType},
     policy::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
-    BatchRead, Bin, Bins, Key, Record, Recordset, ResultCode,
+    BatchRead, Bin, Bins, Key, Record, RecordSet, ResultCode,
 };
 
 /// Instantiate a Client instance to access an Aerospike database cluster and perform database
@@ -550,14 +550,14 @@ impl Client {
         namespace: &str,
         set_name: &str,
         bins: T,
-    ) -> Result<Recordset>
+    ) -> Result<RecordSet>
     where
         T: Into<Bins> + Send + Sync + 'static,
     {
         let bins = bins.into();
         let nodes = self.cluster.nodes().await;
         let (queue_tx, queue_rx) = mpsc::channel(policy.record_queue_size);
-        let recordset = Recordset::new(queue_rx);
+        let recordset = RecordSet::new(queue_rx);
         let task_id = recordset.task_id();
 
         for node in nodes {

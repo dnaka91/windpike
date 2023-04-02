@@ -66,12 +66,12 @@ fn citrusleaf_epoch() -> SystemTime {
 /// multiple threads will retrieve records from the server nodes and put these records on an
 /// internal queue managed by the recordset. The single user thread consumes these records from the
 /// queue.
-pub struct Recordset {
+pub struct RecordSet {
     queue: mpsc::Receiver<Result<Record, CommandError>>,
     task_id: u64,
 }
 
-impl Recordset {
+impl RecordSet {
     #[must_use]
     pub(crate) fn new(queue: mpsc::Receiver<Result<Record, CommandError>>) -> Self {
         Self {

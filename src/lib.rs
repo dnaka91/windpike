@@ -116,7 +116,7 @@ pub use bin::{Bin, Bins};
 pub use client::Client;
 pub use key::{Key, UserKey};
 pub use net::{Host, ToHosts};
-pub use record::{Record, Recordset};
+pub use record::{Record, RecordSet};
 pub use result_code::ResultCode;
 pub use user::User;
 pub use value::{FloatValue, Value};
