@@ -1,6 +1,11 @@
 use std::time::Duration;
 
-use aerospike::{as_bin, policy::WritePolicy, query::IndexType, task::Task, Client, Key};
+use aerospike::{
+    as_bin,
+    index::{IndexType, Status},
+    policy::WritePolicy,
+    Client, Key,
+};
 
 use crate::common::{self, NAMESPACE};
 
@@ -45,6 +50,41 @@ async fn recreate_index() {
         .await
         .unwrap();
     task.wait_till_complete(None).await.unwrap();
+
+    client.close();
+}
+
+// If creating index is successful, querying IndexTask will return Status::Complete
+#[tokio::test]
+async fn index_task_test() {
+    let client = common::client().await;
+    let set_name = common::rand_str(10);
+    let bin_name = common::rand_str(10);
+    let index_name = common::rand_str(10);
+
+    let wpolicy = WritePolicy::default();
+    for i in 0..2_i64 {
+        let key = Key::new(NAMESPACE, set_name.clone(), i);
+        let wbin = as_bin!(&bin_name, i);
+        let bins = vec![wbin];
+        client.put(&wpolicy, &key, &bins).await.unwrap();
+    }
+
+    let index_task = client
+        .create_index(
+            NAMESPACE,
+            &set_name,
+            &bin_name,
+            &index_name,
+            IndexType::Numeric,
+        )
+        .await
+        .unwrap();
+
+    assert!(matches!(
+        index_task.wait_till_complete(None).await,
+        Ok(Status::Complete)
+    ));
 
     client.close();
 }

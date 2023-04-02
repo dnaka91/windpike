@@ -8,5 +8,4 @@ mod hll;
 mod index;
 mod kv;
 mod scan;
-mod task;
 mod truncate;

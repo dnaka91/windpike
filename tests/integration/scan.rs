@@ -6,8 +6,7 @@ use std::sync::{
 use aerospike::{
     self, as_bin,
     policy::{ScanPolicy, WritePolicy},
-    query::Recordset,
-    Bins, Client, Key,
+    Bins, Client, Key, Recordset,
 };
 use tokio::sync::Mutex;
 

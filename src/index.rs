@@ -1,8 +1,8 @@
-//! Types and methods used for long running status queries.
-
-use std::sync::Arc;
-
-use tokio::time::{Duration, Instant};
+use std::{
+    fmt::{self, Display},
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use crate::{
     cluster::Cluster,
@@ -18,39 +18,6 @@ pub enum Status {
     InProgress,
     /// long running task completed
     Complete,
-}
-
-static POLL_INTERVAL: Duration = Duration::from_secs(1);
-
-/// Base task interface
-#[async_trait::async_trait]
-pub trait Task {
-    /// interface for query specific task status
-    async fn query_status(&self) -> Result<Status>;
-
-    /// Wait until query status is complete, an error occurs, or the timeout has elapsed.
-    async fn wait_till_complete(&self, timeout: Option<Duration>) -> Result<Status> {
-        let now = Instant::now();
-        let timeout_elapsed = |deadline| now.elapsed() + POLL_INTERVAL > deadline;
-
-        loop {
-            // Sleep first to give task a chance to complete and help avoid case where task hasn't
-            // started yet.
-            tokio::time::sleep(POLL_INTERVAL).await;
-
-            match self.query_status().await {
-                Ok(Status::NotFound) => {
-                    return Err(Error::BadResponse("task status not found".to_owned()))
-                }
-                Ok(Status::InProgress) => {} // do nothing and wait
-                error_or_complete => return error_or_complete,
-            }
-
-            if timeout.map_or(false, timeout_elapsed) {
-                return Err(Error::Timeout("Task timeout reached".to_owned()));
-            }
-        }
-    }
 }
 
 /// Struct for querying index creation status
@@ -113,12 +80,9 @@ impl IndexTask {
             }
         }
     }
-}
 
-#[async_trait::async_trait]
-impl Task for IndexTask {
     /// Query the status of index creation across all nodes
-    async fn query_status(&self) -> Result<Status> {
+    pub async fn query_status(&self) -> Result<Status> {
         let nodes = self.cluster.nodes().await;
 
         if nodes.is_empty() {
@@ -139,5 +103,73 @@ impl Task for IndexTask {
             }
         }
         Ok(Status::Complete)
+    }
+
+    /// Wait until query status is complete, an error occurs, or the timeout has elapsed.
+    pub async fn wait_till_complete(&self, timeout: Option<Duration>) -> Result<Status> {
+        const POLL_INTERVAL: Duration = Duration::from_secs(1);
+
+        let now = Instant::now();
+        let timeout_elapsed = |deadline| now.elapsed() + POLL_INTERVAL > deadline;
+
+        loop {
+            // Sleep first to give task a chance to complete and help avoid case where task hasn't
+            // started yet.
+            tokio::time::sleep(POLL_INTERVAL).await;
+
+            match self.query_status().await {
+                Ok(Status::NotFound) => {
+                    return Err(Error::BadResponse("task status not found".to_owned()))
+                }
+                Ok(Status::InProgress) => {} // do nothing and wait
+                error_or_complete => return error_or_complete,
+            }
+
+            if timeout.map_or(false, timeout_elapsed) {
+                return Err(Error::Timeout("Task timeout reached".to_owned()));
+            }
+        }
+    }
+}
+
+/// Underlying data type of secondary index.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IndexType {
+    /// Numeric index.
+    Numeric,
+    /// String index.
+    String,
+    /// 2-dimensional spherical geospatial index.
+    Geo2DSphere,
+}
+
+impl Display for IndexType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Numeric => "NUMERIC",
+            Self::String => "STRING",
+            Self::Geo2DSphere => "GEO2DSPHERE",
+        })
+    }
+}
+
+/// Secondary index collection type.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CollectionIndexType {
+    /// Index list elements.
+    List,
+    /// Index map keys.
+    MapKeys,
+    /// Index map values.
+    MapValues,
+}
+
+impl Display for CollectionIndexType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::List => "LIST",
+            Self::MapKeys => "MAPKEYS",
+            Self::MapValues => "MAPVALUES",
+        })
     }
 }

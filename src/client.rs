@@ -10,12 +10,11 @@ use crate::{
         TouchCommand, WriteCommand,
     },
     errors::{Error, Result},
+    index::{CollectionIndexType, IndexTask, IndexType},
     net::ToHosts,
     operations::{Operation, OperationType},
     policy::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
-    query::{CollectionIndexType, IndexType, Recordset},
-    task::IndexTask,
-    BatchRead, Bin, Bins, Key, Record, ResultCode,
+    BatchRead, Bin, Bins, Key, Record, Recordset, ResultCode,
 };
 
 /// Instantiate a Client instance to access an Aerospike database cluster and perform database
