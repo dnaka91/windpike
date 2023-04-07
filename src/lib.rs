@@ -51,7 +51,7 @@
 //! ```rust
 //! use std::{sync::Arc, time::Instant};
 //!
-//! use aerospike::{
+//! use windpike::{
 //!     as_bin, operations,
 //!     policy::{BasePolicy, ClientPolicy, WritePolicy},
 //!     Bins, Client, Key,

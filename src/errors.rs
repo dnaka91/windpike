@@ -5,7 +5,7 @@
 //! Handling an error returned by the client.
 //!
 //! ```rust
-//! use aerospike::{
+//! use windpike::{
 //!     errors::CommandError,
 //!     policy::{BasePolicy, ClientPolicy},
 //!     Bins, Client, Key, ResultCode,

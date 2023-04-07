@@ -64,7 +64,7 @@ impl Client {
     /// Using an environment variable to set the list of seed hosts.
     ///
     /// ```rust
-    /// use aerospike::{policy::ClientPolicy, Client};
+    /// use windpike::{policy::ClientPolicy, Client};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -109,7 +109,7 @@ impl Client {
     /// Fetch specified bins for a record with the given key.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     errors::CommandError,
     ///     policy::{BasePolicy, ClientPolicy},
     ///     Client, Key, ResultCode,
@@ -135,7 +135,7 @@ impl Client {
     /// Determine the remaining time-to-live of a record.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     errors::CommandError,
     ///     policy::{BasePolicy, ClientPolicy},
     ///     Bins, Client, Key, ResultCode,
@@ -189,7 +189,7 @@ impl Client {
     /// Fetch multiple records in a single client request
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     policy::{BatchPolicy, ClientPolicy},
     ///     BatchRead, Bins, Client, Key,
     /// };
@@ -236,7 +236,7 @@ impl Client {
     /// Write a record with a single integer bin.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     as_bin,
     ///     policy::{ClientPolicy, WritePolicy},
     ///     Client, Key,
@@ -260,7 +260,7 @@ impl Client {
     /// Write a record with an expiration of 10 seconds.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     as_bin, policy,
     ///     policy::{ClientPolicy, WritePolicy},
     ///     Client, Key,
@@ -307,7 +307,7 @@ impl Client {
     /// Add two integer values to two existing bin values.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     as_bin,
     ///     policy::{ClientPolicy, WritePolicy},
     ///     Client, Key,
@@ -391,7 +391,7 @@ impl Client {
     /// Delete a record.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     policy::{ClientPolicy, WritePolicy},
     ///     Client, Key,
     /// };
@@ -424,7 +424,7 @@ impl Client {
     /// Reset a record's time to expiration to the default ttl for the namespace.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     policy,
     ///     policy::{ClientPolicy, WritePolicy},
     ///     Client, Key,
@@ -469,7 +469,7 @@ impl Client {
     /// call.
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     as_bin, operations,
     ///     policy::{ClientPolicy, WritePolicy},
     ///     Client, Key,
@@ -512,7 +512,7 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use aerospike::{
+    /// use windpike::{
     ///     policy::{ClientPolicy, ScanPolicy},
     ///     Bins, Client,
     /// };
@@ -623,7 +623,7 @@ impl Client {
     /// within set `bar` and bin `baz`:
     ///
     /// ```rust
-    /// use aerospike::{policy::ClientPolicy, query::IndexType, Client};
+    /// use windpike::{policy::ClientPolicy, query::IndexType, Client};
     ///
     /// #[tokio::main]
     /// async fn main() {

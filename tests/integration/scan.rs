@@ -3,12 +3,12 @@ use std::sync::{
     Arc,
 };
 
-use aerospike::{
+use tokio::sync::Mutex;
+use windpike::{
     self, as_bin,
     policy::{ScanPolicy, WritePolicy},
     Bins, Client, Key, RecordSet,
 };
-use tokio::sync::Mutex;
 
 use crate::common::{self, NAMESPACE};
 

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use aerospike::{
+use windpike::{
     as_bin,
     index::{IndexType, Status},
     policy::WritePolicy,

@@ -1,12 +1,16 @@
 [package]
-name = "aerospike"
-version = "1.2.0"
+name = "windpike"
+version = "0.1.0"
+authors = ["Dominik Nakamura <dnaka91@gmail.com>"]
 edition = "2021"
-description = "Aerospike Client for Rust"
-keywords = ["aerospike", "nosql", "distributed", "database"]
-categories = ["database"]
-license = "MIT"
+rust-version = "1.62"
+description = "Asynchronous client library for Aerospike"
 readme = "README.md"
+homepage = "https://aerospike.com"
+repository = "https://github.com/dnaka91/windpike"
+license = "MIT"
+keywords = ["aerospike", "async", "database"]
+categories = ["database"]
 include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [dependencies]

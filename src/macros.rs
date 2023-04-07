@@ -16,7 +16,7 @@ macro_rules! as_bin {
 /// Write a list value to a record bin.
 ///
 /// ```rust
-/// use aerospike::{
+/// use windpike::{
 ///     as_bin, as_list,
 ///     policy::{ClientPolicy, WritePolicy},
 ///     Client, Key,
@@ -61,7 +61,7 @@ macro_rules! as_values {
 /// Write a map value to a record bin.
 ///
 /// ```rust
-/// use aerospike::{as_bin, Key, as_map, Client, policy::ClientPolicy, policy::WritePolicy};
+/// use windpike::{as_bin, Key, as_map, Client, policy::ClientPolicy, policy::WritePolicy};
 
 /// #[tokio::main]
 /// async fn main() {

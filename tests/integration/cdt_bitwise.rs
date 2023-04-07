@@ -1,4 +1,4 @@
-use aerospike::{
+use windpike::{
     operations::{
         bitwise,
         bitwise::{BitPolicy, BitwiseOverflowActions},

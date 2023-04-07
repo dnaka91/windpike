@@ -1,4 +1,4 @@
-use aerospike::{
+use windpike::{
     errors::{ClusterError, Error},
     policy::ClientPolicy,
     Client,

@@ -1,6 +1,6 @@
-use aerospike::{policy::ClientPolicy, Client};
 use rand::{distributions::Alphanumeric, Rng};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use windpike::{policy::ClientPolicy, Client};
 
 pub const HOSTS: &str = "127.0.0.1";
 pub const NAMESPACE: &str = "test";
