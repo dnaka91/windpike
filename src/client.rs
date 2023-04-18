@@ -623,7 +623,7 @@ impl Client {
     /// within set `bar` and bin `baz`:
     ///
     /// ```rust
-    /// use windpike::{policy::ClientPolicy, index::IndexType, Client};
+    /// use windpike::{index::IndexType, policy::ClientPolicy, Client};
     ///
     /// #[tokio::main]
     /// async fn main() {
