@@ -12,8 +12,6 @@ use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn cdt_list() {
-    common::init_logger();
-
     let client = common::client().await;
 
     let policy = BasePolicy::default();

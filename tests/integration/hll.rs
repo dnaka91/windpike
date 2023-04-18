@@ -9,8 +9,6 @@ use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn hll() {
-    common::init_logger();
-
     let client = common::client().await;
 
     let key = Key::new(NAMESPACE, common::rand_str(10), "test");

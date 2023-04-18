@@ -6,6 +6,7 @@ pub const HOSTS: &str = "127.0.0.1";
 pub const NAMESPACE: &str = "test";
 
 pub async fn client() -> Client {
+    init_logger();
     Client::new(&ClientPolicy::default(), HOSTS).await.unwrap()
 }
 

@@ -8,8 +8,6 @@ use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn batch_get() {
-    common::init_logger();
-
     let client = common::client().await;
     let set_name = common::rand_str(10);
     let bpolicy = BatchPolicy {

@@ -11,8 +11,6 @@ use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn cdt_bitwise() {
-    common::init_logger();
-
     let client = common::client().await;
 
     let wpolicy = WritePolicy::default();

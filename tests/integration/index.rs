@@ -26,8 +26,6 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 
 #[tokio::test]
 async fn recreate_index() {
-    common::init_logger();
-
     let client = common::client().await;
     let set = create_test_set(&client, EXPECTED).await;
     let bin = "bin";

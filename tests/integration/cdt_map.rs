@@ -14,8 +14,6 @@ use crate::common::{self, NAMESPACE};
 
 #[tokio::test]
 async fn map_operations() {
-    common::init_logger();
-
     let client = common::client().await;
 
     let wpolicy = WritePolicy::default();
