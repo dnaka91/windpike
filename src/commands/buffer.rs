@@ -812,8 +812,17 @@ impl Buffer {
         ProtoHeader::read_from(&mut self.buffer)
     }
 
+    pub fn read_message_header(&mut self, proto: ProtoHeader) -> MessageHeader {
+        MessageHeader::read_from(&mut self.buffer, proto)
+    }
+
+    pub fn read_stream_message_header(&mut self, proto: ProtoHeader) -> StreamMessageHeader {
+        StreamMessageHeader::read_from(&mut self.buffer, proto)
+    }
+
     pub fn read_header(&mut self) -> MessageHeader {
-        MessageHeader::read_from(&mut self.buffer)
+        let proto = ProtoHeader::read_from(&mut self.buffer);
+        MessageHeader::read_from(&mut self.buffer, proto)
     }
 }
 
@@ -945,6 +954,7 @@ fn estimate_operation_size_for_bin_name(bin_name: &str) -> usize {
 /// - 1 byte: Version
 /// - 1 byte: Message type
 /// - 6 bytes: Data size
+#[derive(Clone, Copy, Debug)]
 pub struct ProtoHeader {
     pub version: Version,
     pub ty: ProtoType,
@@ -1125,8 +1135,8 @@ impl MessageHeader {
         buf.put_u16(self.operation_count);
     }
 
-    fn read_from(buf: &mut impl Buf) -> Self {
-        let ProtoHeader { version, ty, size } = ProtoHeader::read_from(buf);
+    fn read_from(buf: &mut impl Buf, proto: ProtoHeader) -> Self {
+        let ProtoHeader { version, ty, size } = proto;
 
         assert!(
             matches!(version, Version::V2),
@@ -1138,7 +1148,7 @@ impl MessageHeader {
         );
         assert!(size >= Self::SIZE, "invalid message length {size}");
 
-        MessageHeader {
+        Self {
             size: size - Self::SIZE,
             header_length: buf.get_u8(),
             read_attr: ReadAttr::from_bits_truncate(buf.get_u8()),
@@ -1240,6 +1250,52 @@ impl MessageHeader {
             timeout: policy.timeout().unwrap_or(Duration::ZERO),
             field_count,
             operation_count,
+        }
+    }
+}
+
+pub struct StreamMessageHeader {
+    /// Attributes relevant for any operation.
+    pub(crate) info_attr: InfoAttr,
+    _unused: u8,
+    pub result_code: ResultCode,
+    pub generation: u32,
+    pub expiration: u32,
+    pub value: u32,
+    /// Amount of fields in the payload.
+    pub field_count: u16,
+    /// Amount of operations in the payload.
+    pub operation_count: u16,
+}
+
+impl StreamMessageHeader {
+    pub const SIZE: usize = 22;
+
+    fn read_from(buf: &mut impl Buf, proto: ProtoHeader) -> Self {
+        let ProtoHeader { version, ty, size } = proto;
+
+        assert!(
+            matches!(version, Version::V2),
+            "invalid message version {version:?}",
+        );
+        assert!(
+            matches!(ty, ProtoType::Message),
+            "invalid message type {ty:?}",
+        );
+        assert!(size >= Self::SIZE, "invalid message length {size}");
+
+        // skip header length, read attrs and write attrs
+        buf.advance(3);
+
+        Self {
+            info_attr: InfoAttr::from_bits_truncate(buf.get_u8()),
+            _unused: buf.get_u8(),
+            result_code: buf.get_u8().into(),
+            generation: buf.get_u32(),
+            expiration: buf.get_u32(),
+            value: buf.get_u32(),
+            field_count: buf.get_u16(),
+            operation_count: buf.get_u16(),
         }
     }
 }

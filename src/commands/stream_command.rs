@@ -4,13 +4,12 @@ use tokio::sync::mpsc;
 use tracing::warn;
 
 use super::{
-    buffer::{InfoAttr, MessageHeader},
+    buffer::{InfoAttr, MessageHeader, ProtoHeader},
     field_type::FieldType,
     Command, CommandError, Result,
 };
 use crate::{
     cluster::Node, net::Connection, value::bytes_to_particle, Key, Record, ResultCode, UserKey,
-    Value,
 };
 
 pub struct StreamCommand {
@@ -24,45 +23,60 @@ impl StreamCommand {
         Self { node, tx, task_id }
     }
 
-    async fn parse_record(conn: &mut Connection, size: usize) -> Result<(Option<Record>, bool)> {
-        conn.buffer().advance(3);
-        let info3 = InfoAttr::from_bits_truncate(conn.buffer().read_u8());
+    async fn parse_stream(&mut self, conn: &mut Connection, header: ProtoHeader) -> Result<bool> {
+        while !self.tx.is_closed() && conn.bytes_read() < header.size {
+            let res = Self::parse_record(conn, header).await;
+            match res {
+                Ok((Some(rec), _)) => {
+                    if self.tx.send(Ok(rec)).await.is_err() {
+                        return Ok(false);
+                    }
+                }
+                Ok((None, false)) => return Ok(false),
+                Ok((None, true)) => continue,
+                Err(err) => {
+                    self.tx.send(Err(err)).await.ok();
+                    return Ok(false);
+                }
+            };
+        }
 
-        conn.buffer().advance(1);
-        let result_code = ResultCode::from(conn.buffer().read_u8());
-        if result_code != ResultCode::Ok {
-            if conn.bytes_read() < size {
-                let remaining = size - conn.bytes_read();
+        Ok(true)
+    }
+
+    async fn parse_record(
+        conn: &mut Connection,
+        proto: ProtoHeader,
+    ) -> Result<(Option<Record>, bool)> {
+        let header = conn.read_stream_message_header(proto).await?;
+
+        if header.result_code != ResultCode::Ok {
+            if conn.bytes_read() < proto.size {
+                let remaining = proto.size - conn.bytes_read();
                 conn.read_buffer(remaining).await?;
             }
 
-            return match result_code {
+            return match header.result_code {
                 ResultCode::KeyNotFoundError => Ok((None, false)),
-                _ => Err(CommandError::ServerError(result_code)),
+                _ => Err(CommandError::ServerError(header.result_code)),
             };
         }
 
         // if cmd is the end marker of the response, do not proceed further
-        if info3.contains(InfoAttr::LAST) {
+        if header.info_attr.contains(InfoAttr::LAST) {
             return Ok((None, false));
         }
 
-        let generation = conn.buffer().read_u32();
-        let expiration = conn.buffer().read_u32();
-        conn.buffer().advance(4);
-        let field_count = conn.buffer().read_u16() as usize; // almost certainly 0
-        let op_count = conn.buffer().read_u16() as usize;
-
-        let key = Self::parse_key(conn, field_count).await?;
+        let key = Self::parse_key(conn, header.field_count).await?;
 
         // Partition is done, don't go further
-        if info3.contains(InfoAttr::PARTITION_DONE) {
+        if header.info_attr.contains(InfoAttr::PARTITION_DONE) {
             return Ok((None, true));
         }
 
-        let mut bins: HashMap<String, Value> = HashMap::with_capacity(op_count);
+        let mut bins = HashMap::with_capacity(header.operation_count.into());
 
-        for _ in 0..op_count {
+        for _ in 0..header.operation_count {
             conn.read_buffer(8).await?;
             let op_size = conn.buffer().read_u32() as usize;
             conn.buffer().advance(1);
@@ -79,37 +93,11 @@ impl StreamCommand {
             bins.insert(name, value);
         }
 
-        let record = Record::new(Some(key), bins, generation, expiration);
+        let record = Record::new(Some(key), bins, header.generation, header.expiration);
         Ok((Some(record), true))
     }
 
-    async fn parse_stream(&mut self, conn: &mut Connection, size: usize) -> Result<bool> {
-        while !self.tx.is_closed() && conn.bytes_read() < size {
-            // Read header.
-            if let Err(err) = conn.read_buffer(MessageHeader::SIZE).await {
-                warn!(%err, "Parse result error");
-                return Err(err.into());
-            }
-
-            let res = Self::parse_record(conn, size).await;
-            match res {
-                Ok((Some(rec), _)) => {
-                    if self.tx.send(Ok(rec)).await.is_err() {
-                        break;
-                    }
-                }
-                Ok((None, cont)) => return Ok(cont),
-                Err(err) => {
-                    self.tx.send(Err(err)).await.ok();
-                    return Ok(false);
-                }
-            };
-        }
-
-        Ok(true)
-    }
-
-    pub async fn parse_key(conn: &mut Connection, field_count: usize) -> Result<Key> {
+    pub async fn parse_key(conn: &mut Connection, field_count: u16) -> Result<Key> {
         let mut digest = [0; 20];
         let mut namespace = String::new();
         let mut set_name = String::new();
@@ -168,16 +156,16 @@ impl Command for StreamCommand {
     }
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {
-        let mut status = true;
+        loop {
+            let header = conn.read_proto_header().await?;
+            if header.size == 0 {
+                break;
+            }
 
-        while status {
-            conn.read_buffer(8).await?;
-            let size = conn.buffer().read_msg_size();
             conn.bookmark();
 
-            status = false;
-            if size > 0 {
-                status = self.parse_stream(conn, size).await?;
+            if !self.parse_stream(conn, header).await? {
+                break;
             }
         }
 

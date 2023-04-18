@@ -148,7 +148,7 @@ impl BatchReadCommand {
         let generation = conn.buffer().read_u32();
         let expiration = conn.buffer().read_u32();
         let batch_index = conn.buffer().read_u32();
-        let field_count = conn.buffer().read_u16() as usize; // almost certainly 0
+        let field_count = conn.buffer().read_u16(); // almost certainly 0
         let op_count = conn.buffer().read_u16() as usize;
 
         let key = super::StreamCommand::parse_key(conn, field_count).await?;

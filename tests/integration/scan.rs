@@ -36,9 +36,8 @@ async fn scan_single_consumer() {
     let client = common::client().await;
     let set_name = create_test_set(&client, EXPECTED).await;
 
-    let spolicy = ScanPolicy::default();
     let mut rs = client
-        .scan(&spolicy, NAMESPACE, &set_name, Bins::All)
+        .scan(&ScanPolicy::default(), NAMESPACE, &set_name, Bins::All)
         .await
         .unwrap();
 
