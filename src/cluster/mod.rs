@@ -17,7 +17,7 @@ use tokio::{
     task::JoinError,
     time::{Duration, Instant},
 };
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, warn};
 
 pub use self::node::Node;
 use self::{
@@ -298,7 +298,7 @@ impl Cluster {
     pub async fn seed_nodes(&self) -> bool {
         let seed_array = self.seeds.read().await;
 
-        info!(seeds_count = seed_array.len(), "Seeding the cluster");
+        debug!(seeds_count = seed_array.len(), "Seeding the cluster");
 
         let mut list: Vec<Arc<Node>> = vec![];
         for seed in &*seed_array {
