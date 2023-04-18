@@ -5,10 +5,9 @@ env:
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
         toolchain: [stable, "1.62"]
     services:
       aerospike:
