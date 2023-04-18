@@ -8,6 +8,8 @@ use crate::common::{self, HOSTS};
 
 #[tokio::test]
 async fn cluster_name() {
+    common::init_logger();
+
     let policy = ClientPolicy {
         cluster_name: Some("notTheRealClusterName".into()),
         ..ClientPolicy::default()

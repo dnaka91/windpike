@@ -1,10 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use tokio::sync::mpsc;
-use tracing::warn;
 
 use super::{
-    buffer::{InfoAttr, MessageHeader, ProtoHeader},
+    buffer::{InfoAttr, ProtoHeader},
     field_type::FieldType,
     Command, CommandError, Result,
 };

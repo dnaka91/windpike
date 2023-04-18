@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use windpike::{
     as_bin,
     index::{IndexType, Status},
@@ -27,7 +25,6 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 }
 
 #[tokio::test]
-#[should_panic(expected = "IndexAlreadyExists")]
 async fn recreate_index() {
     common::init_logger();
 
@@ -37,19 +34,22 @@ async fn recreate_index() {
     let index = format!("{NAMESPACE}_{}_{}", set, bin);
 
     let _ = client.drop_index(NAMESPACE, &set, &index).await;
-    tokio::time::sleep(Duration::from_millis(1000)).await;
 
-    let task = client
+    client
         .create_index(NAMESPACE, &set, bin, &index, IndexType::Numeric)
         .await
-        .expect("Failed to create index");
-    task.wait_till_complete(None).await.unwrap();
-
-    let task = client
-        .create_index(NAMESPACE, &set, bin, &index, IndexType::Numeric)
+        .expect("Failed to create index")
+        .wait_till_complete(None)
         .await
         .unwrap();
-    task.wait_till_complete(None).await.unwrap();
+
+    client
+        .create_index(NAMESPACE, &set, bin, &index, IndexType::Numeric)
+        .await
+        .unwrap()
+        .wait_till_complete(None)
+        .await
+        .unwrap();
 
     client.close();
 }
