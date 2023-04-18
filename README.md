@@ -1,91 +1,42 @@
-# Aerospike Rust Client [![crates-io][crates-io-image]][crates-io-url] [![docs][docs-image]][docs-url] [![travis][travis-image]][travis-url] [![appveyor][appveyor-image]][appveyor-url]
+# ⛰️ Windpike
 
-[crates-io-image]: https://img.shields.io/crates/v/aerospike.svg
-[crates-io-url]: https://crates.io/crates/aerospike
-[docs-image]: https://docs.rs/aerospike/badge.svg
-[docs-url]: https://docs.rs/aerospike/
-[travis-image]: https://travis-ci.org/aerospike/aerospike-client-rust.svg?branch=master
-[travis-url]: https://travis-ci.org/aerospike/aerospike-client-rust
-[appveyor-image]: https://ci.appveyor.com/api/projects/status/e9gx1b5d1307hj2t/branch/master?svg=true
-[appveyor-url]: https://ci.appveyor.com/project/aerospike/aerospike-client-rust/branch/master
+[![Build Status][build-img]][build-url]
+[![Repository][crates-img]][crates-url]
+[![Documentation][doc-img]][doc-url]
 
-An [Aerospike](https://www.aerospike.com/) client library for Rust.
+[build-img]: https://img.shields.io/github/actions/workflow/status/dnaka91/windpike/ci.yml?branch=main&style=for-the-badge
+[build-url]: https://github.com/dnaka91/windpike/actions/workflows/ci.yml
+[crates-img]: https://img.shields.io/crates/v/windpike?style=for-the-badge
+[crates-url]: https://crates.io/crates/windpike
+[doc-img]: https://img.shields.io/badge/docs.rs-windpike-4d76ae?style=for-the-badge
+[doc-url]: https://docs.rs/windpike
 
-This library is compatible with Rust 1.46+ and supports the following operating systems: Linux, Mac OS X, and Windows.
-The current release supports Aerospike version v5.6 and later. Take a look at the [changelog](CHANGELOG.md) for more details.
+A simple async [Aerospike](https://www.aerospike.com) client for Rust.
 
-- [Usage:](#usage)
-- [Known Limitations](#known-limitations)
-- [Tests](#tests)
-- [Benchmarks](#benchmarks)
+## Usage
 
-<a name="Usage"></a>
-## Usage:
+Add the crate to your project with `cargo add`:
 
-Add one of the following to your cargo file
-```toml
-# Async API with tokio Runtime
-aerospike = { version = "<version>", features = ["rt-tokio"]}
-# Async API with async-std runtime
-aerospike = { version = "<version>", features = ["rt-async-std"]}
-
-# The library still supports the old sync interface, but it will be deprecated in the future.
-# This is only for compatibility reasons and will be removed in a later stage.
-
-# Sync API with tokio
-aerospike = { version = "<version>", default-features = false, features = ["rt-tokio", "sync"]}
-# Sync API with async-std
-aerospike = { version = "<version>", default-features = false, features = ["rt-async-std", "sync"]}
+```sh
+cargo add windpike
 ```
 
-<a name="Limitations"></a>
-## Known Limitations
-
-The following features are not yet supported in the Aerospike Rust client:
-
-- Query Aggregation using Lua User-Defined Functions (UDF).
-- Secure connections using TLS.
-- IPv6 support.
-
-<a name="Tests"></a>
 ## Tests
 
-This library is packaged with a number of tests. The tests assume that an
-Aerospike cluster is running at `localhost:3000`. To test using a cluster at a
-different address, set the `AEROSPIKE_HOSTS` environment variable to the list
-of cluster hosts.
+The crate contains various integrations tests, which require a running Aerospike server instance to function. One can be quickly set up with [Podman](https://podman.io) or [Docker](https://www.docker.com) as follows (just replace `podman` with `docker` if you use Docker instead):
 
-To run all the test cases:
-
-```shell
-$ export AEROSPIKE_HOSTS=127.0.0.1:3000
-$ cargo test --features <runtime>
+```sh
+podman run --name aerospike -p 3000:3000 -d docker.io/aerospike/aerospike-server
 ```
 
-To enable debug logging for the `aerospike` crate:
+Then, the tests can be run with `cargo test` as usual.
 
-```shell
-$ RUST_LOG=aerospike=debug cargo test --features <runtime>
+If needed, logs can be enabled with the `RUST_LOG` environment variable:
+
+```sh
+RUST_LOG=windpike=trace cargo test
 ```
 
-To enable backtraces set the `RUST_BACKTRACE` environment variable:
+## License
 
-```shell
-$ RUST_BACKTRACE=1 cargo test --features <runtime>
-```
-
-<a name="Benchmarks"></a>
-## Benchmarks
-
-The micro-benchmarks in the `benches` directory use the
-[`bencher`](https://crates.io/crates/bencher) crate and can be run on Rust
-stable releases:
-
-```shell
-$ export AEROSPIKE_HOSTS=127.0.0.1:3000
-$ cargo bench
-```
-
-There is a separate benchmark tool under the
-[tools/benchmark](tools/benchmark) directory that is designed to
-insert data into an Aerospike server cluster and generate load.
+This project is licensed under [MIT License](LICENSE) (or <http://opensource.org/licenses/MIT>).

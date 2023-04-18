@@ -6,5 +6,11 @@ exceptions = [
 
 [bans]
 skip = [
+    { name = "bitflags", version = "=1.3.2" },
+    { name = "hermit-abi", version = "=0.2.6" },
+    { name = "quick-error", version = "=1.2.3" },
     { name = "syn", version = "=1.0.109" },
+]
+skip-tree = [
+    { name = "windows-sys", version = "=0.45.0", depth = 3 },
 ]
