@@ -30,7 +30,7 @@ use crate::{
 /// Each record may have multiple bins, unless the Aerospike server nodes are configured as
 /// "single-bin". In "multi-bin" mode, partial records may be written or read by specifying the
 /// relevant subset of bins.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Client {
     cluster: Arc<Cluster>,
 }
