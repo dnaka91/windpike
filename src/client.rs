@@ -606,7 +606,7 @@ impl Client {
         }
 
         if before_nanos > 0 {
-            let _ = write!(cmd, ";lut={before_nanos}");
+            write!(cmd, ";lut={before_nanos}").ok();
         }
 
         self.send_info_cmd(&cmd)
