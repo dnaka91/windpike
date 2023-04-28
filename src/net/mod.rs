@@ -1,13 +1,13 @@
 pub use self::{
     connection::Connection,
-    connection_pool::{ConnectionPool, PooledConnection},
     host::{Host, ToHosts},
+    pool::{Pool, PooledConnection},
 };
 
 mod connection;
-mod connection_pool;
-pub mod host;
+mod host;
 mod parser;
+mod pool;
 
 type Result<T, E = NetError> = std::result::Result<T, E>;
 

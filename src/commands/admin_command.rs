@@ -48,16 +48,16 @@ impl AdminCommand {
         Self {}
     }
 
-    async fn execute(mut conn: PooledConnection) -> Result<()> {
+    async fn execute(mut conn: PooledConnection<'_>) -> Result<()> {
         // Send command.
         if let Err(err) = conn.flush().await {
-            conn.invalidate().await;
+            conn.close().await;
             return Err(err.into());
         }
 
         // read header
         if let Err(err) = conn.read_buffer(HEADER_SIZE).await {
-            conn.invalidate().await;
+            conn.close().await;
             return Err(err.into());
         }
 

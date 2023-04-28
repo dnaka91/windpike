@@ -13,7 +13,7 @@ use tracing::error;
 use super::{node_validator::NodeValidator, ClusterError, NodeError, NodeRefreshError, Result};
 use crate::{
     commands::Message,
-    net::{ConnectionPool, Host, NetError, PooledConnection},
+    net::{Host, NetError, Pool, PooledConnection},
     policy::ClientPolicy,
 };
 
@@ -29,7 +29,7 @@ pub struct Node {
     aliases: RwLock<Vec<Host>>,
     address: String,
 
-    connection_pool: ConnectionPool,
+    connection_pool: Pool,
     failures: AtomicUsize,
 
     partition_generation: AtomicIsize,
@@ -43,10 +43,9 @@ pub struct Node {
 }
 
 impl Node {
-    #[must_use]
-    pub fn new(client_policy: ClientPolicy, nv: &NodeValidator) -> Self {
-        Self {
-            connection_pool: ConnectionPool::new(&nv.aliases[0], &client_policy),
+    pub async fn new(client_policy: ClientPolicy, nv: &NodeValidator) -> Result<Self, NetError> {
+        Ok(Self {
+            connection_pool: Pool::new(nv.aliases[0].clone(), client_policy.clone()).await?,
             client_policy,
             name: nv.name.clone(),
             aliases: RwLock::new(nv.aliases.clone()),
@@ -62,7 +61,7 @@ impl Node {
 
             supports_float: nv.supports_float,
             supports_geo: nv.supports_geo,
-        }
+        })
     }
 
     // Returns the Node address
@@ -231,7 +230,7 @@ impl Node {
     }
 
     // Get a connection to the node from the connection pool
-    pub async fn get_connection(&self) -> Result<PooledConnection, NetError> {
+    pub async fn get_connection(&self) -> Result<PooledConnection<'_>, NetError> {
         self.connection_pool.get().await
     }
 
@@ -270,19 +269,13 @@ impl Node {
         self.reference_count.fetch_add(1, Ordering::Relaxed);
     }
 
-    // Set the node inactive and close all connections in the pool
-    pub async fn close(&mut self) {
-        self.inactivate();
-        self.connection_pool.close().await;
-    }
-
     // Send info commands to this node
     pub async fn info(&self, commands: &[&str]) -> Result<HashMap<String, String>> {
         let mut conn = self.get_connection().await?;
         match Message::info(&mut conn, commands).await {
             Ok(info) => Ok(info),
             Err(e) => {
-                conn.invalidate().await;
+                conn.close().await;
                 Err(e.into())
             }
         }

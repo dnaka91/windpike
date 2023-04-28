@@ -17,14 +17,13 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Connection {
-    _timeout: Option<Duration>,
-
     // duration after which connection is considered idle
     idle_timeout: Option<Duration>,
     idle_deadline: Option<Instant>,
 
     // connection object
     conn: TcpStream,
+    active: bool,
 
     bytes_read: usize,
 
@@ -40,8 +39,8 @@ impl Connection {
         let mut conn = Self {
             buffer: Buffer::new(policy.buffer_reclaim_threshold),
             bytes_read: 0,
-            _timeout: policy.timeout,
             conn: stream.unwrap()?,
+            active: true,
             idle_timeout: policy.idle_timeout,
             idle_deadline: policy.idle_timeout.map(|timeout| Instant::now() + timeout),
         };
@@ -50,8 +49,13 @@ impl Connection {
         Ok(conn)
     }
 
+    pub(super) fn active(&self) -> bool {
+        self.active
+    }
+
     pub async fn close(&mut self) {
-        let _s = self.conn.shutdown().await;
+        self.active = false;
+        self.conn.shutdown().await.ok();
     }
 
     pub async fn flush(&mut self) -> Result<()> {

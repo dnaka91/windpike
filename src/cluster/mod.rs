@@ -23,7 +23,10 @@ pub use self::node::Node;
 use self::{
     node_validator::NodeValidator, partition::Partition, partition_tokenizer::PartitionTokenizer,
 };
-use crate::{net::Host, policy::ClientPolicy};
+use crate::{
+    net::{Host, NetError},
+    policy::ClientPolicy,
+};
 
 type Result<T, E = ClusterError> = std::result::Result<T, E>;
 
@@ -158,7 +161,7 @@ impl Cluster {
         // If active nodes don't exist, seed cluster.
         if nodes.is_empty() {
             debug!("No connections available; seeding...");
-            self.seed_nodes().await;
+            self.seed_nodes().await?;
             nodes = self.nodes().await;
         }
 
@@ -190,13 +193,13 @@ impl Cluster {
         }
 
         // Add nodes in a batch.
-        let add_list = self.find_new_nodes_to_add(friend_list).await;
+        let add_list = self.find_new_nodes_to_add(friend_list).await?;
         self.add_nodes_and_aliases(&add_list).await;
 
         // IMPORTANT: Remove must come after add to remove aliases
         // Handle nodes changes determined from refreshes.
         // Remove nodes in a batch.
-        let remove_list = self.find_nodes_to_remove(refresh_count).await;
+        let remove_list = self.find_nodes_to_remove(refresh_count).await?;
         self.remove_nodes_and_aliases(remove_list).await;
 
         Ok(())
@@ -280,12 +283,14 @@ impl Cluster {
     }
 
     pub async fn update_partitions(&self, node: Arc<Node>) -> Result<()> {
-        let mut conn = node.get_connection().await?;
-        let tokens = match PartitionTokenizer::new(&mut conn).await {
-            Ok(tokens) => tokens,
-            Err(e) => {
-                conn.invalidate().await;
-                return Err(e);
+        let tokens = {
+            let mut conn = node.get_connection().await?;
+            match PartitionTokenizer::new(&mut conn).await {
+                Ok(tokens) => tokens,
+                Err(e) => {
+                    conn.close().await;
+                    return Err(e);
+                }
             }
         };
 
@@ -295,7 +300,7 @@ impl Cluster {
         Ok(())
     }
 
-    pub async fn seed_nodes(&self) -> bool {
+    pub async fn seed_nodes(&self) -> Result<bool, NetError> {
         let seed_array = self.seeds.read().await;
 
         debug!(seeds_count = seed_array.len(), "Seeding the cluster");
@@ -324,7 +329,7 @@ impl Cluster {
                     continue;
                 }
 
-                let node = self.create_node(&nv);
+                let node = self.create_node(&nv).await?;
                 let node = Arc::new(node);
                 self.add_aliases(Arc::clone(&node)).await;
                 list.push(node);
@@ -332,14 +337,14 @@ impl Cluster {
         }
 
         self.add_nodes_and_aliases(&list).await;
-        !list.is_empty()
+        Ok(!list.is_empty())
     }
 
     fn find_node_name(list: &[Arc<Node>], name: &str) -> bool {
         list.iter().any(|node| node.name() == name)
     }
 
-    async fn find_new_nodes_to_add(&self, hosts: Vec<Host>) -> Vec<Arc<Node>> {
+    async fn find_new_nodes_to_add(&self, hosts: Vec<Host>) -> Result<Vec<Arc<Node>>, NetError> {
         let mut list: Vec<Arc<Node>> = vec![];
 
         for host in hosts {
@@ -368,19 +373,19 @@ impl Cluster {
             };
 
             if !dup {
-                let node = self.create_node(&nv);
+                let node = self.create_node(&nv).await?;
                 list.push(Arc::new(node));
             }
         }
 
-        list
+        Ok(list)
     }
 
-    fn create_node(&self, nv: &NodeValidator) -> Node {
-        Node::new(self.client_policy.clone(), nv)
+    async fn create_node(&self, nv: &NodeValidator) -> Result<Node, NetError> {
+        Node::new(self.client_policy.clone(), nv).await
     }
 
-    async fn find_nodes_to_remove(&self, refresh_count: usize) -> Vec<Arc<Node>> {
+    async fn find_nodes_to_remove(&self, refresh_count: usize) -> Result<Vec<Arc<Node>>, NetError> {
         let nodes = self.nodes().await;
         let mut remove_list: Vec<Arc<Node>> = vec![];
         let cluster_size = nodes.len();
@@ -396,7 +401,7 @@ impl Cluster {
                 // Single node clusters rely on whether it responded to info requests.
                 1 if node.failures() > 5 => {
                     // 5 consecutive info requests failed. Try seeds.
-                    if self.seed_nodes().await {
+                    if self.seed_nodes().await? {
                         remove_list.push(tnode);
                     }
                 }
@@ -425,7 +430,7 @@ impl Cluster {
             }
         }
 
-        remove_list
+        Ok(remove_list)
     }
 
     async fn add_nodes_and_aliases(&self, friend_list: &[Arc<Node>]) {
@@ -439,9 +444,6 @@ impl Cluster {
         for node in &mut nodes_to_remove {
             for alias in node.aliases().await {
                 self.remove_alias(&alias).await;
-            }
-            if let Some(node) = Arc::get_mut(node) {
-                node.close().await;
             }
         }
         self.remove_nodes(&nodes_to_remove).await;
@@ -487,14 +489,10 @@ impl Cluster {
             return;
         }
 
-        let nodes = self
-            .nodes()
+        self.nodes
+            .write()
             .await
-            .into_iter()
-            .filter(|node| nodes_to_remove.iter().all(|rem| rem.name() != node.name()))
-            .collect();
-
-        self.set_nodes(nodes).await;
+            .retain(|node| nodes_to_remove.iter().all(|rem| rem.name() != node.name()));
     }
 
     pub async fn is_connected(&self) -> bool {

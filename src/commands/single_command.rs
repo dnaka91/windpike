@@ -94,7 +94,7 @@ impl<'a> SingleCommand<'a> {
             if let Err(err) = conn.flush().await {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
-                conn.invalidate().await;
+                conn.close().await;
                 warn!(?node, %err, "Node");
                 continue;
             }
@@ -106,7 +106,7 @@ impl<'a> SingleCommand<'a> {
                 // close the connection to throw away its data and signal the server about the
                 // situation. We will not put back the connection in the buffer.
                 if !super::keep_connection(&err) {
-                    conn.invalidate().await;
+                    conn.close().await;
                 }
                 return Err(err);
             }

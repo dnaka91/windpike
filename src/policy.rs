@@ -264,13 +264,7 @@ pub struct ClientPolicy {
     pub idle_timeout: Option<Duration>,
 
     /// Maximum number of synchronous connections allowed per server node.
-    pub max_conns_per_node: usize,
-
-    /// Number of connection pools used for each node. Machines with 8 CPU cores or less usually
-    /// need only one connection pool per node. Machines with larger number of CPU cores may have
-    /// their performance limited by contention for pooled connections. Contention for pooled
-    /// connections can be reduced by creating multiple mini connection pools per node.
-    pub conn_pools_per_node: usize,
+    pub max_conns_per_node: u32,
 
     /// Throw exception if host connection fails during addHost().
     pub fail_if_not_connected: bool,
@@ -322,7 +316,6 @@ impl Default for ClientPolicy {
             timeout: Some(Duration::new(30, 0)),
             idle_timeout: Some(Duration::new(5, 0)),
             max_conns_per_node: 256,
-            conn_pools_per_node: 1,
             fail_if_not_connected: true,
             tend_interval: Duration::new(1, 0),
             ip_map: None,
