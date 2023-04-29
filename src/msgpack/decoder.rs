@@ -5,7 +5,7 @@ use tracing::warn;
 use super::{Marker, MsgpackError, Result};
 use crate::{
     commands::{buffer::Buffer, ParticleType},
-    value::Value,
+    value::{MapKey, Value},
 };
 
 pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
@@ -52,9 +52,9 @@ fn unpack_map(buf: &mut Buffer, mut count: usize) -> Result<Value> {
         count -= 1;
     }
 
-    let mut map: HashMap<Value, Value> = HashMap::with_capacity(count);
+    let mut map = HashMap::with_capacity(count);
     for _ in 0..count {
-        let key = unpack_value(buf)?;
+        let key = unpack_map_key(buf)?;
         let val = unpack_value(buf)?;
         map.insert(key, val);
     }
@@ -77,6 +77,49 @@ fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
             Ok(Value::GeoJson(val))
         }
         _ => Err(MsgpackError::UnrecognizedCode(vtype)),
+    }
+}
+
+fn unpack_string(buf: &mut Buffer, count: usize) -> Result<String> {
+    let vtype = buf.read_u8();
+    let count = count - 1;
+
+    match ParticleType::try_from(vtype)? {
+        ParticleType::String => buf.read_str(count).map_err(Into::into),
+        _ => Err(MsgpackError::UnrecognizedCode(vtype)),
+    }
+}
+
+fn unpack_map_key(buf: &mut Buffer) -> Result<MapKey> {
+    let marker = buf.read_u8();
+
+    match Marker::from(marker) {
+        Marker::Pfix(value) => Ok(MapKey::from(value)),
+        Marker::FixStr(len) => unpack_string(buf, len as usize).map(Into::into),
+        Marker::Bin8 | Marker::Str8 => {
+            let count = buf.read_u8();
+            unpack_string(buf, count as usize).map(Into::into)
+        }
+        Marker::Bin16 | Marker::Str16 => {
+            let count = buf.read_u16();
+            unpack_string(buf, count as usize).map(Into::into)
+        }
+        Marker::Bin32 | Marker::Str32 => {
+            let count = buf.read_u32();
+            unpack_string(buf, count as usize).map(Into::into)
+        }
+        Marker::F32 => Ok(MapKey::from(buf.read_f32())),
+        Marker::F64 => Ok(MapKey::from(buf.read_f64())),
+        Marker::U8 => Ok(MapKey::from(buf.read_u8())),
+        Marker::U16 => Ok(MapKey::from(buf.read_u16())),
+        Marker::U32 => Ok(MapKey::from(buf.read_u32())),
+        Marker::U64 => Ok(MapKey::from(buf.read_u64())),
+        Marker::I8 => Ok(MapKey::from(buf.read_i8())),
+        Marker::I16 => Ok(MapKey::from(buf.read_i16())),
+        Marker::I32 => Ok(MapKey::from(buf.read_i32())),
+        Marker::I64 => Ok(MapKey::from(buf.read_i64())),
+        Marker::Nfix(value) => Ok(MapKey::from(value)),
+        _ => Err(MsgpackError::InvalidMarker(marker)),
     }
 }
 

@@ -2,7 +2,7 @@ use windpike::{
     as_list,
     operations::{hll, hll::HllPolicy},
     policy::{BasePolicy, WritePolicy},
-    Bins, FloatValue, Key, Value,
+    Bins, Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};
@@ -112,7 +112,7 @@ async fn hll() {
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
-        Value::Float(FloatValue::F64(4602678819172646912)),
+        Value::from(0.5),
         "Similarity failed"
     );
 

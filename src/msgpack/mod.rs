@@ -21,6 +21,8 @@ pub enum MsgpackError {
     UnrecognizedCode(u8),
     #[error("Buffer error")]
     Buffer(#[from] crate::commands::buffer::BufferError),
+    #[error("the marker `{0}` isn't valid for the data type")]
+    InvalidMarker(u8),
 }
 
 pub(crate) trait Write {

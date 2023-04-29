@@ -119,7 +119,7 @@ pub use net::{Host, ToHosts};
 pub use record::{Record, RecordSet};
 pub use result_code::ResultCode;
 pub use user::User;
-pub use value::{FloatValue, Value};
+pub use value::{FloatValue, MapKey, Value};
 
 mod batch;
 mod bin;

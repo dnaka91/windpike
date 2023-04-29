@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{commands::ParticleType, msgpack, operations::cdt_context::CdtContext, Value};
+use crate::{
+    commands::ParticleType, msgpack, operations::cdt_context::CdtContext, value::MapKey, Value,
+};
 
 pub(crate) enum CdtArgument<'a> {
     Byte(u8),
@@ -8,7 +10,7 @@ pub(crate) enum CdtArgument<'a> {
     Bool(bool),
     Value(&'a Value),
     List(&'a [Value]),
-    Map(&'a HashMap<Value, Value>),
+    Map(&'a HashMap<MapKey, Value>),
 }
 
 #[derive(Clone, Copy)]

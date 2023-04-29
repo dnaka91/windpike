@@ -50,8 +50,8 @@ async fn map_operations() {
     );
 
     let mut items = HashMap::new();
-    items.insert(Value::from("d"), Value::from(4));
-    items.insert(Value::from("e"), Value::from(5));
+    items.insert("d".into(), 4.into());
+    items.insert("e".into(), 5.into());
     let op = maps::put_items(mpolicy, bin_name, &items);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
     // returns size of map after put

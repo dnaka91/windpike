@@ -34,6 +34,7 @@ use crate::{
         cdt_context::DEFAULT_CTX,
         Operation, OperationBin, OperationData, OperationType,
     },
+    value::MapKey,
     Value,
 };
 
@@ -267,7 +268,7 @@ pub fn put<'a>(policy: MapPolicy, bin: &'a str, key: &'a Value, val: &'a Value) 
 pub fn put_items<'a>(
     policy: MapPolicy,
     bin: &'a str,
-    items: &'a HashMap<Value, Value>,
+    items: &'a HashMap<MapKey, Value>,
 ) -> Operation<'a> {
     let mut args = vec![CdtArgument::Map(items)];
     if let Some(arg) = map_order_arg(policy) {

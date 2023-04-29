@@ -1,10 +1,6 @@
-use std::{
-    collections::HashMap,
-    fmt,
-    hash::{Hash, Hasher},
-    result::Result as StdResult,
-    vec::Vec,
-};
+use std::{collections::HashMap, fmt, result::Result as StdResult, vec::Vec};
+
+pub use ordered_float::OrderedFloat;
 
 use crate::{
     commands::{
@@ -19,75 +15,187 @@ use crate::{
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum FloatValue {
     /// Container for single precision float values.
-    F32(u32),
+    F32(OrderedFloat<f32>),
     /// Container for double precision float values.
-    F64(u64),
+    F64(OrderedFloat<f64>),
 }
 
 impl FloatValue {
+    #[inline]
     #[must_use]
     pub fn as_f32(&self) -> Option<f32> {
         match self {
-            Self::F32(val) => Some(f32::from_bits(*val)),
+            Self::F32(value) => Some(value.0),
             Self::F64(_) => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
         match self {
             Self::F32(_) => None,
-            Self::F64(val) => Some(f64::from_bits(*val)),
+            Self::F64(value) => Some(value.0),
         }
     }
 }
 
-impl From<f64> for FloatValue {
-    fn from(val: f64) -> Self {
-        let mut val = val;
-        if val.is_nan() {
-            val = f64::NAN;
-        } // make all NaNs have the same representation
-        Self::F64(val.to_bits())
-    }
-}
-
-impl<'a> From<&'a f64> for FloatValue {
-    fn from(val: &f64) -> Self {
-        let mut val = *val;
-        if val.is_nan() {
-            val = f64::NAN;
-        } // make all NaNs have the same representation
-        Self::F64(val.to_bits())
-    }
-}
-
 impl From<f32> for FloatValue {
-    fn from(val: f32) -> Self {
-        let mut val = val;
-        if val.is_nan() {
-            val = f32::NAN;
-        } // make all NaNs have the same representation
-        Self::F32(val.to_bits())
+    fn from(value: f32) -> Self {
+        Self::F32(value.into())
     }
 }
 
-impl<'a> From<&'a f32> for FloatValue {
-    fn from(val: &f32) -> Self {
-        let mut val = *val;
-        if val.is_nan() {
-            val = f32::NAN;
-        } // make all NaNs have the same representation
-        Self::F32(val.to_bits())
+impl From<f64> for FloatValue {
+    fn from(value: f64) -> Self {
+        Self::F64(value.into())
     }
 }
 
 impl fmt::Display for FloatValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::F32(val) => f32::from_bits(val).fmt(f),
-            Self::F64(val) => f64::from_bits(val).fmt(f),
+            Self::F32(value) => value.fmt(f),
+            Self::F64(value) => value.fmt(f),
         }
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MapKey {
+    Int(i64),
+    Uint(u64),
+    Float(FloatValue),
+    String(String),
+}
+
+impl MapKey {
+    #[inline]
+    #[must_use]
+    pub fn as_i64(&self) -> Option<i64> {
+        match self {
+            Self::Int(value) => Some(*value),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn as_u64(&self) -> Option<u64> {
+        match self {
+            Self::Uint(value) => Some(*value),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn as_f32(&self) -> Option<f32> {
+        match self {
+            Self::Float(value) => value.as_f32(),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            Self::Float(value) => value.as_f64(),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
+impl From<i8> for MapKey {
+    fn from(value: i8) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<i16> for MapKey {
+    fn from(value: i16) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<i32> for MapKey {
+    fn from(value: i32) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<i64> for MapKey {
+    fn from(value: i64) -> Self {
+        Self::Int(value)
+    }
+}
+
+impl From<isize> for MapKey {
+    fn from(value: isize) -> Self {
+        Self::Int(value as i64)
+    }
+}
+
+impl From<u8> for MapKey {
+    fn from(value: u8) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<u16> for MapKey {
+    fn from(value: u16) -> Self {
+        Self::Int(value.into())
+    }
+}
+impl From<u32> for MapKey {
+    fn from(value: u32) -> Self {
+        Self::Int(value.into())
+    }
+}
+
+impl From<u64> for MapKey {
+    fn from(value: u64) -> Self {
+        Self::Uint(value)
+    }
+}
+
+impl From<usize> for MapKey {
+    fn from(value: usize) -> Self {
+        Self::Uint(value as u64)
+    }
+}
+
+impl From<f32> for MapKey {
+    fn from(value: f32) -> Self {
+        Self::Float(value.into())
+    }
+}
+
+impl From<f64> for MapKey {
+    fn from(value: f64) -> Self {
+        Self::Float(value.into())
+    }
+}
+
+impl From<&str> for MapKey {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_owned())
+    }
+}
+
+impl From<String> for MapKey {
+    fn from(value: String) -> Self {
+        Self::String(value)
     }
 }
 
@@ -122,35 +230,15 @@ pub enum Value {
     /// Map data type is a collection of key-value pairs. Each key can only appear once in a
     /// collection and is associated with a value. Map keys and values can be any supported data
     /// type.
-    HashMap(HashMap<Value, Value>),
+    HashMap(HashMap<MapKey, Value>),
     /// Map data type where the map entries are sorted based key ordering (K-ordered maps) and may
     /// have an additional value-order index depending the namespace configuration (KV-ordered
     /// maps).
-    OrderedMap(Vec<(Value, Value)>),
+    OrderedMap(Vec<(MapKey, Value)>),
     /// GeoJSON data type are JSON formatted strings to encode geospatial information.
     GeoJson(String),
     /// HLL value
     Hll(Vec<u8>),
-}
-
-#[allow(clippy::derived_hash_with_manual_eq)]
-impl Hash for Value {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            Self::Nil => {
-                Option::<u8>::None.hash(state);
-            }
-            Self::Bool(val) => val.hash(state),
-            Self::Int(val) => val.hash(state),
-            Self::Uint(val) => val.hash(state),
-            Self::Float(val) => val.hash(state),
-            Self::String(val) | Self::GeoJson(val) => val.hash(state),
-            Self::Blob(val) | Self::Hll(val) => val.hash(state),
-            Self::List(val) => val.hash(state),
-            Self::HashMap(_) => panic!("HashMaps cannot be used as map keys."),
-            Self::OrderedMap(_) => panic!("OrderedMaps cannot be used as map keys."),
-        }
-    }
 }
 
 impl Value {
@@ -177,90 +265,101 @@ impl Value {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn as_bool(&self) -> Option<bool> {
         match self {
-            Self::Bool(val) => Some(*val),
+            Self::Bool(value) => Some(*value),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn as_i64(&self) -> Option<i64> {
         match self {
-            Self::Int(val) => Some(*val),
+            Self::Int(value) => Some(*value),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn as_u64(&self) -> Option<u64> {
         match self {
-            Self::Uint(val) => Some(*val),
+            Self::Uint(value) => Some(*value),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn as_f32(&self) -> Option<f32> {
         match self {
-            Self::Float(val) => val.as_f32(),
+            Self::Float(value) => value.as_f32(),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
         match self {
-            Self::Float(val) => val.as_f64(),
+            Self::Float(value) => value.as_f64(),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
         match self {
-            Self::String(val) => Some(val.as_str()),
+            Self::String(value) => Some(value.as_str()),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> Option<&[u8]> {
         match self {
-            Self::Blob(val) => Some(val.as_slice()),
+            Self::Blob(value) => Some(value.as_slice()),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn as_list(&self) -> Option<&[Value]> {
         match self {
-            Self::List(val) => Some(val.as_slice()),
+            Self::List(value) => Some(value.as_slice()),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn into_string(self) -> Option<String> {
         match self {
-            Self::String(val) => Some(val),
+            Self::String(value) => Some(value),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn into_bytes(self) -> Option<Vec<u8>> {
         match self {
-            Self::Blob(val) => Some(val),
+            Self::Blob(value) => Some(value),
             _ => None,
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn into_list(self) -> Option<Vec<Value>> {
         match self {
-            Self::List(val) => Some(val),
+            Self::List(value) => Some(value),
             _ => None,
         }
     }
@@ -290,21 +389,21 @@ impl Value {
     pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
         match self {
             Self::Nil => 0,
-            Self::Bool(val) => w.write_bool(*val),
-            Self::Int(val) => w.write_i64(*val),
+            Self::Bool(value) => w.write_bool(*value),
+            Self::Int(value) => w.write_i64(*value),
             Self::Uint(_) => panic!(
                 "Aerospike does not support u64 natively on server-side. Use casting to store and \
                  retrieve u64 values."
             ),
-            Self::Float(val) => w.write_f64(match val {
-                FloatValue::F32(val) => f64::from(f32::from_bits(*val)),
-                FloatValue::F64(val) => f64::from_bits(*val),
-            }),
-            Self::String(val) => w.write_str(val),
-            Self::Blob(val) | Self::Hll(val) => w.write_bytes(val),
+            Self::Float(value) => match value {
+                FloatValue::F32(value) => w.write_f32(value.0),
+                FloatValue::F64(value) => w.write_f64(value.0),
+            },
+            Self::String(value) => w.write_str(value),
+            Self::Blob(value) | Self::Hll(value) => w.write_bytes(value),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(w, self),
             Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
-            Self::GeoJson(val) => w.write_geo(val),
+            Self::GeoJson(value) => w.write_geo(value),
         }
     }
 }
@@ -313,220 +412,146 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> StdResult<(), fmt::Error> {
         match self {
             Self::Nil => f.write_str("<null>"),
-            Self::Int(val) => val.fmt(f),
-            Self::Uint(val) => val.fmt(f),
-            Self::Bool(val) => val.fmt(f),
-            Self::Float(val) => val.fmt(f),
-            Self::String(val) | Self::GeoJson(val) => val.fmt(f),
-            Self::Blob(val) | Self::Hll(val) => write!(f, "{val:?}"),
-            Self::List(val) => write!(f, "{val:?}"),
-            Self::HashMap(val) => write!(f, "{val:?}"),
-            Self::OrderedMap(val) => write!(f, "{val:?}"),
+            Self::Int(value) => value.fmt(f),
+            Self::Uint(value) => value.fmt(f),
+            Self::Bool(value) => value.fmt(f),
+            Self::Float(value) => value.fmt(f),
+            Self::String(value) | Self::GeoJson(value) => value.fmt(f),
+            Self::Blob(value) | Self::Hll(value) => write!(f, "{value:?}"),
+            Self::List(value) => write!(f, "{value:?}"),
+            Self::HashMap(value) => write!(f, "{value:?}"),
+            Self::OrderedMap(value) => write!(f, "{value:?}"),
         }
     }
 }
 
-impl From<String> for Value {
-    fn from(val: String) -> Self {
-        Self::String(val)
-    }
-}
-
-impl From<Vec<u8>> for Value {
-    fn from(val: Vec<u8>) -> Self {
-        Self::Blob(val)
-    }
-}
-
-impl From<Vec<Self>> for Value {
-    fn from(val: Vec<Self>) -> Self {
-        Self::List(val)
-    }
-}
-
-impl From<HashMap<Self, Self>> for Value {
-    fn from(val: HashMap<Self, Self>) -> Self {
-        Self::HashMap(val)
-    }
-}
-
-impl From<f32> for Value {
-    fn from(val: f32) -> Self {
-        Self::Float(FloatValue::from(val))
-    }
-}
-
-impl From<f64> for Value {
-    fn from(val: f64) -> Self {
-        Self::Float(FloatValue::from(val))
-    }
-}
-
-impl<'a> From<&'a f32> for Value {
-    fn from(val: &'a f32) -> Self {
-        Self::Float(FloatValue::from(*val))
-    }
-}
-
-impl<'a> From<&'a f64> for Value {
-    fn from(val: &'a f64) -> Self {
-        Self::Float(FloatValue::from(*val))
-    }
-}
-
-impl<'a> From<&'a String> for Value {
-    fn from(val: &'a String) -> Self {
-        Self::String(val.clone())
-    }
-}
-
-impl<'a> From<&'a str> for Value {
-    fn from(val: &'a str) -> Self {
-        Self::String(val.to_owned())
-    }
-}
-
-impl<'a> From<&'a Vec<u8>> for Value {
-    fn from(val: &'a Vec<u8>) -> Self {
-        Self::Blob(val.clone())
-    }
-}
-
-impl<'a> From<&'a [u8]> for Value {
-    fn from(val: &'a [u8]) -> Self {
-        Self::Blob(val.to_vec())
-    }
-}
-
 impl From<bool> for Value {
-    fn from(val: bool) -> Self {
-        Self::Bool(val)
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
     }
 }
 
 impl From<i8> for Value {
-    fn from(val: i8) -> Self {
-        Self::Int(i64::from(val))
-    }
-}
-
-impl From<u8> for Value {
-    fn from(val: u8) -> Self {
-        Self::Int(i64::from(val))
+    fn from(value: i8) -> Self {
+        Self::Int(i64::from(value))
     }
 }
 
 impl From<i16> for Value {
-    fn from(val: i16) -> Self {
-        Self::Int(i64::from(val))
-    }
-}
-
-impl From<u16> for Value {
-    fn from(val: u16) -> Self {
-        Self::Int(i64::from(val))
+    fn from(value: i16) -> Self {
+        Self::Int(i64::from(value))
     }
 }
 
 impl From<i32> for Value {
-    fn from(val: i32) -> Self {
-        Self::Int(i64::from(val))
-    }
-}
-
-impl From<u32> for Value {
-    fn from(val: u32) -> Self {
-        Self::Int(i64::from(val))
+    fn from(value: i32) -> Self {
+        Self::Int(i64::from(value))
     }
 }
 
 impl From<i64> for Value {
-    fn from(val: i64) -> Self {
-        Self::Int(val)
-    }
-}
-
-impl From<u64> for Value {
-    fn from(val: u64) -> Self {
-        Self::Uint(val)
+    fn from(value: i64) -> Self {
+        Self::Int(value)
     }
 }
 
 impl From<isize> for Value {
-    fn from(val: isize) -> Self {
-        Self::Int(val as i64)
+    fn from(value: isize) -> Self {
+        Self::Int(value as i64)
+    }
+}
+
+impl From<u8> for Value {
+    fn from(value: u8) -> Self {
+        Self::Int(i64::from(value))
+    }
+}
+
+impl From<u16> for Value {
+    fn from(value: u16) -> Self {
+        Self::Int(i64::from(value))
+    }
+}
+impl From<u32> for Value {
+    fn from(value: u32) -> Self {
+        Self::Int(i64::from(value))
+    }
+}
+
+impl From<u64> for Value {
+    fn from(value: u64) -> Self {
+        Self::Uint(value)
     }
 }
 
 impl From<usize> for Value {
-    fn from(val: usize) -> Self {
-        Self::Uint(val as u64)
+    fn from(value: usize) -> Self {
+        Self::Uint(value as u64)
     }
 }
 
-impl<'a> From<&'a i8> for Value {
-    fn from(val: &'a i8) -> Self {
-        Self::Int(i64::from(*val))
+impl From<f32> for Value {
+    fn from(value: f32) -> Self {
+        Self::Float(value.into())
     }
 }
 
-impl<'a> From<&'a u8> for Value {
-    fn from(val: &'a u8) -> Self {
-        Self::Int(i64::from(*val))
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Self::Float(value.into())
     }
 }
 
-impl<'a> From<&'a i16> for Value {
-    fn from(val: &'a i16) -> Self {
-        Self::Int(i64::from(*val))
+impl From<FloatValue> for Value {
+    fn from(value: FloatValue) -> Self {
+        Self::Float(value)
     }
 }
 
-impl<'a> From<&'a u16> for Value {
-    fn from(val: &'a u16) -> Self {
-        Self::Int(i64::from(*val))
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_owned())
     }
 }
 
-impl<'a> From<&'a i32> for Value {
-    fn from(val: &'a i32) -> Self {
-        Self::Int(i64::from(*val))
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Self::String(value)
     }
 }
 
-impl<'a> From<&'a u32> for Value {
-    fn from(val: &'a u32) -> Self {
-        Self::Int(i64::from(*val))
+impl From<&[u8]> for Value {
+    fn from(value: &[u8]) -> Self {
+        Self::Blob(value.to_owned())
     }
 }
 
-impl<'a> From<&'a i64> for Value {
-    fn from(val: &'a i64) -> Self {
-        Self::Int(*val)
+impl From<Vec<u8>> for Value {
+    fn from(value: Vec<u8>) -> Self {
+        Self::Blob(value)
     }
 }
 
-impl<'a> From<&'a u64> for Value {
-    fn from(val: &'a u64) -> Self {
-        Self::Uint(*val)
+impl From<Vec<Self>> for Value {
+    fn from(value: Vec<Self>) -> Self {
+        Self::List(value)
     }
 }
 
-impl<'a> From<&'a isize> for Value {
-    fn from(val: &'a isize) -> Self {
-        Self::Int(*val as i64)
+impl From<HashMap<MapKey, Self>> for Value {
+    fn from(value: HashMap<MapKey, Self>) -> Self {
+        Self::HashMap(value)
     }
 }
 
-impl<'a> From<&'a usize> for Value {
-    fn from(val: &'a usize) -> Self {
-        Self::Uint(*val as u64)
-    }
-}
-
-impl<'a> From<&'a bool> for Value {
-    fn from(val: &'a bool) -> Self {
-        Self::Bool(*val)
+impl From<MapKey> for Value {
+    fn from(value: MapKey) -> Self {
+        match value {
+            MapKey::Int(value) => value.into(),
+            MapKey::Uint(value) => value.into(),
+            MapKey::Float(value) => value.into(),
+            MapKey::String(value) => value.into(),
+        }
     }
 }
 
@@ -563,8 +588,8 @@ pub(crate) fn bytes_to_particle(
             let header_size = ncells * 8;
 
             buf.advance(header_size);
-            let val = buf.read_str(len - header_size - 3)?;
-            Ok(Value::GeoJson(val))
+            let value = buf.read_str(len - header_size - 3)?;
+            Ok(Value::GeoJson(value))
         }
     }
 }

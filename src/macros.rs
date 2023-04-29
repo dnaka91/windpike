@@ -83,7 +83,7 @@ macro_rules! as_map {
     ($($k:expr => $v:expr),*) => {{
         $crate::Value::HashMap(
             std::collections::HashMap::from([
-                $(($crate::Value::from($k), $crate::Value::from($v)),)*
+                $(($crate::MapKey::from($k), $crate::Value::from($v)),)*
             ])
         )
     }};

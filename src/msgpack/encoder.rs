@@ -7,8 +7,20 @@ use crate::{
         cdt::{CdtArgument, CdtOperation},
         cdt_context::CdtContext,
     },
-    value::{FloatValue, Value},
+    value::{FloatValue, MapKey, Value},
 };
+
+pub(crate) fn pack_map_key(w: &mut impl Write, val: &MapKey) -> usize {
+    match val {
+        MapKey::Int(val) => pack_integer(w, *val),
+        MapKey::Uint(val) => pack_u64(w, *val),
+        MapKey::Float(val) => match val {
+            FloatValue::F64(val) => pack_f64(w, val.0),
+            FloatValue::F32(val) => pack_f32(w, val.0),
+        },
+        MapKey::String(val) => pack_string(w, val),
+    }
+}
 
 pub(crate) fn pack_value(w: &mut impl Write, val: &Value) -> usize {
     match val {
@@ -18,8 +30,8 @@ pub(crate) fn pack_value(w: &mut impl Write, val: &Value) -> usize {
         Value::Bool(val) => pack_bool(w, *val),
         Value::String(val) => pack_string(w, val),
         Value::Float(val) => match val {
-            FloatValue::F64(val) => pack_f64(w, f64::from_bits(*val)),
-            FloatValue::F32(val) => pack_f32(w, f32::from_bits(*val)),
+            FloatValue::F64(val) => pack_f64(w, val.0),
+            FloatValue::F32(val) => pack_f32(w, val.0),
         },
         Value::Blob(val) | Value::Hll(val) => pack_blob(w, val),
         Value::List(val) => pack_array(w, val),
@@ -141,11 +153,11 @@ fn pack_array(w: &mut impl Write, values: &[Value]) -> usize {
     pack_array_begin(w, values.len()) + values.iter().map(|val| pack_value(w, val)).sum::<usize>()
 }
 
-fn pack_map(w: &mut impl Write, map: &HashMap<Value, Value>) -> usize {
+fn pack_map(w: &mut impl Write, map: &HashMap<MapKey, Value>) -> usize {
     pack_map_begin(w, map.len())
         + map
             .iter()
-            .map(|(key, val)| pack_value(w, key) + pack_value(w, val))
+            .map(|(key, val)| pack_map_key(w, key) + pack_value(w, val))
             .sum::<usize>()
 }
 
