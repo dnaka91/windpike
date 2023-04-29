@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt, result::Result as StdResult, vec::Vec};
 
-pub use ordered_float::OrderedFloat;
+use ordered_float::OrderedFloat;
 
 use crate::{
     commands::{

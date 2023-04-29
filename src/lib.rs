@@ -111,15 +111,19 @@
 //! }
 //! ```
 
-pub use batch::BatchRead;
-pub use bin::{Bin, Bins};
-pub use client::Client;
-pub use key::{Key, UserKey};
-pub use net::{Host, ToHosts};
-pub use record::{Record, RecordSet};
-pub use result_code::ResultCode;
-pub use user::User;
-pub use value::{FloatValue, MapKey, Value};
+pub use ordered_float;
+
+pub use crate::{
+    batch::BatchRead,
+    bin::{Bin, Bins},
+    client::Client,
+    key::{Key, UserKey},
+    net::{Host, ToHosts},
+    record::{Record, RecordSet},
+    result_code::ResultCode,
+    user::User,
+    value::{FloatValue, MapKey, Value},
+};
 
 mod batch;
 mod bin;
