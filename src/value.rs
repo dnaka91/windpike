@@ -117,8 +117,8 @@ impl MapKey {
     }
 }
 
-from!(MapKey, Int, i8, i16, i32, i64);
-from!(MapKey, Uint, u8, u16, u32, u64);
+from!(MapKey, Int, i8, i16, i32, i64, u8, u16, u32);
+from!(MapKey, Uint, u64);
 from!(MapKey, Float, f32, f64);
 from!(MapKey, String, &str, String);
 
@@ -353,8 +353,8 @@ impl fmt::Display for Value {
 }
 
 from!(Value, Bool, bool);
-from!(Value, Int, i8, i16, i32, i64);
-from!(Value, Uint, u8, u16, u32, u64);
+from!(Value, Int, i8, i16, i32, i64, u8, u16, u32);
+from!(Value, Uint, u64);
 from!(Value, Float, f32, f64);
 from!(Value, String, &str, String);
 from!(Value, Blob, &[u8], Vec<u8>);
