@@ -11,6 +11,16 @@ use crate::{
     msgpack::{self, decoder, encoder, MsgpackError},
 };
 
+macro_rules! from {
+    ($to:ty, $variant:ident, $($from:ty),+) => {
+        $(impl From<$from> for $to {
+            fn from(value: $from) -> Self {
+                Self::$variant(value.into())
+            }
+        })+
+    };
+}
+
 /// Container for floating point bin values stored in the Aerospike database.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum FloatValue {
@@ -40,17 +50,8 @@ impl FloatValue {
     }
 }
 
-impl From<f32> for FloatValue {
-    fn from(value: f32) -> Self {
-        Self::F32(value.into())
-    }
-}
-
-impl From<f64> for FloatValue {
-    fn from(value: f64) -> Self {
-        Self::F64(value.into())
-    }
-}
+from!(FloatValue, F32, f32);
+from!(FloatValue, F64, f64);
 
 impl fmt::Display for FloatValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -116,29 +117,10 @@ impl MapKey {
     }
 }
 
-impl From<i8> for MapKey {
-    fn from(value: i8) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<i16> for MapKey {
-    fn from(value: i16) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<i32> for MapKey {
-    fn from(value: i32) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<i64> for MapKey {
-    fn from(value: i64) -> Self {
-        Self::Int(value)
-    }
-}
+from!(MapKey, Int, i8, i16, i32, i64);
+from!(MapKey, Uint, u8, u16, u32, u64);
+from!(MapKey, Float, f32, f64);
+from!(MapKey, String, &str, String);
 
 impl From<isize> for MapKey {
     fn from(value: isize) -> Self {
@@ -146,56 +128,9 @@ impl From<isize> for MapKey {
     }
 }
 
-impl From<u8> for MapKey {
-    fn from(value: u8) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<u16> for MapKey {
-    fn from(value: u16) -> Self {
-        Self::Int(value.into())
-    }
-}
-impl From<u32> for MapKey {
-    fn from(value: u32) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<u64> for MapKey {
-    fn from(value: u64) -> Self {
-        Self::Uint(value)
-    }
-}
-
 impl From<usize> for MapKey {
     fn from(value: usize) -> Self {
         Self::Uint(value as u64)
-    }
-}
-
-impl From<f32> for MapKey {
-    fn from(value: f32) -> Self {
-        Self::Float(value.into())
-    }
-}
-
-impl From<f64> for MapKey {
-    fn from(value: f64) -> Self {
-        Self::Float(value.into())
-    }
-}
-
-impl From<&str> for MapKey {
-    fn from(value: &str) -> Self {
-        Self::String(value.to_owned())
-    }
-}
-
-impl From<String> for MapKey {
-    fn from(value: String) -> Self {
-        Self::String(value)
     }
 }
 
@@ -417,62 +352,18 @@ impl fmt::Display for Value {
     }
 }
 
-impl From<bool> for Value {
-    fn from(value: bool) -> Self {
-        Self::Bool(value)
-    }
-}
-
-impl From<i8> for Value {
-    fn from(value: i8) -> Self {
-        Self::Int(i64::from(value))
-    }
-}
-
-impl From<i16> for Value {
-    fn from(value: i16) -> Self {
-        Self::Int(i64::from(value))
-    }
-}
-
-impl From<i32> for Value {
-    fn from(value: i32) -> Self {
-        Self::Int(i64::from(value))
-    }
-}
-
-impl From<i64> for Value {
-    fn from(value: i64) -> Self {
-        Self::Int(value)
-    }
-}
+from!(Value, Bool, bool);
+from!(Value, Int, i8, i16, i32, i64);
+from!(Value, Uint, u8, u16, u32, u64);
+from!(Value, Float, f32, f64);
+from!(Value, String, &str, String);
+from!(Value, Blob, &[u8], Vec<u8>);
+from!(Value, List, &[Self], Vec<Self>);
+from!(Value, HashMap, HashMap<MapKey,Self>);
 
 impl From<isize> for Value {
     fn from(value: isize) -> Self {
         Self::Int(value as i64)
-    }
-}
-
-impl From<u8> for Value {
-    fn from(value: u8) -> Self {
-        Self::Int(i64::from(value))
-    }
-}
-
-impl From<u16> for Value {
-    fn from(value: u16) -> Self {
-        Self::Int(i64::from(value))
-    }
-}
-impl From<u32> for Value {
-    fn from(value: u32) -> Self {
-        Self::Int(i64::from(value))
-    }
-}
-
-impl From<u64> for Value {
-    fn from(value: u64) -> Self {
-        Self::Uint(value)
     }
 }
 
@@ -482,57 +373,9 @@ impl From<usize> for Value {
     }
 }
 
-impl From<f32> for Value {
-    fn from(value: f32) -> Self {
-        Self::Float(value.into())
-    }
-}
-
-impl From<f64> for Value {
-    fn from(value: f64) -> Self {
-        Self::Float(value.into())
-    }
-}
-
 impl From<FloatValue> for Value {
     fn from(value: FloatValue) -> Self {
         Self::Float(value)
-    }
-}
-
-impl From<&str> for Value {
-    fn from(value: &str) -> Self {
-        Self::String(value.to_owned())
-    }
-}
-
-impl From<String> for Value {
-    fn from(value: String) -> Self {
-        Self::String(value)
-    }
-}
-
-impl From<&[u8]> for Value {
-    fn from(value: &[u8]) -> Self {
-        Self::Blob(value.to_owned())
-    }
-}
-
-impl From<Vec<u8>> for Value {
-    fn from(value: Vec<u8>) -> Self {
-        Self::Blob(value)
-    }
-}
-
-impl From<Vec<Self>> for Value {
-    fn from(value: Vec<Self>) -> Self {
-        Self::List(value)
-    }
-}
-
-impl From<HashMap<MapKey, Self>> for Value {
-    fn from(value: HashMap<MapKey, Self>) -> Self {
-        Self::HashMap(value)
     }
 }
 
