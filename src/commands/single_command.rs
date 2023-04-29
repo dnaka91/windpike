@@ -41,9 +41,6 @@ impl<'a> SingleCommand<'a> {
         Ok(())
     }
 
-    // EXECUTE
-    //
-
     pub(super) async fn execute(policy: &impl Policy, cmd: &mut impl Command) -> Result<()> {
         let mut iterations = 0;
 
