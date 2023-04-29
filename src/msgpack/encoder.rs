@@ -36,7 +36,6 @@ pub(crate) fn pack_value(w: &mut impl Write, val: &Value) -> usize {
         Value::Blob(val) | Value::Hll(val) => pack_blob(w, val),
         Value::List(val) => pack_array(w, val),
         Value::HashMap(val) => pack_map(w, val),
-        Value::OrderedMap(_) => panic!("Ordered maps are not supported in this encoder."),
         Value::GeoJson(val) => pack_geo_json(w, val),
     }
 }

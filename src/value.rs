@@ -231,10 +231,6 @@ pub enum Value {
     /// collection and is associated with a value. Map keys and values can be any supported data
     /// type.
     HashMap(HashMap<MapKey, Value>),
-    /// Map data type where the map entries are sorted based key ordering (K-ordered maps) and may
-    /// have an additional value-order index depending the namespace configuration (KV-ordered
-    /// maps).
-    OrderedMap(Vec<(MapKey, Value)>),
     /// GeoJSON data type are JSON formatted strings to encode geospatial information.
     GeoJson(String),
     /// HLL value
@@ -259,7 +255,6 @@ impl Value {
             Self::Blob(_) => ParticleType::Blob,
             Self::List(_) => ParticleType::List,
             Self::HashMap(_) => ParticleType::Map,
-            Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
             Self::GeoJson(_) => ParticleType::GeoJson,
             Self::Hll(_) => ParticleType::Hll,
         }
@@ -378,7 +373,6 @@ impl Value {
             Self::String(s) => s.len(),
             Self::Blob(b) => b.len(),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut msgpack::Sink, self),
-            Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
             Self::GeoJson(s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
             Self::Hll(h) => h.len(),
         }
@@ -402,7 +396,6 @@ impl Value {
             Self::String(value) => w.write_str(value),
             Self::Blob(value) | Self::Hll(value) => w.write_bytes(value),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(w, self),
-            Self::OrderedMap(_) => panic!("The library never passes ordered maps to the server."),
             Self::GeoJson(value) => w.write_geo(value),
         }
     }
@@ -420,7 +413,6 @@ impl fmt::Display for Value {
             Self::Blob(value) | Self::Hll(value) => write!(f, "{value:?}"),
             Self::List(value) => write!(f, "{value:?}"),
             Self::HashMap(value) => write!(f, "{value:?}"),
-            Self::OrderedMap(value) => write!(f, "{value:?}"),
         }
     }
 }
