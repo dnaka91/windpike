@@ -174,17 +174,17 @@ impl Buffer {
     }
 
     // Writes the command for write operations
-    pub(crate) fn set_write<'b, A: AsRef<Bin<'b>>>(
+    pub(crate) fn set_write(
         &mut self,
         policy: &WritePolicy,
         op_type: OperationType,
         key: &Key,
-        bins: &[A],
+        bins: &[Bin<'_>],
     ) -> Result<()> {
         let (key_size, field_count) = estimate_key_size(key, policy.as_ref().send_key);
         let op_size = bins
             .iter()
-            .map(|bin| estimate_operation_size_for_bin(bin.as_ref()))
+            .map(estimate_operation_size_for_bin)
             .sum::<usize>();
 
         self.clear(TOTAL_HEADER_SIZE + key_size + op_size)?;
@@ -202,7 +202,7 @@ impl Buffer {
         self.write_key(key, policy.as_ref().send_key);
 
         for bin in bins {
-            self.write_operation_for_bin(bin.as_ref(), op_type);
+            self.write_operation_for_bin(bin, op_type);
         }
 
         Ok(())

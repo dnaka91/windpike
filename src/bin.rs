@@ -3,7 +3,7 @@ use std::convert::From;
 use crate::value::Value;
 
 /// Container object for a record bin, comprising a name and a value.
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Bin<'a> {
     /// Bin name
     pub name: &'a str,
@@ -13,15 +13,22 @@ pub struct Bin<'a> {
 
 impl<'a> Bin<'a> {
     /// Construct a new bin given a name and a value.
+    #[inline]
     #[must_use]
-    pub const fn new(name: &'a str, val: Value) -> Self {
-        Bin { name, value: val }
+    pub fn new(name: &'a str, value: impl Into<Value>) -> Self {
+        Bin {
+            name,
+            value: value.into(),
+        }
     }
 }
 
-impl<'a> AsRef<Bin<'a>> for Bin<'a> {
-    fn as_ref(&self) -> &Self {
-        self
+impl<'a, T> From<(&'a str, T)> for Bin<'a>
+where
+    T: Into<Value>,
+{
+    fn from((name, value): (&'a str, T)) -> Self {
+        Bin::new(name, value)
     }
 }
 
@@ -36,17 +43,13 @@ pub enum Bins {
     Some(Vec<String>),
 }
 
-impl<'a> From<&'a [&'a str]> for Bins {
-    fn from(bins: &'a [&'a str]) -> Self {
-        let bins = bins.iter().copied().map(String::from).collect();
-        Self::Some(bins)
-    }
-}
-
-impl<'a, const N: usize> From<[&'a str; N]> for Bins {
-    fn from(bins: [&'a str; N]) -> Self {
-        let bins = bins.iter().copied().map(String::from).collect();
-        Self::Some(bins)
+impl<I, T> From<I> for Bins
+where
+    I: IntoIterator<Item = T>,
+    T: Into<String>,
+{
+    fn from(value: I) -> Self {
+        Self::Some(value.into_iter().map(T::into).collect())
     }
 }
 
