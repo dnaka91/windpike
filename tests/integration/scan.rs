@@ -5,9 +5,9 @@ use std::sync::{
 
 use tokio::sync::Mutex;
 use windpike::{
-    self, as_bin,
+    self,
     policy::{ScanPolicy, WritePolicy},
-    Bins, Client, Key, RecordSet,
+    Bin, Bins, Client, Key, RecordSet,
 };
 
 use crate::common::{self, NAMESPACE};
@@ -20,7 +20,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
     let wpolicy = WritePolicy::default();
     for i in 0..no_records as i64 {
         let key = Key::new(NAMESPACE, set_name.clone(), i);
-        let wbin = as_bin!("bin", i);
+        let wbin = Bin::new("bin", i);
         let bins = vec![wbin];
         client.delete(&wpolicy, &key).await.unwrap();
         client.put(&wpolicy, &key, &bins).await.unwrap();

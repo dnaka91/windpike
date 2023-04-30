@@ -237,9 +237,8 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     as_bin,
     ///     policy::{ClientPolicy, WritePolicy},
-    ///     Client, Key,
+    ///     Bin, Client, Key,
     /// };
     ///
     /// #[tokio::main]
@@ -249,7 +248,7 @@ impl Client {
     ///         .unwrap();
     ///
     ///     let key = Key::new("test", "test", "mykey");
-    ///     let bin = as_bin!("i", 42);
+    ///     let bin = Bin::new("i", 42);
     ///     match client.put(&WritePolicy::default(), &key, &vec![bin]).await {
     ///         Ok(()) => println!("Record written"),
     ///         Err(err) => println!("Error writing record: {err}"),
@@ -261,9 +260,9 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     as_bin, policy,
+    ///     policy,
     ///     policy::{ClientPolicy, WritePolicy},
-    ///     Client, Key,
+    ///     Bin, Client, Key,
     /// };
     ///
     /// #[tokio::main]
@@ -273,7 +272,7 @@ impl Client {
     ///         .unwrap();
     ///
     ///     let key = Key::new("test", "test", "mykey");
-    ///     let bin = as_bin!("i", 42);
+    ///     let bin = Bin::new("i", 42);
     ///     let mut policy = WritePolicy::default();
     ///     policy.expiration = policy::Expiration::Seconds(10);
     ///     match client.put(&policy, &key, &vec![bin]).await {
@@ -308,9 +307,8 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     as_bin,
     ///     policy::{ClientPolicy, WritePolicy},
-    ///     Client, Key,
+    ///     Bin, Client, Key,
     /// };
     ///
     /// #[tokio::main]
@@ -320,8 +318,8 @@ impl Client {
     ///         .unwrap();
     ///
     ///     let key = Key::new("test", "test", "mykey");
-    ///     let bina = as_bin!("a", 1);
-    ///     let binb = as_bin!("b", 2);
+    ///     let bina = Bin::new("a", 1);
+    ///     let binb = Bin::new("b", 2);
     ///     let bins = vec![bina, binb];
     ///     match client.add(&WritePolicy::default(), &key, &bins).await {
     ///         Ok(()) => println!("Record updated"),
@@ -470,9 +468,9 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     as_bin, operations,
+    ///     operations,
     ///     policy::{ClientPolicy, WritePolicy},
-    ///     Client, Key,
+    ///     Bin, Client, Key,
     /// };
     ///
     /// #[tokio::main]
@@ -482,7 +480,7 @@ impl Client {
     ///         .unwrap();
     ///
     ///     let key = Key::new("test", "test", "mykey");
-    ///     let bin = as_bin!("a", 42);
+    ///     let bin = Bin::new("a", 42);
     ///     let ops = vec![operations::add(&bin), operations::get_bin("a")];
     ///     match client.operate(&WritePolicy::default(), &key, &ops).await {
     ///         Ok(record) => println!("The new value is {}", record.bins.get("a").unwrap()),

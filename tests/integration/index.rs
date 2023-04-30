@@ -1,8 +1,7 @@
 use windpike::{
-    as_bin,
     index::{IndexType, Status},
     policy::WritePolicy,
-    Client, Key,
+    Bin, Client, Key,
 };
 
 use crate::common::{self, NAMESPACE};
@@ -15,7 +14,7 @@ async fn create_test_set(client: &Client, no_records: usize) -> String {
 
     for i in 0..no_records as i64 {
         let key = Key::new(NAMESPACE, set_name.clone(), i);
-        let wbin = as_bin!("bin", i);
+        let wbin = Bin::new("bin", i);
         let bins = vec![wbin];
         client.delete(&wpolicy, &key).await.unwrap();
         client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -63,7 +62,7 @@ async fn index_task_test() {
     let wpolicy = WritePolicy::default();
     for i in 0..2_i64 {
         let key = Key::new(NAMESPACE, set_name.clone(), i);
-        let wbin = as_bin!(&bin_name, i);
+        let wbin = Bin::new(&bin_name, i);
         let bins = vec![wbin];
         client.put(&wpolicy, &key, &bins).await.unwrap();
     }

@@ -1,7 +1,7 @@
 use windpike::{
-    as_bin, as_list, as_map, operations,
+    as_list, as_map, operations,
     policy::{BasePolicy, WritePolicy},
-    Bins, Key, Value,
+    Bin, Bins, Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};
@@ -16,19 +16,19 @@ async fn connect() {
     client.delete(&wpolicy, &key).await.unwrap();
 
     let bins = [
-        as_bin!("bin999", "test string"),
-        as_bin!("bin vec![int]", as_list![1u32, 2u32, 3u32]),
-        as_bin!("bin vec![u8]", Value::from(vec![1u8, 2u8, 3u8])),
-        as_bin!("bin map", as_map!(1 => 1, 2 => 2, 3 => "hi!")),
-        as_bin!("bin f64", 1.64f64),
-        as_bin!("bin Nil", None), // Writing None erases the bin!
-        as_bin!(
+        Bin::new("bin999", "test string"),
+        Bin::new("bin vec![int]", as_list![1u32, 2u32, 3u32]),
+        Bin::new("bin vec![u8]", Value::from(vec![1u8, 2u8, 3u8])),
+        Bin::new("bin map", as_map!(1 => 1, 2 => 2, 3 => "hi!")),
+        Bin::new("bin f64", 1.64f64),
+        Bin::new("bin Nil", Value::Nil), // Writing None erases the bin!
+        Bin::new(
             "bin Geo",
             Value::GeoJson(
                 r#"{ "type": "Point", "coordinates": [17.119381, 19.45612] }"#.to_owned(),
-            )
+            ),
         ),
-        as_bin!("bin-name-len-15", "max. bin name length is 15 chars"),
+        Bin::new("bin-name-len-15", "max. bin name length is 15 chars"),
     ];
     client.put(&wpolicy, &key, &bins).await.unwrap();
 
@@ -69,7 +69,7 @@ async fn connect() {
     let exists = client.exists(&wpolicy, &key).await.unwrap();
     assert!(exists);
 
-    let bin = as_bin!("bin999", "test string");
+    let bin = Bin::new("bin999", "test string");
     let ops = &vec![operations::put(&bin), operations::get()];
     client.operate(&wpolicy, &key, ops).await.unwrap();
 

@@ -1,7 +1,6 @@
 use windpike::{
-    as_bin,
     policy::{BatchPolicy, Concurrency, WritePolicy},
-    BatchRead, Bins, Key,
+    BatchRead, Bin, Bins, Key,
 };
 
 use crate::common::{self, NAMESPACE};
@@ -16,9 +15,9 @@ async fn batch_get() {
     };
     let wpolicy = WritePolicy::default();
 
-    let bin1 = as_bin!("a", "a value");
-    let bin2 = as_bin!("b", "another value");
-    let bin3 = as_bin!("c", 42);
+    let bin1 = Bin::new("a", "a value");
+    let bin2 = Bin::new("b", "another value");
+    let bin3 = Bin::new("c", 42);
     let bins = [bin1, bin2, bin3];
     let key1 = Key::new(NAMESPACE, set_name.clone(), 1);
     client.put(&wpolicy, &key1, &bins).await.unwrap();

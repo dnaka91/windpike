@@ -1,14 +1,3 @@
-/// Construct a new bin from a name and an optional value (defaults to the empty value `nil`).
-#[macro_export]
-macro_rules! as_bin {
-    ($bin_name:expr, None) => {{
-        $crate::Bin::new($bin_name, $crate::Value::Nil)
-    }};
-    ($bin_name:expr, $val:expr) => {{
-        $crate::Bin::new($bin_name, $crate::Value::from($val))
-    }};
-}
-
 /// Constructs a new List Value from a list of one or more native data types.
 ///
 /// # Examples
@@ -17,9 +6,9 @@ macro_rules! as_bin {
 ///
 /// ```rust
 /// use windpike::{
-///     as_bin, as_list,
+///     as_list,
 ///     policy::{ClientPolicy, WritePolicy},
-///     Client, Key,
+///     Bin, Client, Key,
 /// };
 ///
 /// #[tokio::main]
@@ -30,7 +19,7 @@ macro_rules! as_bin {
 ///
 ///     let key = Key::new("test", "test", "mykey");
 ///     let list = as_list!("a", "b", "c");
-///     let bin = as_bin!("list", list);
+///     let bin = Bin::new("list", list);
 ///     client
 ///         .put(&WritePolicy::default(), &key, &vec![bin])
 ///         .await
@@ -61,7 +50,7 @@ macro_rules! as_values {
 /// Write a map value to a record bin.
 ///
 /// ```rust
-/// use windpike::{as_bin, Key, as_map, Client, policy::ClientPolicy, policy::WritePolicy};
+/// use windpike::{Bin, Key, as_map, Client, policy::ClientPolicy, policy::WritePolicy};
 
 /// #[tokio::main]
 /// async fn main() {
@@ -71,7 +60,7 @@ macro_rules! as_values {
 ///
 ///     let key = Key::new("test", "test", "mykey");
 ///     let map = as_map!("a" => 1, "b" => 2);
-///     let bin = as_bin!("map", map);
+///     let bin = Bin::new("map", map);
 ///     client
 ///         .put(&WritePolicy::default(), &key, &vec![bin])
 ///         .await

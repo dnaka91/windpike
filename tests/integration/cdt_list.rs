@@ -1,11 +1,11 @@
 use windpike::{
-    as_bin, as_list, as_values, operations,
+    as_list, as_values, operations,
     operations::{
         lists,
         lists::{ListPolicy, ListReturnType, ListSortFlags},
     },
     policy::{BasePolicy, WritePolicy},
-    Bins, Key, Value,
+    Bin, Bins, Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};
@@ -19,7 +19,7 @@ async fn cdt_list() {
     let wpolicy = WritePolicy::default();
     let key = Key::new(NAMESPACE, common::rand_str(10), -1);
     let val = as_list!("0", 1, 2.1f64);
-    let wbin = as_bin!("bin", val.clone());
+    let wbin = Bin::new("bin", val.clone());
     let bins = vec![wbin];
     let lpolicy = ListPolicy::default();
 

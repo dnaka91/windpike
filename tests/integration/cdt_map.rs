@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use windpike::{
-    as_bin, as_list, as_map,
+    as_list, as_map,
     operations::{
         cdt_context::{ctx_map_key, ctx_map_key_create},
         maps, MapOrder, MapPolicy, MapReturnType,
     },
     policy::{BasePolicy, WritePolicy},
-    Bins, Key, Value,
+    Bin, Bins, Key, Value,
 };
 
 use crate::common::{self, NAMESPACE};
@@ -27,7 +27,7 @@ async fn map_operations() {
 
     let val = as_map!("a" => 1, "b" => 2);
     let bin_name = "bin";
-    let bin = as_bin!(bin_name, val);
+    let bin = Bin::new(bin_name, val);
     let bins = vec![bin];
 
     client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -91,7 +91,7 @@ async fn map_operations() {
 
     let val = as_map!("a" => 1, "b" => 2, "c" => 3, "d" => 4, "e" => 5);
     let bin_name = "bin";
-    let bin = as_bin!(bin_name, val);
+    let bin = Bin::new(bin_name, val);
     let bins = vec![bin];
 
     client.put(&wpolicy, &key, bins.as_slice()).await.unwrap();
