@@ -17,6 +17,8 @@ mod field_type;
 
 use std::sync::Arc;
 
+use async_trait::async_trait;
+
 pub use self::particle_type::ParseParticleError;
 pub(crate) use self::{
     admin_command::{hash_password, AdminCommand},
@@ -68,7 +70,7 @@ pub enum CommandError {
 }
 
 // Command interface describes all commands available
-#[async_trait::async_trait]
+#[async_trait]
 trait Command {
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()>;
     async fn get_node(&self) -> Option<Arc<Node>>;

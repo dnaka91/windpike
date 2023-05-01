@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
+use async_trait::async_trait;
 use tokio::sync::mpsc;
 
 use super::{
@@ -144,7 +145,7 @@ impl StreamCommand {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl Command for StreamCommand {
     fn prepare_buffer(&mut self, _conn: &mut Connection) -> Result<()> {
         panic!("stream command doesn't write the buffer itself")

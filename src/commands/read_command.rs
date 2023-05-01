@@ -6,6 +6,7 @@ use std::{
     sync::Arc,
 };
 
+use async_trait::async_trait;
 use tracing::warn;
 
 use super::{Command, CommandError, Result, SingleCommand};
@@ -86,7 +87,7 @@ impl<'a> ReadCommand<'a> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl<'a> Command for ReadCommand<'a> {
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()

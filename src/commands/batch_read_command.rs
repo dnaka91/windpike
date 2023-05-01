@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
+use async_trait::async_trait;
 use tokio::time::Instant;
 use tracing::warn;
 
@@ -183,7 +184,7 @@ impl BatchReadCommand {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl Command for BatchReadCommand {
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()

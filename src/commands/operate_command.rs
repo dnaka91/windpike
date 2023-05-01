@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
+
 use super::{Command, ReadCommand, Result, SingleCommand};
 use crate::{
     cluster::{Cluster, Node},
@@ -34,7 +36,7 @@ impl<'a> OperateCommand<'a> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl<'a> Command for OperateCommand<'a> {
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()

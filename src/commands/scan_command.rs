@@ -1,5 +1,6 @@
 use std::{str, sync::Arc};
 
+use async_trait::async_trait;
 use tokio::sync::mpsc;
 
 use super::{Command, Result, SingleCommand, StreamCommand};
@@ -41,7 +42,7 @@ impl<'a> ScanCommand<'a> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl<'a> Command for ScanCommand<'a> {
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()
