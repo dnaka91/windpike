@@ -15,11 +15,11 @@ pub(crate) type Result<T, E = MsgpackError> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MsgpackError {
-    #[error("Particle type not recognized")]
+    #[error("particle type not recognized")]
     UnrecognizedParticle(#[from] ParseParticleError),
-    #[error("Type header with code `{0}` not recognized")]
+    #[error("type header with code `{0}` not recognized")]
     UnrecognizedCode(u8),
-    #[error("Buffer error")]
+    #[error("buffer error")]
     Buffer(#[from] crate::commands::buffer::BufferError),
     #[error("the marker `{0}` isn't valid for the data type")]
     InvalidMarker(u8),

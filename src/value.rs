@@ -392,11 +392,11 @@ impl From<MapKey> for Value {
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParticleError {
-    #[error("Particle type not recognized")]
+    #[error("particle type not recognized")]
     UnrecognizedParticle(#[from] ParseParticleError),
-    #[error("Particle type `{0:?}` not supported for the target type")]
+    #[error("particle type `{0:?}` not supported for the target type")]
     Unsupported(u8),
-    #[error("Buffer error")]
+    #[error("buffer error")]
     Buffer(#[from] BufferError),
     #[error("MessagePack error")]
     Msgpack(#[from] MsgpackError),

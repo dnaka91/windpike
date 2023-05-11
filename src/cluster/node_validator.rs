@@ -48,7 +48,7 @@ impl NodeValidator {
             match self.validate_alias(cluster, alias).await {
                 Ok(_) => return Ok(()),
                 Err(err) => {
-                    debug!(%alias, ?err, "Alias validation failed");
+                    debug!(%alias, ?err, "alias validation failed");
                     last_err = Some(err);
                 }
             }
@@ -70,7 +70,7 @@ impl NodeValidator {
             .to_socket_addrs()?
             .map(|addr| Host::new(&addr.ip().to_string(), addr.port()))
             .collect();
-        debug!(%host, aliases = ?self.aliases, "Resolved aliases for host");
+        debug!(%host, aliases = ?self.aliases, "resolved aliases for host");
         if self.aliases.is_empty() {
             Err(NodeError::NoAddress { host: host.clone() })
         } else {

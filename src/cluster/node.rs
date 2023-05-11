@@ -192,7 +192,7 @@ impl Node {
             let mut friend_info = friend.split(':');
             if friend_info.clone().count() != 2 {
                 error!(
-                    "Node info from asinfo:services is malformed. Expected HOST:PORT, but got \
+                    "node info from asinfo:services is malformed. Expected HOST:PORT, but got \
                      '{friend}'",
                 );
                 continue;

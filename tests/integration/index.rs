@@ -35,7 +35,7 @@ async fn recreate_index() {
     client
         .create_index(NAMESPACE, &set, bin, &index, IndexType::Numeric)
         .await
-        .expect("Failed to create index")
+        .expect("failed to create index")
         .wait_till_complete(None)
         .await
         .unwrap();

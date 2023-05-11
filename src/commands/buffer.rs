@@ -103,9 +103,9 @@ pub type Result<T, E = BufferError> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum BufferError {
-    #[error("Invalid size for buffer: {size} (max {max})")]
+    #[error("invalid size for buffer: {size} (max {max})")]
     SizeExceeded { size: usize, max: usize },
-    #[error("Invalid UTF-8 content encountered")]
+    #[error("invalid UTF-8 content encountered")]
     InvalidUtf8(#[from] std::string::FromUtf8Error),
 }
 

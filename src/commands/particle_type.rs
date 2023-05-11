@@ -13,7 +13,7 @@ pub(crate) enum ParticleType {
 }
 
 #[derive(Debug, thiserror::Error)]
-#[error("Invalid particle type `{0}`")]
+#[error("invalid particle type `{0}`")]
 pub struct ParseParticleError(u8);
 
 impl TryFrom<u8> for ParticleType {

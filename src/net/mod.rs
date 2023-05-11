@@ -13,22 +13,22 @@ type Result<T, E = NetError> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum NetError {
-    #[error("No more connections available in the pool")]
+    #[error("no more connections available in the pool")]
     NoMoreConnections,
-    #[error("Could not open network connection")]
+    #[error("could not open network connection")]
     FailedOpening,
     #[error("I/O related error")]
     Io(#[from] std::io::Error),
-    #[error("Buffer error")]
+    #[error("buffer error")]
     Buffer(#[from] crate::commands::buffer::BufferError),
-    #[error("Authentication error")]
+    #[error("authentication error")]
     Authenticate(#[source] Box<crate::commands::CommandError>),
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParseHostError {
-    #[error("Invalid address string")]
+    #[error("invalid address string")]
     InvalidArgument,
-    #[error("Invalid port number")]
+    #[error("invalid port number")]
     PortNumber(#[source] std::num::ParseIntError),
 }

@@ -41,31 +41,31 @@ pub type Result<T, E = CommandError> = crate::errors::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum CommandError {
-    #[error("Failed to prepare send buffer")]
+    #[error("failed to prepare send buffer")]
     PrepareBuffer(#[source] Box<Self>),
-    #[error("Invalid size for buffer: {size} (max {max})")]
+    #[error("invalid size for buffer: {size} (max {max})")]
     BufferSize { size: usize, max: usize },
-    #[error("Timeout")]
+    #[error("timeout")]
     Timeout,
-    #[error("Server error: {}", .0.into_string())]
+    #[error("server error: {}", .0.into_string())]
     ServerError(ResultCode),
-    #[error("Invalid UTF-8 content ecountered")]
+    #[error("invalid UTF-8 content ecountered")]
     InvalidUtf8(#[from] std::str::Utf8Error),
     #[error("I/O related error")]
     Io(#[from] std::io::Error),
-    #[error("Failed hashing password")]
+    #[error("failed hashing password")]
     Hashing(#[from] bcrypt::BcryptError),
-    #[error("Network error")]
+    #[error("network error")]
     Network(#[from] crate::net::NetError),
-    #[error("Buffer error")]
+    #[error("buffer error")]
     Buffer(#[from] self::buffer::BufferError),
-    #[error("Particle error")]
+    #[error("particle error")]
     Particle(#[from] crate::value::ParticleError),
-    #[error("No connections available")]
+    #[error("no connections available")]
     NoConnection,
-    #[error("Parsing failed: {0}")]
+    #[error("parsing failed: {0}")]
     Parse(&'static str),
-    #[error("Other error")]
+    #[error("other error")]
     Other(#[source] Box<crate::errors::Error>),
 }
 

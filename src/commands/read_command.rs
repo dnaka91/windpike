@@ -101,7 +101,7 @@ impl<'a> Command for ReadCommand<'a> {
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {
         let header = conn.read_header().await.map_err(|err| {
-            warn!(%err, "Parse result error");
+            warn!(%err, "failed to read message header");
             err
         })?;
 
@@ -112,7 +112,7 @@ impl<'a> Command for ReadCommand<'a> {
         // Read remaining message bytes
         if header.size > 0 {
             if let Err(err) = conn.read_buffer(header.size).await {
-                warn!(%err, "Parse result error");
+                warn!(%err, "failed to read message body");
                 return Err(err.into());
             }
         }

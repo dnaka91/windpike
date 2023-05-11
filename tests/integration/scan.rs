@@ -73,7 +73,7 @@ async fn scan_multi_consumer() {
     }
 
     for t in threads {
-        t.await.expect("Cannot join thread");
+        t.await.expect("cannot join thread");
     }
 
     assert_eq!(count.load(Ordering::Relaxed), EXPECTED);

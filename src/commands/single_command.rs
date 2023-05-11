@@ -79,7 +79,7 @@ impl<'a> SingleCommand<'a> {
             let mut conn = match node.get_connection().await {
                 Ok(conn) => conn,
                 Err(err) => {
-                    warn!(?node, %err, "Node");
+                    warn!(?node, %err, "failed to get a new connection");
                     continue;
                 }
             };
@@ -92,7 +92,7 @@ impl<'a> SingleCommand<'a> {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
                 conn.close().await;
-                warn!(?node, %err, "Node");
+                warn!(?node, %err, "failed to flush remaining buffer to connection");
                 continue;
             }
 

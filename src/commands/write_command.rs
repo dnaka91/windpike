@@ -59,7 +59,7 @@ impl<'a> Command for WriteCommand<'a> {
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {
         let header = conn.read_header().await.map_err(|err| {
-            warn!(%err, "Parse result error");
+            warn!(%err, "parse result error");
             err
         })?;
 

@@ -711,7 +711,7 @@ impl Client {
         }
 
         Err(Error::BadResponse(
-            "Unexpected sindex info command response".to_owned(),
+            "unexpected sindex info command response".to_owned(),
         ))
     }
 }

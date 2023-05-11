@@ -32,60 +32,60 @@ type Result<T, E = ClusterError> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ClusterError {
-    #[error("Missing replicas information")]
+    #[error("missing replicas information")]
     MissingReplicas,
-    #[error("Error parsing partition information")]
+    #[error("error parsing partition information")]
     InvalidPartitionInfo,
-    #[error("Invalid UTF-8 content discovered")]
+    #[error("invalid UTF-8 content discovered")]
     InvalidUtf8(#[from] std::str::Utf8Error),
-    #[error("Invalid integer")]
+    #[error("invalid integer")]
     InvalidInteger(#[from] std::num::ParseIntError),
     #[error("Base64 decoding error")]
     Base64(#[from] base64::DecodeError),
     #[error(
-        "Failed to connect to host(s). The network connection(s) to cluster nodes may have timed \
+        "failed to connect to host(s). The network connection(s) to cluster nodes may have timed \
          out, or the cluster may be in a state of flux."
     )]
     Connection,
-    #[error("Networking error")]
+    #[error("networking error")]
     Network(#[from] crate::net::NetError),
-    #[error("Command error")]
+    #[error("command error")]
     Command(#[from] crate::commands::CommandError),
-    #[error("Missing services list")]
+    #[error("missing services list")]
     MissingServicesList,
-    #[error("Missing partition generation")]
+    #[error("missing partition generation")]
     MissingPartitionGeneration,
-    #[error("Error during initial cluster tend")]
+    #[error("error during initial cluster tend")]
     InitialTend(#[source] JoinError),
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum NodeError {
-    #[error("No addresses for host `{host}`")]
+    #[error("no addresses for host `{host}`")]
     NoAddress { host: Host },
-    #[error("Missing node name")]
+    #[error("missing node name")]
     MissingNodeName,
-    #[error("Missing cluster name")]
+    #[error("missing cluster name")]
     MissingClusterName,
-    #[error("Cluster name mismatch. Expected `{expected}`, but got `{got}`")]
+    #[error("cluster name mismatch. Expected `{expected}`, but got `{got}`")]
     NameMismatch { expected: String, got: String },
-    #[error("Networking error")]
+    #[error("networking error")]
     Net(#[from] crate::net::NetError),
     #[error("I/O related error")]
     Io(#[from] std::io::Error),
-    #[error("Command error")]
+    #[error("command error")]
     Command(#[from] crate::commands::CommandError),
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum NodeRefreshError {
-    #[error("Info command failed")]
+    #[error("info command failed")]
     InfoCommandFailed(#[source] ClusterError),
-    #[error("Failed to validate node")]
+    #[error("failed to validate node")]
     ValidationFailed(#[source] NodeError),
-    #[error("Failed to add friends")]
+    #[error("failed to add friends")]
     FailedAddingFriends(#[source] ClusterError),
-    #[error("Failed to update partitions")]
+    #[error("failed to update partitions")]
     FailedUpdatingPartitions(#[source] ClusterError),
 }
 
@@ -138,7 +138,7 @@ impl Cluster {
         let cluster_for_tend = Arc::clone(&cluster);
         tokio::spawn(Self::tend_thread(cluster_for_tend));
 
-        debug!("New cluster initialized and ready to be used...");
+        debug!("new cluster initialized and ready to be used...");
 
         Ok(cluster)
     }
@@ -148,7 +148,7 @@ impl Cluster {
 
         while !cluster.closed.load(Ordering::Relaxed) {
             if let Err(err) = cluster.tend().await {
-                error!(error = ?err, "Error tending cluster");
+                error!(error = ?err, "error tending cluster");
             }
             tokio::time::sleep(tend_interval).await;
         }
@@ -160,7 +160,7 @@ impl Cluster {
         // All node additions/deletions are performed in tend thread.
         // If active nodes don't exist, seed cluster.
         if nodes.is_empty() {
-            debug!("No connections available; seeding...");
+            debug!("no connections available; seeding...");
             self.seed_nodes().await?;
             nodes = self.nodes().await;
         }
@@ -186,7 +186,7 @@ impl Cluster {
                     }
                     Err(err) => {
                         node.increase_failures();
-                        warn!(?node, %err, "Node refresh failed");
+                        warn!(?node, %err, "node refresh failed");
                     }
                 }
             }
@@ -220,7 +220,7 @@ impl Cluster {
                 }
 
                 if let Err(err) = cluster.tend().await {
-                    error!(error = ?err, "Error during initial cluster tend");
+                    error!(error = ?err, "error during initial cluster tend");
                 }
 
                 let old_count = count;
@@ -303,13 +303,13 @@ impl Cluster {
     pub async fn seed_nodes(&self) -> Result<bool, NetError> {
         let seed_array = self.seeds.read().await;
 
-        debug!(seeds_count = seed_array.len(), "Seeding the cluster");
+        debug!(seeds_count = seed_array.len(), "seeding the cluster");
 
         let mut list: Vec<Arc<Node>> = vec![];
         for seed in &*seed_array {
             let mut seed_node_validator = NodeValidator::new(self);
             if let Err(err) = seed_node_validator.validate_node(self, seed).await {
-                error!(error = ?err, %seed, "Failed to validate seed host");
+                error!(error = ?err, %seed, "failed to validate seed host");
                 continue;
             };
 
@@ -319,7 +319,7 @@ impl Cluster {
                 } else {
                     let mut nv2 = NodeValidator::new(self);
                     if let Err(err) = nv2.validate_node(self, seed).await {
-                        error!(error = ?err, %alias, "Seeding host failed with error");
+                        error!(error = ?err, %alias, "seeding host failed with error");
                         continue;
                     };
                     nv2
@@ -350,7 +350,7 @@ impl Cluster {
         for host in hosts {
             let mut nv = NodeValidator::new(self);
             if let Err(err) = nv.validate_node(self, &host).await {
-                error!(error = ?err, %host, "Adding node failed with error");
+                error!(error = ?err, %host, "adding node failed with error");
                 continue;
             };
 

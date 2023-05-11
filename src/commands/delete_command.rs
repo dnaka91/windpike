@@ -45,7 +45,7 @@ impl<'a> Command for DeleteCommand<'a> {
 
     async fn parse_result(&mut self, conn: &mut Connection) -> Result<()> {
         let header = conn.read_header().await.map_err(|err| {
-            warn!(%err, "Parse result error");
+            warn!(%err, "failed parsing message header");
             err
         })?;
 

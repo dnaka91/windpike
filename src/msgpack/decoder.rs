@@ -133,7 +133,7 @@ fn unpack_value(buf: &mut Buffer) -> Result<Value> {
         Marker::FixStr(len) => unpack_blob(buf, len as usize),
         Marker::Nil => Ok(Value::Nil),
         Marker::Reserved => {
-            warn!("Skipping over reserved type");
+            warn!("skipping over reserved type");
             Ok(Value::Nil)
         }
         Marker::False => Ok(Value::from(false)),
@@ -151,19 +151,19 @@ fn unpack_value(buf: &mut Buffer) -> Result<Value> {
             unpack_blob(buf, count as usize)
         }
         Marker::Ext8 => {
-            warn!("Skipping over type extension with 8 bit header and bytes");
+            warn!("skipping over type extension with 8 bit header and bytes");
             let count = 1 + buf.read_u8() as usize;
             buf.advance(count);
             Ok(Value::Nil)
         }
         Marker::Ext16 => {
-            warn!("Skipping over type extension with 16 bit header and bytes");
+            warn!("skipping over type extension with 16 bit header and bytes");
             let count = 1 + buf.read_u16() as usize;
             buf.advance(count);
             Ok(Value::Nil)
         }
         Marker::Ext32 => {
-            warn!("Skipping over type extension with 32 bit header and bytes");
+            warn!("skipping over type extension with 32 bit header and bytes");
             let count = 1 + buf.read_u32() as usize;
             buf.advance(count);
             Ok(Value::Nil)
@@ -179,27 +179,27 @@ fn unpack_value(buf: &mut Buffer) -> Result<Value> {
         Marker::I32 => Ok(Value::from(buf.read_i32())),
         Marker::I64 => Ok(Value::from(buf.read_i64())),
         Marker::FixExt1 => {
-            warn!("Skipping over type extension with 1 byte");
+            warn!("skipping over type extension with 1 byte");
             buf.advance(2);
             Ok(Value::Nil)
         }
         Marker::FixExt2 => {
-            warn!("Skipping over type extension with 2 bytes");
+            warn!("skipping over type extension with 2 bytes");
             buf.advance(3);
             Ok(Value::Nil)
         }
         Marker::FixExt4 => {
-            warn!("Skipping over type extension with 4 bytes");
+            warn!("skipping over type extension with 4 bytes");
             buf.advance(5);
             Ok(Value::Nil)
         }
         Marker::FixExt8 => {
-            warn!("Skipping over type extension with 8 bytes");
+            warn!("skipping over type extension with 8 bytes");
             buf.advance(9);
             Ok(Value::Nil)
         }
         Marker::FixExt16 => {
-            warn!("Skipping over type extension with 16 bytes");
+            warn!("skipping over type extension with 16 bytes");
             buf.advance(17);
             Ok(Value::Nil)
         }

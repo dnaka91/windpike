@@ -54,7 +54,7 @@ impl IndexTask {
                     Ok(Status::NotFound)
                 } else {
                     Err(Error::BadResponse(format!(
-                        "Code 201 and 203 missing. Response: {response}"
+                        "code 201 and 203 missing. Response: {response}"
                     )))
                 }
             }
@@ -74,7 +74,7 @@ impl IndexTask {
                     Ok(100) => Ok(Status::Complete),
                     Ok(_) => Ok(Status::InProgress),
                     Err(_) => Err(Error::BadResponse(
-                        "Unexpected load_pct value from server".to_owned(),
+                        "unexpected load_pct value from server".to_owned(),
                     )),
                 }
             }
@@ -126,7 +126,7 @@ impl IndexTask {
             }
 
             if timeout.map_or(false, timeout_elapsed) {
-                return Err(Error::Timeout("Task timeout reached".to_owned()));
+                return Err(Error::Timeout("task timeout reached".to_owned()));
             }
         }
     }

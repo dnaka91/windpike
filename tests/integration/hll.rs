@@ -26,7 +26,7 @@ async fn hll() {
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
         Value::Int(1),
-        "Register update did not match"
+        "register update did not match"
     );
 
     let ops = &vec![hll::get_count("bin")];
@@ -49,7 +49,7 @@ async fn hll() {
     assert_eq!(
         *rec.bins.get("bin2").unwrap(),
         Value::Int(1),
-        "Register update did not match"
+        "register update did not match"
     );
 
     let ops = &vec![hll::describe("bin")];
@@ -57,7 +57,7 @@ async fn hll() {
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
         as_list!(4, 0),
-        "Index bits did not match"
+        "index bits did not match"
     );
 
     let rec = client
@@ -71,7 +71,7 @@ async fn hll() {
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
         Value::from(0),
-        "Intersect Count is wrong"
+        "intersect Count is wrong"
     );
 
     let ops = &vec![hll::get_union_count("bin", &bin2val)];
@@ -79,7 +79,7 @@ async fn hll() {
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
         Value::from(2),
-        "Union Count is wrong"
+        "union Count is wrong"
     );
 
     let ops = &vec![hll::get_union("bin", &bin2val)];
@@ -87,14 +87,14 @@ async fn hll() {
     let val = Value::Hll(vec![
         0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ]);
-    assert_eq!(*rec.bins.get("bin").unwrap(), val, "Union does not match");
+    assert_eq!(*rec.bins.get("bin").unwrap(), val, "union does not match");
 
     let ops = &vec![hll::refresh_count("bin")];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
         Value::Int(1),
-        "HLL Refresh Count did not match"
+        "HLL refresh count did not match"
     );
 
     let ops = &vec![
@@ -105,7 +105,7 @@ async fn hll() {
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
         Value::from(2),
-        "Written Union count does not match"
+        "written union count does not match"
     );
 
     let ops = &vec![hll::get_similarity("bin", &bin2val)];
@@ -113,7 +113,7 @@ async fn hll() {
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
         Value::from(0.5),
-        "Similarity failed"
+        "similarity failed"
     );
 
     client.close();

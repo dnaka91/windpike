@@ -29,11 +29,11 @@ async fn node_names() {
 #[tokio::test]
 async fn close() {
     let client = common::client().await;
-    assert!(client.is_connected().await, "The client is not connected");
+    assert!(client.is_connected().await, "the client is not connected");
 
     client.close();
     assert!(
         !client.is_connected().await,
-        "The client did not disconnect"
+        "the client did not disconnect"
     );
 }

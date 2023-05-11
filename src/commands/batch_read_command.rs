@@ -77,7 +77,7 @@ impl BatchReadCommand {
             let mut conn = match node.get_connection().await {
                 Ok(conn) => conn,
                 Err(err) => {
-                    warn!(?node, %err, "Node");
+                    warn!(?node, %err, "failed to get a fresh connection");
                     continue;
                 }
             };
@@ -90,7 +90,7 @@ impl BatchReadCommand {
                 // IO errors are considered temporary anomalies. Retry.
                 // Close socket to flush out possible garbage. Do not put back in pool.
                 conn.close().await;
-                warn!(?node, %err, "Node");
+                warn!(?node, %err, "failed to flush remaining data to connection");
                 continue;
             }
 
@@ -122,7 +122,7 @@ impl BatchReadCommand {
                     let batch_read = self
                         .batch_reads
                         .get_mut(batch_record.batch_index)
-                        .expect("Invalid batch index");
+                        .expect("invalid batch index");
                     batch_read.record = batch_record.record;
                 }
             }

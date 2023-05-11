@@ -30,7 +30,7 @@ fn parse_response(buf: &mut Buffer) -> Result<HashMap<String, String>> {
         .map(|tuple| {
             let (key, value) = tuple
                 .split_once('\t')
-                .ok_or_else(|| CommandError::Parse("Parsing Info command failed"))?;
+                .ok_or_else(|| CommandError::Parse("failed parsing info command"))?;
 
             Ok((key.to_owned(), value.to_owned()))
         })
