@@ -468,7 +468,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     operations,
+    ///     operations::scalar,
     ///     policy::{ClientPolicy, WritePolicy},
     ///     Bin, Client, Key,
     /// };
@@ -481,7 +481,7 @@ impl Client {
     ///
     ///     let key = Key::new("test", "test", "mykey");
     ///     let bin = Bin::new("a", 42);
-    ///     let ops = vec![operations::add(&bin), operations::get_bin("a")];
+    ///     let ops = vec![scalar::add(&bin), scalar::get_bin("a")];
     ///     match client.operate(&WritePolicy::default(), &key, &ops).await {
     ///         Ok(record) => println!("The new value is {}", record.bins.get("a").unwrap()),
     ///         Err(err) => println!("Error writing record: {err}"),

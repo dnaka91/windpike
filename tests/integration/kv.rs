@@ -1,5 +1,6 @@
 use windpike::{
-    as_list, as_map, operations,
+    as_list, as_map,
+    operations::scalar,
     policy::{BasePolicy, WritePolicy},
     Bin, Bins, Key, Value,
 };
@@ -70,7 +71,7 @@ async fn connect() {
     assert!(exists);
 
     let bin = Bin::new("bin999", "test string");
-    let ops = &vec![operations::put(&bin), operations::get()];
+    let ops = &vec![scalar::put(&bin), scalar::get()];
     client.operate(&wpolicy, &key, ops).await.unwrap();
 
     let existed = client.delete(&wpolicy, &key).await.unwrap();

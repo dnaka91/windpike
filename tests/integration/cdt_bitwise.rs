@@ -1,7 +1,7 @@
 use windpike::{
     operations::{
         bitwise,
-        bitwise::{BitPolicy, BitwiseOverflowActions},
+        bitwise::{OverflowAction, Policy},
     },
     policy::WritePolicy,
     Key, Value,
@@ -18,13 +18,13 @@ async fn cdt_bitwise() {
     let val = Value::Blob(vec![
         0b00000001, 0b01000010, 0b00000011, 0b00000100, 0b00000101,
     ]);
-    let bpolicy = BitPolicy::default();
+    let bpolicy = Policy::default();
 
     client.delete(&wpolicy, &key).await.unwrap();
 
     // Verify the insert and Get Command
     let ops = &vec![
-        bitwise::insert("bin", 0, &val, &bpolicy),
+        bitwise::insert("bin", 0, &val, bpolicy),
         bitwise::get("bin", 9, 5),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -38,7 +38,7 @@ async fn cdt_bitwise() {
     // Verify the set command
     let val = Value::Blob(vec![0b11100000]);
     let ops = &vec![
-        bitwise::set("bin", 13, 3, &val, &bpolicy),
+        bitwise::set("bin", 13, 3, &val, bpolicy),
         bitwise::get("bin", 0, 40),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -51,7 +51,7 @@ async fn cdt_bitwise() {
 
     // Verify Remove command
     let ops = &vec![
-        bitwise::remove("bin", 0, 1, &bpolicy),
+        bitwise::remove("bin", 0, 1, bpolicy),
         bitwise::get("bin", 0, 8),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -60,7 +60,7 @@ async fn cdt_bitwise() {
     // Verify OR command
     let val = Value::Blob(vec![0b10101010]);
     let ops = &vec![
-        bitwise::or("bin", 0, 8, &val, &bpolicy),
+        bitwise::or("bin", 0, 8, &val, bpolicy),
         bitwise::get("bin", 0, 8),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -69,7 +69,7 @@ async fn cdt_bitwise() {
     // Verify XOR command
     let val = Value::Blob(vec![0b10101100]);
     let ops = &vec![
-        bitwise::xor("bin", 0, 8, &val, &bpolicy),
+        bitwise::xor("bin", 0, 8, &val, bpolicy),
         bitwise::get("bin", 0, 8),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -78,7 +78,7 @@ async fn cdt_bitwise() {
     // Verify AND command
     let val = Value::Blob(vec![0b01011010]);
     let ops = &vec![
-        bitwise::and("bin", 0, 8, &val, &bpolicy),
+        bitwise::and("bin", 0, 8, &val, bpolicy),
         bitwise::get("bin", 0, 8),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -86,7 +86,7 @@ async fn cdt_bitwise() {
 
     // Verify NOT command
     let ops = &vec![
-        bitwise::not("bin", 0, 8, &bpolicy),
+        bitwise::not("bin", 0, 8, bpolicy),
         bitwise::get("bin", 0, 8),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -94,7 +94,7 @@ async fn cdt_bitwise() {
 
     // Verify LSHIFT command
     let ops = &vec![
-        bitwise::lshift("bin", 24, 8, 3, &bpolicy),
+        bitwise::lshift("bin", 24, 8, 3, bpolicy),
         bitwise::get("bin", 24, 8),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -102,7 +102,7 @@ async fn cdt_bitwise() {
 
     // Verify RSHIFT command
     let ops = &vec![
-        bitwise::rshift("bin", 0, 9, 1, &bpolicy),
+        bitwise::rshift("bin", 0, 9, 1, bpolicy),
         bitwise::get("bin", 0, 16),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -113,15 +113,7 @@ async fn cdt_bitwise() {
 
     // Verify Add command
     let ops = &vec![
-        bitwise::add(
-            "bin",
-            0,
-            8,
-            128,
-            false,
-            BitwiseOverflowActions::Fail,
-            &bpolicy,
-        ),
+        bitwise::add("bin", 0, 8, 128, false, OverflowAction::Fail, bpolicy),
         bitwise::get("bin", 0, 32),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -132,15 +124,7 @@ async fn cdt_bitwise() {
 
     // Verify Subtract command
     let ops = &vec![
-        bitwise::subtract(
-            "bin",
-            0,
-            8,
-            128,
-            false,
-            BitwiseOverflowActions::Fail,
-            &bpolicy,
-        ),
+        bitwise::subtract("bin", 0, 8, 128, false, OverflowAction::Fail, bpolicy),
         bitwise::get("bin", 0, 32),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
@@ -151,7 +135,7 @@ async fn cdt_bitwise() {
 
     // Verify the set int command
     let ops = &vec![
-        bitwise::set_int("bin", 8, 8, 255, &bpolicy),
+        bitwise::set_int("bin", 8, 8, 255, bpolicy),
         bitwise::get("bin", 0, 32),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();

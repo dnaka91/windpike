@@ -1,6 +1,6 @@
 use windpike::{
     as_list,
-    operations::{hll, hll::HllPolicy},
+    operations::{hll, hll::Policy},
     policy::{BasePolicy, WritePolicy},
     Bins, Key, Value,
 };
@@ -13,15 +13,15 @@ async fn hll() {
 
     let key = Key::new(NAMESPACE, common::rand_str(10), "test");
 
-    let hpolicy = HllPolicy::default();
+    let hpolicy = Policy::default();
     let wpolicy = WritePolicy::default();
     let rpolicy = BasePolicy::default();
 
-    let ops = &vec![hll::init(&hpolicy, "bin", 4)];
+    let ops = &vec![hll::init(hpolicy, "bin", 4)];
     client.operate(&wpolicy, &key, ops).await.unwrap();
 
     let v = vec![Value::from("asd123")];
-    let ops = &vec![hll::add(&hpolicy, "bin", &v)];
+    let ops = &vec![hll::add(hpolicy, "bin", &v)];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
@@ -37,14 +37,14 @@ async fn hll() {
         "HLL Count did not match"
     );
 
-    let ops = &vec![hll::init_with_min_hash(&hpolicy, "bin2", 8, 0)];
+    let ops = &vec![hll::init_with_min_hash(hpolicy, "bin2", 8, 0)];
     client.operate(&wpolicy, &key, ops).await.unwrap();
 
     let ops = &vec![hll::fold("bin2", 6)];
     client.operate(&wpolicy, &key, ops).await.unwrap();
 
     let v2 = vec![Value::from("123asd")];
-    let ops = &vec![hll::add(&hpolicy, "bin2", &v2)];
+    let ops = &vec![hll::add(hpolicy, "bin2", &v2)];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(
         *rec.bins.get("bin2").unwrap(),
@@ -98,7 +98,7 @@ async fn hll() {
     );
 
     let ops = &vec![
-        hll::set_union(&hpolicy, "bin", &bin2val),
+        hll::set_union(hpolicy, "bin", &bin2val),
         hll::get_count("bin"),
     ];
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();

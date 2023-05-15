@@ -1,20 +1,13 @@
 //! Functions used to create database operations used in the client's `operate()` method.
 
 pub mod bitwise;
-#[doc(hidden)]
 pub mod cdt;
-pub mod cdt_context;
 pub mod hll;
-pub mod lists;
-pub mod maps;
+pub mod list;
+pub mod map;
 pub mod scalar;
 
-use self::cdt::CdtOperation;
-pub use self::{
-    maps::{MapOrder, MapPolicy, MapReturnType, MapWriteMode},
-    scalar::*,
-};
-use crate::{commands::ParticleType, msgpack, operations::cdt_context::CdtContext, Value};
+use crate::{commands::ParticleType, msgpack, Value};
 
 #[derive(Clone, Copy)]
 pub(crate) enum OperationType {
@@ -38,10 +31,10 @@ pub(crate) enum OperationType {
 pub(crate) enum OperationData<'a> {
     None,
     Value(&'a Value),
-    CdtListOp(CdtOperation<'a>),
-    CdtMapOp(CdtOperation<'a>),
-    CdtBitOp(CdtOperation<'a>),
-    HllOp(CdtOperation<'a>),
+    CdtListOp(cdt::Operation<'a>),
+    CdtMapOp(cdt::Operation<'a>),
+    CdtBitOp(cdt::Operation<'a>),
+    HllOp(cdt::Operation<'a>),
 }
 
 pub(crate) enum OperationBin<'a> {
@@ -55,7 +48,7 @@ pub struct Operation<'a> {
     // OpType determines type of operation.
     pub(crate) op: OperationType,
     // CDT context for nested types
-    pub(crate) ctx: &'a [CdtContext],
+    pub(crate) ctx: &'a [cdt::Context],
     // BinName (Optional) determines the name of bin used in operation.
     pub(crate) bin: OperationBin<'a>,
     // BinData determines bin value used in operation.
@@ -103,7 +96,7 @@ impl<'a> Operation<'a> {
             | OperationData::CdtMapOp(cdt_op)
             | OperationData::CdtBitOp(cdt_op)
             | OperationData::HllOp(cdt_op) => {
-                size += self.write_op_header_to(w, CdtOperation::particle_type() as u8);
+                size += self.write_op_header_to(w, cdt::Operation::particle_type() as u8);
                 size += cdt_op.write_to(w, self.ctx);
             }
         };
@@ -128,7 +121,7 @@ impl<'a> Operation<'a> {
 
     /// Set the context of the operation. Required for nested structures
     #[must_use]
-    pub const fn set_context(mut self, ctx: &'a [CdtContext]) -> Operation<'a> {
+    pub const fn set_context(mut self, ctx: &'a [cdt::Context]) -> Operation<'a> {
         self.ctx = ctx;
         self
     }

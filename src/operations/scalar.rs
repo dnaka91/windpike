@@ -1,7 +1,7 @@
 //! String/number bin operations. Create operations used by the client's `operate()` method.
 
 use crate::{
-    operations::{cdt_context::DEFAULT_CTX, Operation, OperationBin, OperationData, OperationType},
+    operations::{Operation, OperationBin, OperationData, OperationType},
     Bin,
 };
 
@@ -10,7 +10,7 @@ use crate::{
 pub const fn get<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Read,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::All,
         data: OperationData::None,
     }
@@ -21,7 +21,7 @@ pub const fn get<'a>() -> Operation<'a> {
 pub const fn get_header<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Read,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::None,
         data: OperationData::None,
     }
@@ -32,7 +32,7 @@ pub const fn get_header<'a>() -> Operation<'a> {
 pub const fn get_bin(bin_name: &str) -> Operation<'_> {
     Operation {
         op: OperationType::Read,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::Name(bin_name),
         data: OperationData::None,
     }
@@ -43,7 +43,7 @@ pub const fn get_bin(bin_name: &str) -> Operation<'_> {
 pub const fn put<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Write,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::Name(bin.name),
         data: OperationData::Value(&bin.value),
     }
@@ -54,7 +54,7 @@ pub const fn put<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
 pub const fn append<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Append,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::Name(bin.name),
         data: OperationData::Value(&bin.value),
     }
@@ -65,7 +65,7 @@ pub const fn append<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
 pub const fn prepend<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Prepend,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::Name(bin.name),
         data: OperationData::Value(&bin.value),
     }
@@ -76,7 +76,7 @@ pub const fn prepend<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
 pub const fn add<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
     Operation {
         op: OperationType::Incr,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::Name(bin.name),
         data: OperationData::Value(&bin.value),
     }
@@ -87,7 +87,7 @@ pub const fn add<'a>(bin: &'a Bin<'_>) -> Operation<'a> {
 pub const fn touch<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Touch,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::None,
         data: OperationData::None,
     }
@@ -98,7 +98,7 @@ pub const fn touch<'a>() -> Operation<'a> {
 pub const fn delete<'a>() -> Operation<'a> {
     Operation {
         op: OperationType::Delete,
-        ctx: DEFAULT_CTX,
+        ctx: &[],
         bin: OperationBin::None,
         data: OperationData::None,
     }

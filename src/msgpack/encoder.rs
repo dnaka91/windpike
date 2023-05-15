@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use super::{Marker, Write};
 use crate::{
     commands::ParticleType,
-    operations::{
-        cdt::{CdtArgument, CdtOperation},
-        cdt_context::CdtContext,
-    },
+    operations::cdt,
     value::{FloatValue, MapKey, Value},
 };
 
@@ -42,15 +39,15 @@ pub(crate) fn pack_value(w: &mut impl Write, val: &Value) -> usize {
 
 pub(crate) fn pack_cdt_op(
     w: &mut impl Write,
-    cdt_op: &CdtOperation<'_>,
-    ctx: &[CdtContext],
+    op: &cdt::Operation<'_>,
+    ctx: &[cdt::Context],
 ) -> usize {
     let mut size: usize = 0;
     if ctx.is_empty() {
-        w.write_u16(cdt_op.op.into());
+        w.write_u16(op.op.into());
         size += 2;
-        if !cdt_op.args.is_empty() {
-            size += pack_array_begin(w, cdt_op.args.len());
+        if !op.args.is_empty() {
+            size += pack_array_begin(w, op.args.len());
         }
     } else {
         size += pack_array_begin(w, 3);
@@ -66,19 +63,19 @@ pub(crate) fn pack_cdt_op(
             size += pack_value(w, &c.value);
         }
 
-        size += pack_array_begin(w, cdt_op.args.len() + 1);
-        size += pack_integer(w, i64::from(cdt_op.op));
+        size += pack_array_begin(w, op.args.len() + 1);
+        size += pack_integer(w, i64::from(op.op));
     }
 
-    if !cdt_op.args.is_empty() {
-        for arg in &cdt_op.args {
+    if !op.args.is_empty() {
+        for arg in &op.args {
             size += match *arg {
-                CdtArgument::Byte(byte) => pack_value(w, &Value::from(byte)),
-                CdtArgument::Int(int) => pack_value(w, &Value::from(int)),
-                CdtArgument::Value(value) => pack_value(w, value),
-                CdtArgument::List(list) => pack_array(w, list),
-                CdtArgument::Map(map) => pack_map(w, map),
-                CdtArgument::Bool(bool_val) => pack_value(w, &Value::from(bool_val)),
+                cdt::Argument::Byte(byte) => pack_value(w, &Value::from(byte)),
+                cdt::Argument::Int(int) => pack_value(w, &Value::from(int)),
+                cdt::Argument::Value(value) => pack_value(w, value),
+                cdt::Argument::List(list) => pack_array(w, list),
+                cdt::Argument::Map(map) => pack_map(w, map),
+                cdt::Argument::Bool(bool_val) => pack_value(w, &Value::from(bool_val)),
             }
         }
     }
@@ -88,21 +85,21 @@ pub(crate) fn pack_cdt_op(
 
 pub(crate) fn pack_hll_op(
     w: &mut impl Write,
-    hll_op: &CdtOperation<'_>,
-    _ctx: &[CdtContext],
+    op: &cdt::Operation<'_>,
+    _ctx: &[cdt::Context],
 ) -> usize {
     let mut size: usize = 0;
-    size += pack_array_begin(w, hll_op.args.len() + 1);
-    size += pack_integer(w, i64::from(hll_op.op));
-    if !hll_op.args.is_empty() {
-        for arg in &hll_op.args {
+    size += pack_array_begin(w, op.args.len() + 1);
+    size += pack_integer(w, i64::from(op.op));
+    if !op.args.is_empty() {
+        for arg in &op.args {
             size += match *arg {
-                CdtArgument::Byte(byte) => pack_value(w, &Value::from(byte)),
-                CdtArgument::Int(int) => pack_value(w, &Value::from(int)),
-                CdtArgument::Value(value) => pack_value(w, value),
-                CdtArgument::List(list) => pack_array(w, list),
-                CdtArgument::Map(map) => pack_map(w, map),
-                CdtArgument::Bool(bool_val) => pack_value(w, &Value::from(bool_val)),
+                cdt::Argument::Byte(byte) => pack_value(w, &Value::from(byte)),
+                cdt::Argument::Int(int) => pack_value(w, &Value::from(int)),
+                cdt::Argument::Value(value) => pack_value(w, value),
+                cdt::Argument::List(list) => pack_array(w, list),
+                cdt::Argument::Map(map) => pack_map(w, map),
+                cdt::Argument::Bool(bool_val) => pack_value(w, &Value::from(bool_val)),
             }
         }
     }
@@ -111,8 +108,8 @@ pub(crate) fn pack_hll_op(
 
 pub(crate) fn pack_cdt_bit_op(
     w: &mut impl Write,
-    cdt_op: &CdtOperation<'_>,
-    ctx: &[CdtContext],
+    op: &cdt::Operation<'_>,
+    ctx: &[cdt::Context],
 ) -> usize {
     let mut size: usize = 0;
     if !ctx.is_empty() {
@@ -130,18 +127,18 @@ pub(crate) fn pack_cdt_bit_op(
         }
     }
 
-    size += pack_array_begin(w, cdt_op.args.len() + 1);
-    size += pack_integer(w, i64::from(cdt_op.op));
+    size += pack_array_begin(w, op.args.len() + 1);
+    size += pack_integer(w, i64::from(op.op));
 
-    if !cdt_op.args.is_empty() {
-        for arg in &cdt_op.args {
+    if !op.args.is_empty() {
+        for arg in &op.args {
             size += match *arg {
-                CdtArgument::Byte(byte) => pack_value(w, &Value::from(byte)),
-                CdtArgument::Int(int) => pack_value(w, &Value::from(int)),
-                CdtArgument::Value(value) => pack_value(w, value),
-                CdtArgument::List(list) => pack_array(w, list),
-                CdtArgument::Map(map) => pack_map(w, map),
-                CdtArgument::Bool(bool_val) => pack_value(w, &Value::from(bool_val)),
+                cdt::Argument::Byte(byte) => pack_value(w, &Value::from(byte)),
+                cdt::Argument::Int(int) => pack_value(w, &Value::from(int)),
+                cdt::Argument::Value(value) => pack_value(w, value),
+                cdt::Argument::List(list) => pack_array(w, list),
+                cdt::Argument::Map(map) => pack_map(w, map),
+                cdt::Argument::Bool(bool_val) => pack_value(w, &Value::from(bool_val)),
             }
         }
     }

@@ -52,7 +52,7 @@
 //! use std::{sync::Arc, time::Instant};
 //!
 //! use windpike::{
-//!     operations,
+//!     operations::scalar,
 //!     policy::{BasePolicy, ClientPolicy, WritePolicy},
 //!     Bin, Bins, Client, Key,
 //! };
@@ -89,7 +89,7 @@
 //!             println!("exists: {exists}");
 //!
 //!             let bin = Bin::new("int", 999);
-//!             let ops = &vec![operations::put(&bin), operations::get()];
+//!             let ops = &vec![scalar::put(&bin), scalar::get()];
 //!             let op_rec = client.operate(&wpolicy, &key, ops).await.unwrap();
 //!             println!("operate: {op_rec:?}");
 //!
