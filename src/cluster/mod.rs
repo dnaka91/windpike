@@ -128,7 +128,7 @@ impl Cluster {
             closed: AtomicBool::new(false),
         });
         // try to seed connections for first use
-        Self::wait_till_stabilized(Arc::clone(&cluster)).await?;
+        Self::wait_till_stabilized(Arc::clone(&cluster)).await;
 
         // apply policy rules
         if cluster.client_policy.fail_if_not_connected && !cluster.is_connected().await {
@@ -205,36 +205,32 @@ impl Cluster {
         Ok(())
     }
 
-    async fn wait_till_stabilized(cluster: Arc<Self>) -> Result<()> {
+    async fn wait_till_stabilized(cluster: Arc<Self>) {
         let timeout = cluster
             .client_policy()
             .timeout
             .unwrap_or_else(|| Duration::from_secs(3));
         let deadline = Instant::now() + timeout;
 
-        let handle = tokio::spawn(async move {
-            let mut count: isize = -1;
-            loop {
-                if Instant::now() > deadline {
-                    break;
-                }
-
-                if let Err(err) = cluster.tend().await {
-                    error!(error = ?err, "error during initial cluster tend");
-                }
-
-                let old_count = count;
-                // unlikely that there are ever more than isize::MAX nodes
-                count = cluster.node_count().await.try_into().unwrap_or(isize::MAX);
-                if count == old_count {
-                    break;
-                }
-
-                tokio::time::sleep(Duration::from_millis(1)).await;
+        let mut count: isize = -1;
+        loop {
+            if Instant::now() > deadline {
+                break;
             }
-        });
 
-        handle.await.map_err(ClusterError::InitialTend)
+            if let Err(err) = cluster.tend().await {
+                error!(error = ?err, "error during initial cluster tend");
+            }
+
+            let old_count = count;
+            // unlikely that there are ever more than isize::MAX nodes
+            count = cluster.node_count().await.try_into().unwrap_or(isize::MAX);
+            if count == old_count {
+                break;
+            }
+
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
     }
 
     pub const fn cluster_name(&self) -> &Option<String> {
