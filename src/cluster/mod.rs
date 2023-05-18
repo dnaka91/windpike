@@ -229,7 +229,7 @@ impl Cluster {
                 break;
             }
 
-            tokio::time::sleep(Duration::from_millis(1)).await;
+            tokio::time::sleep(Duration::from_millis(10)).await;
         }
     }
 

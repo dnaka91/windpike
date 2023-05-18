@@ -100,9 +100,9 @@ pub struct BasePolicy {
 impl Default for BasePolicy {
     fn default() -> Self {
         Self {
-            timeout: Some(Duration::new(30, 0)),
+            timeout: Some(Duration::from_secs(30)),
             max_retries: Some(2),
-            sleep_between_retries: Some(Duration::new(0, 500_000_000)),
+            sleep_between_retries: Some(Duration::from_millis(500)),
             consistency_level: ConsistencyLevel::default(),
             send_key: false,
         }
@@ -265,11 +265,11 @@ impl Default for ClientPolicy {
     fn default() -> Self {
         Self {
             user_password: None,
-            timeout: Some(Duration::new(30, 0)),
-            idle_timeout: Some(Duration::new(5, 0)),
+            timeout: Some(Duration::from_secs(30)),
+            idle_timeout: Some(Duration::from_secs(5)),
             max_conns_per_node: 256,
             fail_if_not_connected: true,
-            tend_interval: Duration::new(1, 0),
+            tend_interval: Duration::from_secs(1),
             ip_map: None,
             use_services_alternate: false,
             thread_pool_size: 128,

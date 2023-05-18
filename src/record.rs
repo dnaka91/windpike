@@ -47,11 +47,11 @@ impl Record {
     #[must_use]
     pub fn time_to_live(&self) -> Option<Duration> {
         (self.expiration > 0).then(|| {
-            let expiration = citrusleaf_epoch() + Duration::new(u64::from(self.expiration), 0);
+            let expiration = citrusleaf_epoch() + Duration::from_secs(u64::from(self.expiration));
             expiration
                 .duration_since(SystemTime::now())
                 .ok()
-                .unwrap_or(Duration::new(1, 0))
+                .unwrap_or(Duration::from_secs(1))
         })
     }
 }
@@ -59,7 +59,7 @@ impl Record {
 /// Aerospike's own epoch time, which is `Fri Jan  1 00:00:00 UTC 2010`.
 #[inline]
 fn citrusleaf_epoch() -> SystemTime {
-    UNIX_EPOCH + Duration::new(1_262_304_000, 0)
+    UNIX_EPOCH + Duration::from_secs(1_262_304_000)
 }
 
 /// Virtual collection of records retrieved through queries and scans. During a query/scan,
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn ttl_expiration_future() {
-        let expiration = SystemTime::now() + Duration::new(1000, 0);
+        let expiration = SystemTime::now() + Duration::from_secs(1000);
         let secs_since_epoch = expiration
             .duration_since(citrusleaf_epoch())
             .unwrap()
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn ttl_expiration_past() {
         let record = Record::new(None, HashMap::new(), 0, 0x0d00_d21c);
-        assert_eq!(record.time_to_live(), Some(Duration::new(1u64, 0)));
+        assert_eq!(record.time_to_live(), Some(Duration::from_secs(1)));
     }
 
     #[test]
