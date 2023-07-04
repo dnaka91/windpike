@@ -7,6 +7,5 @@ exceptions = [
 [bans]
 skip = [
     { name = "bitflags", version = "=1.3.2" },
-    { name = "hermit-abi", version = "=0.2.6" },
     { name = "regex-syntax", version = "=0.6.29" },
 ]
