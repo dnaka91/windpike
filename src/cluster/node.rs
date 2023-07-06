@@ -38,8 +38,68 @@ pub struct Node {
     responded: AtomicBool,
     active: AtomicBool,
 
-    supports_float: bool,
-    supports_geo: bool,
+    features: FeatureSupport,
+}
+
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, Default)]
+    pub struct FeatureSupport: u32 {
+        const BATCH_ANY = 1 << 0;
+        const BATCH_INDEX = 1 << 1;
+        const BLOB_BITS = 1 << 2;
+        const CDT_LIST = 1 << 3;
+        const CDT_MAP = 1 << 4;
+        const CLUSTER_STABLE = 1 << 5;
+        const FLOAT = 1 << 6;
+        const GEO = 1 << 7;
+        const SINDEX_EXISTS = 1 << 8;
+        const PEERS = 1 << 9;
+        const PIPELINING = 1 << 10;
+        const PQUERY = 1 << 11;
+        const PSCANS = 1 << 12;
+        const QUERY_SHOW = 1 << 13;
+        const RELAXED_SC = 1 << 14;
+        const REPLICAS = 1 << 15;
+        const REPLICAS_ALL = 1 << 16;
+        const REPLICAS_MASTER = 1 << 17;
+        const REPLICAS_MAX = 1 << 18;
+        const TRUNCATE_NAMESPACE = 1 << 19;
+        const UDF = 1 << 20;
+    }
+}
+
+impl From<&str> for FeatureSupport {
+    fn from(value: &str) -> Self {
+        let mut support = FeatureSupport::default();
+        for v in value.split(';') {
+            support |= match v {
+                "batch-any" => Self::BATCH_ANY,
+                "batch-index" => Self::BATCH_INDEX,
+                "blob-bits" => Self::BLOB_BITS,
+                "cdt-list" => Self::CDT_LIST,
+                "cdt-map" => Self::CDT_MAP,
+                "cluster-stable" => Self::CLUSTER_STABLE,
+                "float" => Self::FLOAT,
+                "geo" => Self::GEO,
+                "sindex-exists" => Self::SINDEX_EXISTS,
+                "peers" => Self::PEERS,
+                "pipelining" => Self::PIPELINING,
+                "pquery" => Self::PQUERY,
+                "pscans" => Self::PSCANS,
+                "query-show" => Self::QUERY_SHOW,
+                "relaxed-sc" => Self::RELAXED_SC,
+                "replicas" => Self::REPLICAS,
+                "replicas-all" => Self::REPLICAS_ALL,
+                "replicas-master" => Self::REPLICAS_MASTER,
+                "replicas-max" => Self::REPLICAS_MAX,
+                "truncate-namespace" => Self::TRUNCATE_NAMESPACE,
+                "udf" => Self::UDF,
+                _ => continue,
+            };
+        }
+
+        support
+    }
 }
 
 impl Node {
@@ -59,8 +119,7 @@ impl Node {
             responded: AtomicBool::new(false),
             active: AtomicBool::new(true),
 
-            supports_float: nv.supports_float,
-            supports_geo: nv.supports_geo,
+            features: nv.features,
         })
     }
 
@@ -83,14 +142,9 @@ impl Node {
         self.host.clone()
     }
 
-    // Returns true if the Node supports floats
-    pub fn supports_float(&self) -> bool {
-        self.supports_float
-    }
-
-    // Returns true if the Node supports geo
-    pub fn supports_geo(&self) -> bool {
-        self.supports_geo
+    // Return the supported features of the node.
+    pub fn features(&self) -> FeatureSupport {
+        self.features
     }
 
     // Returns the reference count

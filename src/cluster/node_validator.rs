@@ -1,8 +1,8 @@
-use std::{net::ToSocketAddrs, str, vec::Vec};
+use std::{net::ToSocketAddrs, vec::Vec};
 
 use tracing::debug;
 
-use super::{Cluster, NodeError, Result};
+use super::{node::FeatureSupport, Cluster, NodeError, Result};
 use crate::{
     commands::Message,
     net::{Connection, Host},
@@ -18,10 +18,7 @@ pub struct NodeValidator {
     pub address: String,
     pub client_policy: ClientPolicy,
     pub use_new_info: bool,
-    pub supports_float: bool,
-    pub supports_batch_index: bool,
-    pub supports_replicas_all: bool,
-    pub supports_geo: bool,
+    pub features: FeatureSupport,
 }
 
 // Generates a node validator
@@ -33,10 +30,7 @@ impl NodeValidator {
             address: String::new(),
             client_policy: cluster.client_policy().clone(),
             use_new_info: true,
-            supports_float: false,
-            supports_batch_index: false,
-            supports_replicas_all: false,
-            supports_geo: false,
+            features: FeatureSupport::default(),
         }
     }
 
@@ -103,22 +97,9 @@ impl NodeValidator {
         self.address = alias.address();
 
         if let Some(features) = info_map.get("features") {
-            self.set_features(features);
+            self.features = features.as_str().into();
         }
 
         Ok(())
-    }
-
-    fn set_features(&mut self, features: &str) {
-        let features = features.split(';');
-        for feature in features {
-            match feature {
-                "float" => self.supports_float = true,
-                "batch-index" => self.supports_batch_index = true,
-                "replicas-all" => self.supports_replicas_all = true,
-                "geo" => self.supports_geo = true,
-                _ => (),
-            }
-        }
     }
 }
