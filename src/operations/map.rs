@@ -787,7 +787,7 @@ pub fn remove_by_key_relative_index_range_count<'a>(
     )
 }
 
-/// reates a map remove by value relative to rank range operation.
+/// Creates a map remove by value relative to rank range operation.
 /// Server removes map items nearest to value and greater by relative rank.
 /// Server returns removed data specified by returnType.
 ///

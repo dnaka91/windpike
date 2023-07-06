@@ -273,7 +273,7 @@ impl WritePolicy {
     /// Create a new write policy with given generation and expiration.
     ///
     /// This is a shorthand for common operations. Alternatively the write policy can be created
-    /// manually, allowing to set additonal parameters at once.
+    /// manually, allowing to set additional parameters at once.
     #[must_use]
     pub fn new(generation: u32, expiration: Expiration) -> Self {
         Self {

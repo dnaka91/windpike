@@ -94,7 +94,7 @@
 //!             println!("operate: {op_rec:?}");
 //!
 //!             let existed = client.delete(&wpolicy, &key).await.unwrap();
-//!             println!("existed (sould be true): {existed}");
+//!             println!("existed (should be true): {existed}");
 //!
 //!             let existed = client.delete(&wpolicy, &key).await.unwrap();
 //!             println!("existed (should be false): {existed}");

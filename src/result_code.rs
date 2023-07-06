@@ -96,7 +96,7 @@ pub enum ResultCode {
     RoleAlreadyExists,
     /// Privilege is invalid.
     InvalidPrivilege,
-    /// Invalid IP address whiltelist.
+    /// Invalid IP address whitelist.
     InvalidWhitelist,
     /// Quotas not enabled on server.
     QuotasNotEnabled,
@@ -130,7 +130,7 @@ pub enum ResultCode {
     IndexGeneric,
     /// Index name maximum length exceeded.
     IndexNameMaxLen,
-    /// Maximum number of indicies exceeded.
+    /// Maximum number of indices exceeded.
     IndexMaxCount,
     /// Secondary index query aborted.
     QueryAborted,

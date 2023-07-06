@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Unique record identifier. Records can be identified using a specified namespace, an optional
-/// set name and a user defined key which must be uique within a set. Records can also be
+/// set name and a user defined key which must be unique within a set. Records can also be
 /// identified by namespace/digest, which is the combination used on the server.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Key {

@@ -49,7 +49,7 @@ pub enum CommandError {
     Timeout,
     #[error("server error: {}", .0.into_string())]
     ServerError(ResultCode),
-    #[error("invalid UTF-8 content ecountered")]
+    #[error("invalid UTF-8 content encountered")]
     InvalidUtf8(#[from] std::str::Utf8Error),
     #[error("I/O related error")]
     Io(#[from] std::io::Error),
