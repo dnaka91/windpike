@@ -4,7 +4,7 @@ pub mod partition;
 pub mod partition_tokenizer;
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
@@ -165,7 +165,7 @@ impl Cluster {
             nodes = self.nodes().await;
         }
 
-        let mut friend_list: Vec<Host> = vec![];
+        let mut friend_list: HashSet<Host> = HashSet::new();
         let mut refresh_count = 0;
 
         // Refresh all known nodes.
@@ -177,7 +177,7 @@ impl Cluster {
                         refresh_count += 1;
 
                         if !friends.is_empty() {
-                            friend_list.extend_from_slice(&friends);
+                            friend_list.extend(friends);
                         }
 
                         if old_gen != node.partition_generation() {
@@ -340,13 +340,16 @@ impl Cluster {
         list.iter().any(|node| node.name() == name)
     }
 
-    async fn find_new_nodes_to_add(&self, hosts: Vec<Host>) -> Result<Vec<Arc<Node>>, NetError> {
+    async fn find_new_nodes_to_add(
+        &self,
+        hosts: HashSet<Host>,
+    ) -> Result<Vec<Arc<Node>>, NetError> {
         let mut list: Vec<Arc<Node>> = vec![];
 
         for host in hosts {
             let mut nv = NodeValidator::new(self);
             if let Err(err) = nv.validate_node(self, &host).await {
-                error!(error = ?err, %host, "adding node failed with error");
+                error!(error = ?err, %host, "node validation failed");
                 continue;
             };
 

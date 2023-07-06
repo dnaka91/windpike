@@ -18,9 +18,9 @@ pub struct Host {
 impl Host {
     /// Create a new host instance given a hostname/IP and a port number.
     #[must_use]
-    pub fn new(name: &str, port: u16) -> Self {
+    pub fn new(name: impl Into<String>, port: u16) -> Self {
         Self {
-            name: name.to_owned(),
+            name: name.into(),
             port,
         }
     }

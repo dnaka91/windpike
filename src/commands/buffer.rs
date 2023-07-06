@@ -1173,7 +1173,7 @@ impl MessageHeader {
         field_count: u16,
         operation_count: u16,
     ) -> Self {
-        if policy.consistency_level == ConsistencyLevel::ConsistencyAll {
+        if policy.consistency_level == ConsistencyLevel::All {
             read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
         }
 
@@ -1187,7 +1187,7 @@ impl MessageHeader {
             result_code: ResultCode::Ok,
             generation: 0,
             expiration: Expiration::NamespaceDefault.into(),
-            timeout: policy.timeout.unwrap_or(Duration::ZERO),
+            timeout: policy.timeout,
             field_count,
             operation_count,
         }
@@ -1225,11 +1225,11 @@ impl MessageHeader {
             }
         }
 
-        if policy.commit_level == CommitLevel::CommitMaster {
+        if policy.commit_level == CommitLevel::Master {
             info_attr |= InfoAttr::COMMIT_LEVEL_MASTER;
         }
 
-        if policy.base_policy.consistency_level == ConsistencyLevel::ConsistencyAll {
+        if policy.base_policy.consistency_level == ConsistencyLevel::All {
             read_attr |= ReadAttr::CONSISTENCY_LEVEL_ALL;
         }
 
@@ -1247,7 +1247,7 @@ impl MessageHeader {
             result_code: ResultCode::Ok,
             generation,
             expiration: policy.expiration.into(),
-            timeout: policy.as_ref().timeout.unwrap_or(Duration::ZERO),
+            timeout: policy.as_ref().timeout,
             field_count,
             operation_count,
         }

@@ -50,12 +50,8 @@ async fn scan_multi_consumer() {
     let client = common::client().await;
     let set_name = create_test_set(&client, EXPECTED).await;
 
-    let spolicy = ScanPolicy {
-        record_queue_size: 4096,
-        ..ScanPolicy::default()
-    };
     let rs = client
-        .scan(&spolicy, NAMESPACE, &set_name, Bins::All)
+        .scan(&ScanPolicy::default(), NAMESPACE, &set_name, Bins::All)
         .await
         .unwrap();
     let rs = Arc::new(Mutex::new(rs));

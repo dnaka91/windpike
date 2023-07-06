@@ -1,6 +1,5 @@
 use std::{
-    collections::HashMap,
-    str::FromStr,
+    collections::{HashMap, HashSet},
     sync::{
         atomic::{AtomicBool, AtomicIsize, AtomicUsize, Ordering},
         Arc,
@@ -156,7 +155,7 @@ impl Node {
     pub async fn refresh(
         &self,
         current_aliases: &HashMap<Host, Arc<Self>>,
-    ) -> Result<Vec<Host>, NodeRefreshError> {
+    ) -> Result<HashSet<Host>, NodeRefreshError> {
         self.reference_count.store(0, Ordering::Relaxed);
         self.responded.store(false, Ordering::Relaxed);
         self.refresh_count.fetch_add(1, Ordering::Relaxed);
@@ -232,43 +231,43 @@ impl Node {
         &self,
         current_aliases: &HashMap<Host, Arc<Self>>,
         info_map: &HashMap<String, String>,
-    ) -> Result<Vec<Host>> {
-        let mut friends: Vec<Host> = vec![];
+    ) -> Result<HashSet<Host>> {
+        Ok(info_map
+            .get(self.services_name())
+            .ok_or(ClusterError::MissingServicesList)?
+            .split(';')
+            .filter(|s| !s.is_empty())
+            .filter_map(|friend| {
+                let (host, port) = if let Some((host, port)) = friend
+                    .split_once(':')
+                    .and_then(|(host, port)| Some(host).zip(port.parse().ok()))
+                {
+                    (host, port)
+                } else {
+                    error!(
+                        got = friend,
+                        "node info from asinfo:services is malformed, expected HOST:PORT",
+                    );
+                    return None;
+                };
 
-        let friend_string = match info_map.get(self.services_name()) {
-            None => return Err(ClusterError::MissingServicesList),
-            Some(friend_string) if friend_string.is_empty() => return Ok(friends),
-            Some(friend_string) => friend_string,
-        };
+                let host = self
+                    .client_policy
+                    .ip_map
+                    .as_ref()
+                    .and_then(|map| map.get(host).map(String::as_str))
+                    .unwrap_or(host);
 
-        let friend_names = friend_string.split(';');
-        for friend in friend_names {
-            let mut friend_info = friend.split(':');
-            if friend_info.clone().count() != 2 {
-                error!(
-                    "node info from asinfo:services is malformed. Expected HOST:PORT, but got \
-                     '{friend}'",
-                );
-                continue;
-            }
+                let alias = Host::new(host, port);
 
-            let host = friend_info.next().unwrap();
-            let port = u16::from_str(friend_info.next().unwrap())?;
-            let alias = match &self.client_policy.ip_map {
-                Some(ip_map) if ip_map.contains_key(host) => {
-                    Host::new(ip_map.get(host).unwrap(), port)
+                if current_aliases.contains_key(&alias) {
+                    self.reference_count.fetch_add(1, Ordering::Relaxed);
+                    None
+                } else {
+                    Some(alias)
                 }
-                _ => Host::new(host, port),
-            };
-
-            if current_aliases.contains_key(&alias) {
-                self.reference_count.fetch_add(1, Ordering::Relaxed);
-            } else if !friends.contains(&alias) {
-                friends.push(alias);
-            }
-        }
-
-        Ok(friends)
+            })
+            .collect())
     }
 
     fn update_partitions(&self, info_map: &HashMap<String, String>) -> Result<()> {

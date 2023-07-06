@@ -54,8 +54,12 @@ impl BatchReadCommand {
 
             // Sleep before trying again, after the first iteration
             if iterations > 1 {
-                if let Some(sleep_between_retries) = base_policy.sleep_between_retries {
-                    tokio::time::sleep(sleep_between_retries).await;
+                if base_policy.sleep_between_retries.is_zero() {
+                    // yield to free space for the runtime to execute other futures between runs
+                    // because the loop would block the thread
+                    tokio::task::yield_now().await;
+                } else {
+                    tokio::time::sleep(base_policy.sleep_between_retries).await;
                 }
             }
 

@@ -57,12 +57,12 @@ impl<'a> SingleCommand<'a> {
 
             // Sleep before trying again, after the first iteration
             if iterations > 1 {
-                if let Some(sleep_between_retries) = policy.sleep_between_retries {
-                    tokio::time::sleep(sleep_between_retries).await;
-                } else {
+                if policy.sleep_between_retries.is_zero() {
                     // yield to free space for the runtime to execute other futures between runs
                     // because the loop would block the thread
                     tokio::task::yield_now().await;
+                } else {
+                    tokio::time::sleep(policy.sleep_between_retries).await;
                 }
             }
 

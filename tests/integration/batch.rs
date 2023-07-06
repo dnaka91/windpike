@@ -10,7 +10,7 @@ async fn batch_get() {
     let client = common::client().await;
     let set_name = common::rand_str(10);
     let bpolicy = BatchPolicy {
-        concurrency: Concurrency::Parallel,
+        concurrency: Concurrency::Parallel(0),
         ..BatchPolicy::default()
     };
     let wpolicy = WritePolicy::default();

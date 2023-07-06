@@ -1,4 +1,4 @@
-use std::{cmp, collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use tokio::sync::Mutex;
 
@@ -45,8 +45,13 @@ impl BatchExecutor {
     ) -> Result<Vec<BatchReadCommand>> {
         let threads = match *concurrency {
             Concurrency::Sequential => 1,
-            Concurrency::Parallel => jobs.len(),
-            Concurrency::MaxThreads(max) => cmp::min(max, jobs.len()),
+            Concurrency::Parallel(max) => {
+                if max > 0 {
+                    jobs.len().min(max)
+                } else {
+                    jobs.len()
+                }
+            }
         };
         let size = jobs.len() / threads;
         let mut overhead = jobs.len() % threads;

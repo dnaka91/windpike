@@ -554,7 +554,7 @@ impl Client {
     {
         let bins = bins.into();
         let nodes = self.cluster.nodes().await;
-        let (queue_tx, queue_rx) = mpsc::channel(policy.record_queue_size);
+        let (queue_tx, queue_rx) = mpsc::channel(nodes.len().min(128));
         let recordset = RecordSet::new(queue_rx);
         let task_id = recordset.task_id();
 
