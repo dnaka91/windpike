@@ -7,7 +7,7 @@ use super::{Command, CommandError, Result};
 use crate::{
     cluster::{partition::Partition, Cluster, Node},
     net::Connection,
-    policy::Policy,
+    policy::BasePolicy,
     Key,
 };
 
@@ -41,8 +41,12 @@ impl<'a> SingleCommand<'a> {
         Ok(())
     }
 
-    pub(super) async fn execute(policy: &impl Policy, cmd: &mut impl Command) -> Result<()> {
+    pub(super) async fn execute(
+        policy: &impl AsRef<BasePolicy>,
+        cmd: &mut impl Command,
+    ) -> Result<()> {
         let mut iterations = 0;
+        let policy = policy.as_ref();
 
         // set timeout outside the loop
         let deadline = policy.deadline();
@@ -53,7 +57,7 @@ impl<'a> SingleCommand<'a> {
 
             // Sleep before trying again, after the first iteration
             if iterations > 1 {
-                if let Some(sleep_between_retries) = policy.sleep_between_retries() {
+                if let Some(sleep_between_retries) = policy.sleep_between_retries {
                     tokio::time::sleep(sleep_between_retries).await;
                 } else {
                     // yield to free space for the runtime to execute other futures between runs

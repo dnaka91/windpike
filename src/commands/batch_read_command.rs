@@ -9,10 +9,8 @@ use super::{
     Command, CommandError, Result,
 };
 use crate::{
-    cluster::Node,
-    net::Connection,
-    policy::{BatchPolicy, Policy},
-    value, BatchRead, Record, ResultCode, Value,
+    cluster::Node, net::Connection, policy::BatchPolicy, value, BatchRead, Record, ResultCode,
+    Value,
 };
 
 struct BatchRecord {
@@ -48,7 +46,7 @@ impl BatchReadCommand {
             iterations += 1;
 
             // too many retries
-            if let Some(max_retries) = base_policy.max_retries() {
+            if let Some(max_retries) = base_policy.max_retries {
                 if iterations > max_retries + 1 {
                     return Err(CommandError::Timeout);
                 }
@@ -56,7 +54,7 @@ impl BatchReadCommand {
 
             // Sleep before trying again, after the first iteration
             if iterations > 1 {
-                if let Some(sleep_between_retries) = base_policy.sleep_between_retries() {
+                if let Some(sleep_between_retries) = base_policy.sleep_between_retries {
                     tokio::time::sleep(sleep_between_retries).await;
                 }
             }

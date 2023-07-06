@@ -6,59 +6,6 @@ use tokio::time::{Duration, Instant};
 
 use crate::commands::{self, CommandError};
 
-/// Trait implemented by most policy types; policies that implement this trait typically encompass
-/// an instance of `BasePolicy`.
-pub trait Policy {
-    #[doc(hidden)]
-    /// Deadline for current transaction based on specified timeout. For internal use only.
-    fn deadline(&self) -> Option<Instant>;
-
-    /// Total transaction timeout for both client and server. The timeout is tracked on the client
-    /// and also sent to the server along with the transaction in the wire protocol. The client
-    /// will most likely timeout first, but the server has the capability to timeout the
-    /// transaction as well.
-    ///
-    /// The timeout is also used as a socket timeout. Default: 0 (no timeout).
-    fn timeout(&self) -> Option<Duration>;
-
-    /// Maximum number of retries before aborting the current transaction. A retry may be attempted
-    /// when there is a network error. If `max_retries` is exceeded, the abort will occur even if
-    /// the timeout has not yet been exceeded.
-    fn max_retries(&self) -> Option<usize>;
-
-    /// Time to sleep between retries. Set to zero to skip sleep. Default: 500ms.
-    fn sleep_between_retries(&self) -> Option<Duration>;
-
-    /// How replicas should be consulted in read operations to provide the desired consistency
-    /// guarantee.
-    fn consistency_level(&self) -> ConsistencyLevel;
-}
-
-impl<T> Policy for T
-where
-    T: AsRef<BasePolicy>,
-{
-    fn deadline(&self) -> Option<Instant> {
-        self.as_ref().deadline()
-    }
-
-    fn timeout(&self) -> Option<Duration> {
-        self.as_ref().timeout()
-    }
-
-    fn max_retries(&self) -> Option<usize> {
-        self.as_ref().max_retries()
-    }
-
-    fn sleep_between_retries(&self) -> Option<Duration> {
-        self.as_ref().sleep_between_retries()
-    }
-
-    fn consistency_level(&self) -> ConsistencyLevel {
-        self.as_ref().consistency_level()
-    }
-}
-
 /// `ConsistencyLevel` indicates how replicas should be consulted in a read
 /// operation to provide the desired consistency guarantee.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -109,25 +56,17 @@ impl Default for BasePolicy {
     }
 }
 
-impl Policy for BasePolicy {
-    fn deadline(&self) -> Option<Instant> {
+impl AsRef<Self> for BasePolicy {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl BasePolicy {
+    /// Deadline for current transaction based on specified timeout. For internal use only.
+    #[must_use]
+    pub fn deadline(&self) -> Option<Instant> {
         self.timeout.map(|timeout| Instant::now() + timeout)
-    }
-
-    fn timeout(&self) -> Option<Duration> {
-        self.timeout
-    }
-
-    fn max_retries(&self) -> Option<usize> {
-        self.max_retries
-    }
-
-    fn sleep_between_retries(&self) -> Option<Duration> {
-        self.sleep_between_retries
-    }
-
-    fn consistency_level(&self) -> ConsistencyLevel {
-        self.consistency_level
     }
 }
 

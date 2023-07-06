@@ -15,7 +15,7 @@ use crate::{
     operations::{Operation, OperationBin, OperationData, OperationType},
     policy::{
         BasePolicy, BatchPolicy, CommitLevel, ConsistencyLevel, Expiration, GenerationPolicy,
-        Policy, RecordExistsAction, ScanPolicy, WritePolicy,
+        RecordExistsAction, ScanPolicy, WritePolicy,
     },
     BatchRead, Bin, Bins, Key, ResultCode, UserKey,
 };
@@ -1247,7 +1247,7 @@ impl MessageHeader {
             result_code: ResultCode::Ok,
             generation,
             expiration: policy.expiration.into(),
-            timeout: policy.timeout().unwrap_or(Duration::ZERO),
+            timeout: policy.as_ref().timeout.unwrap_or(Duration::ZERO),
             field_count,
             operation_count,
         }
