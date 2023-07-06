@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime},
 };
 
 use rand::Rng;
@@ -8,25 +8,30 @@ use tokio::sync::mpsc;
 
 use crate::{commands::CommandError, Key, Value};
 
-/// Container object for a database record.
+/// A single, uniquely identifiable database entry.
 #[derive(Clone, Debug)]
 pub struct Record {
-    /// Record key. When reading a record from the database, the key is not set in the returned
-    /// Record struct.
+    /// Identifier for the record, by which it can be found in the database.
+    ///
+    /// When reading a record the key is usually not set, unless the
+    /// [`BasePolicy::send_key](crate::policy::BasePolicy::send_key) parameter is set to `true`.
     pub key: Option<Key>,
-
-    /// Map of named record bins.
+    /// Content of the record, which is categories in named bins. Each entry can contain simple
+    /// values, lists, or even maps to create nested structures within.
     pub bins: HashMap<String, Value>,
-
-    /// Record modification count.
+    /// Modification count of the record. This counter is increased on the server side for each
+    /// modification (including the initial creation).
+    ///
+    /// In write operations, the generation can be used to create conditional writes by utilizing
+    /// the [`WritePolicy::generation_policy`](crate::policy::WritePolicy::generation_policy).
     pub generation: u32,
-
-    /// Date record will expire, in seconds from Jan 01 2010, 00:00:00 UTC.
+    /// Seconds from the _Citrusleaf epoch time_ (Jan 01 2010, 00:00:00 UTC) after which this
+    /// record will expire.
     expiration: u32,
 }
 
 impl Record {
-    /// Construct a new Record. For internal use only.
+    /// Construct a new record. For internal use only.
     #[must_use]
     pub(crate) const fn new(
         key: Option<Key>,
@@ -42,8 +47,8 @@ impl Record {
         }
     }
 
-    /// Returns the remaining time-to-live (TTL, a.k.a. expiration time) for the record or `None`
-    /// if the record never expires.
+    /// Returns the remaining time-to-live (usually appreviated as TTL, or known as expiration time)
+    /// for the record. If the record never expires, [`None`] is returned.
     #[must_use]
     pub fn time_to_live(&self) -> Option<Duration> {
         (self.expiration > 0).then(|| {
@@ -59,13 +64,13 @@ impl Record {
 /// Aerospike's own epoch time, which is `Fri Jan  1 00:00:00 UTC 2010`.
 #[inline]
 fn citrusleaf_epoch() -> SystemTime {
-    UNIX_EPOCH + Duration::from_secs(1_262_304_000)
+    SystemTime::UNIX_EPOCH + Duration::from_secs(1_262_304_000)
 }
 
-/// Virtual collection of records retrieved through queries and scans. During a query/scan,
-/// multiple threads will retrieve records from the server nodes and put these records on an
-/// internal queue managed by the recordset. The single user thread consumes these records from the
-/// queue.
+/// Set of records retrieved through queries and scans.
+///
+/// During a query/scan, multiple tasks will load the record from the cluster nodes and queue them
+/// up for consumption through this set.
 pub struct RecordSet {
     queue: mpsc::Receiver<Result<Record, CommandError>>,
     task_id: u64,
@@ -85,6 +90,9 @@ impl RecordSet {
         self.task_id
     }
 
+    /// Get the next record in the set, potentially wait for it if not available yet. Once [`None`]
+    /// is returned, the set is considered resumed and subsequent calls will always return [`None`]
+    /// immediately.
     pub async fn next(&mut self) -> Option<Result<Record, CommandError>> {
         self.queue.recv().await
     }
