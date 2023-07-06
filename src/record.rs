@@ -14,7 +14,7 @@ pub struct Record {
     /// Identifier for the record, by which it can be found in the database.
     ///
     /// When reading a record the key is usually not set, unless the
-    /// [`BasePolicy::send_key](crate::policy::BasePolicy::send_key) parameter is set to `true`.
+    /// [`BasePolicy::send_key`](crate::policy::BasePolicy::send_key) parameter is set to `true`.
     pub key: Option<Key>,
     /// Content of the record, which is categories in named bins. Each entry can contain simple
     /// values, lists, or even maps to create nested structures within.
