@@ -82,6 +82,99 @@ pub enum UserKey {
 }
 
 impl UserKey {
+    /// If this value is a 64-bit signed integer, return the associated `i64`. Return `None`
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use windpike::UserKey;
+    /// let v = UserKey::from(10_i64);
+    ///
+    /// assert_eq!(Some(10), v.as_i64());
+    /// assert_eq!(None, v.as_str());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub const fn as_i64(&self) -> Option<i64> {
+        match self {
+            Self::Int(value) => Some(*value),
+            _ => None,
+        }
+    }
+
+    /// If this value is a string, return the associated `&str`. Return `None` oterwhise.
+    ///
+    /// ```
+    /// # use windpike::UserKey;
+    /// let v = UserKey::from("value");
+    ///
+    /// assert_eq!(Some("value"), v.as_str());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// If this value is a blob, return the associated `&[u8]`. Return `None` oterwhise.
+    ///
+    /// ```
+    /// # use windpike::UserKey;
+    /// let v = UserKey::from(&[1, 2, 3][..]);
+    ///
+    /// assert_eq!(Some(&[1, 2, 3][..]), v.as_bytes());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn as_bytes(&self) -> Option<&[u8]> {
+        match self {
+            Self::Blob(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// If this value is a string, return the associated `String`. Return `None` oterwhise. In
+    /// contrast to [`Self::as_str`], this method consumes the value to return the owned string.
+    ///
+    /// ```
+    /// # use std::borrow::Cow;
+    /// # use windpike::UserKey;
+    /// let v = UserKey::from("value");
+    ///
+    /// assert_eq!(Some(Cow::Owned(String::from("value"))), v.into_string());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn into_string(self) -> Option<Cow<'static, str>> {
+        match self {
+            Self::String(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// If this value is a blob, return the associated `Vec<u8>`. Return `None` oterwhise. In
+    /// contrast to [`Self::as_bytes`], this method consumes the value to return the owned vector.
+    ///
+    /// ```
+    /// # use std::borrow::Cow;
+    /// # use windpike::UserKey;
+    /// let v = UserKey::from(&[1, 2, 3][..]);
+    ///
+    /// assert_eq!(Some(Cow::Owned(vec![1, 2, 3])), v.into_bytes());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn into_bytes(self) -> Option<Cow<'static, [u8]>> {
+        match self {
+            Self::Blob(value) => Some(value),
+            _ => None,
+        }
+    }
+
     pub(crate) fn particle_type(&self) -> ParticleType {
         match self {
             UserKey::Int(_) => ParticleType::Integer,

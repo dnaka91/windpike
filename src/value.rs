@@ -28,8 +28,8 @@ pub enum FloatValue {
 }
 
 impl FloatValue {
-    /// If this value is a 32-bit floating point number, return the associated [`f32`]. Return
-    /// [`None`] oterwhise.
+    /// If this value is a 32-bit floating point number, return the associated `f32`. Return `None`
+    /// oterwhise.
     ///
     /// ```
     /// # use windpike::FloatValue;
@@ -47,8 +47,8 @@ impl FloatValue {
         }
     }
 
-    /// If this value is a 64-bit floating point number, return the associated [`f64`]. Return
-    /// [`None`] oterwhise.
+    /// If this value is a 64-bit floating point number, return the associated `f64`. Return `None`
+    /// oterwhise.
     ///
     /// ```
     /// # use windpike::FloatValue;
@@ -94,7 +94,7 @@ pub enum MapKey {
 }
 
 impl MapKey {
-    /// If this value is a 64-bit signed integer, return the associated [`i64`]. Return [`None`]
+    /// If this value is a 64-bit signed integer, return the associated `i64`. Return `None`
     /// oterwhise.
     ///
     /// ```
@@ -113,7 +113,7 @@ impl MapKey {
         }
     }
 
-    /// If this value is a 64-bit unsigned integer, return the associated [`u64`]. Return [`None`]
+    /// If this value is a 64-bit unsigned integer, return the associated `u64`. Return `None`
     /// oterwhise.
     ///
     /// ```
@@ -132,8 +132,8 @@ impl MapKey {
         }
     }
 
-    /// If this value is a 32-bit floating point number, return the associated [`f32`]. Return
-    /// [`None`] oterwhise.
+    /// If this value is a 32-bit floating point number, return the associated `f32`. Return `None`
+    /// oterwhise.
     ///
     /// ```
     /// # use windpike::MapKey;
@@ -151,8 +151,8 @@ impl MapKey {
         }
     }
 
-    /// If this value is a 64-bit floating point number, return the associated [`f64`]. Return
-    /// [`None`] oterwhise.
+    /// If this value is a 64-bit floating point number, return the associated `f64`. Return `None`
+    /// oterwhise.
     ///
     /// ```
     /// # use windpike::MapKey;
@@ -170,7 +170,7 @@ impl MapKey {
         }
     }
 
-    /// If this value is a string, return the associated [`&str`]. Return [`None`] oterwhise.
+    /// If this value is a string, return the associated `&str`. Return `None` oterwhise.
     ///
     /// ```
     /// # use windpike::MapKey;
@@ -182,6 +182,24 @@ impl MapKey {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// If this value is a string, return the associated `String`. Return `None` oterwhise. In
+    /// contrast to [`Self::as_str`], this method consumes the value to return the owned string.
+    ///
+    /// ```
+    /// # use windpike::MapKey;
+    /// let v = MapKey::from("value");
+    ///
+    /// assert_eq!(Some(String::from("value")), v.into_string());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn into_string(self) -> Option<String> {
         match self {
             Self::String(value) => Some(value),
             _ => None,
@@ -265,7 +283,7 @@ impl Value {
         }
     }
 
-    /// If this value is a boolean, return the associated [`bool`]. Return [`None`] oterwhise.
+    /// If this value is a boolean, return the associated `bool`. Return `None` oterwhise.
     ///
     /// ```
     /// # use windpike::Value;
@@ -283,7 +301,7 @@ impl Value {
         }
     }
 
-    /// If this value is a 64-bit signed integer, return the associated [`i64`]. Return [`None`]
+    /// If this value is a 64-bit signed integer, return the associated `i64`. Return `None`
     /// oterwhise.
     ///
     /// ```
@@ -302,7 +320,7 @@ impl Value {
         }
     }
 
-    /// If this value is a 64-bit unsigned integer, return the associated [`u64`]. Return [`None`]
+    /// If this value is a 64-bit unsigned integer, return the associated `u64`. Return `None`
     /// oterwhise.
     ///
     /// ```
@@ -321,8 +339,8 @@ impl Value {
         }
     }
 
-    /// If this value is a 32-bit floating point number, return the associated [`f32`]. Return
-    /// [`None`] oterwhise.
+    /// If this value is a 32-bit floating point number, return the associated `f32`. Return `None`
+    /// oterwhise.
     ///
     /// ```
     /// # use windpike::Value;
@@ -340,8 +358,8 @@ impl Value {
         }
     }
 
-    /// If this value is a 64-bit floating point number, return the associated [`f64`]. Return
-    /// [`None`] oterwhise.
+    /// If this value is a 64-bit floating point number, return the associated `f64`. Return `None`
+    /// oterwhise.
     ///
     /// ```
     /// # use windpike::Value;
@@ -359,7 +377,7 @@ impl Value {
         }
     }
 
-    /// If this value is a string, return the associated [`&str`]. Return [`None`] oterwhise.
+    /// If this value is a string, return the associated `&str`. Return `None` oterwhise.
     ///
     /// ```
     /// # use windpike::Value;
@@ -377,12 +395,11 @@ impl Value {
         }
     }
 
-    /// If this value is a blob, return the associated [`&[u8]`](slice). Return [`None`]
-    /// oterwhise.
+    /// If this value is a blob, return the associated `&[u8]`. Return `None` oterwhise.
     ///
     /// ```
     /// # use windpike::Value;
-    /// let v = Value::from(&[1, 2, 3][..]);
+    /// let v = Value::from([1, 2, 3]);
     ///
     /// assert_eq!(Some(&[1, 2, 3][..]), v.as_bytes());
     /// assert_eq!(None, v.as_i64());
@@ -396,12 +413,11 @@ impl Value {
         }
     }
 
-    /// If this value is a list, return the associated [`&[Value]`](slice). Return [`None`]
-    /// oterwhise.
+    /// If this value is a list, return the associated `&[Value]`. Return `None` oterwhise.
     ///
     /// ```
     /// # use windpike::Value;
-    /// let v = Value::from(&[Value::from(1), Value::from("value")][..]);
+    /// let v = Value::from([Value::from(1), Value::from("value")]);
     ///
     /// assert_eq!(Some(&[1.into(), "value".into()][..]), v.as_list());
     /// assert_eq!(None, v.as_i64());
@@ -415,7 +431,36 @@ impl Value {
         }
     }
 
-    /// If this value is a string, return the associated [`String`]. Return [`None`] oterwhise. In
+    /// If this value is a hash map, return the associated `&HashMap<MapKey, Value>`. Return `None`
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use std::collections::HashMap;
+    /// # use windpike::{MapKey,Value};
+    /// let v = Value::from([
+    ///     (MapKey::from("a"), Value::from(1)),
+    ///     (MapKey::from("b"), Value::from("value")),
+    /// ]);
+    ///
+    /// assert_eq!(
+    ///     Some(&HashMap::from([
+    ///         ("a".into(), 1.into()),
+    ///         ("b".into(), "value".into())
+    ///     ])),
+    ///     v.as_hash_map()
+    /// );
+    /// assert_eq!(None, v.as_i64());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn as_hash_map(&self) -> Option<&HashMap<MapKey, Value>> {
+        match self {
+            Self::HashMap(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// If this value is a string, return the associated `String`. Return `None` oterwhise. In
     /// contrast to [`Self::as_str`], this method consumes the value to return the owned string.
     ///
     /// ```
@@ -433,12 +478,12 @@ impl Value {
         }
     }
 
-    /// If this value is a blob, return the associated [`Vec<u8>`]. Return [`None`] oterwhise. In
+    /// If this value is a blob, return the associated `Vec<u8>`. Return `None` oterwhise. In
     /// contrast to [`Self::as_bytes`], this method consumes the value to return the owned vector.
     ///
     /// ```
     /// # use windpike::Value;
-    /// let v = Value::from(&[1, 2, 3][..]);
+    /// let v = Value::from([1, 2, 3]);
     ///
     /// assert_eq!(Some(vec![1, 2, 3]), v.into_bytes());
     /// ```
@@ -451,12 +496,12 @@ impl Value {
         }
     }
 
-    /// If this value is a list, return the associated [`Vec<Value>`]. Return [`None`] oterwhise. In
+    /// If this value is a list, return the associated `Vec<Value>`. Return `None` oterwhise. In
     /// contrast to [`Self::as_list`], this method consumes the value to return the owned vector.
     ///
     /// ```
     /// # use windpike::Value;
-    /// let v = Value::from(&[Value::from(1), Value::from(2), Value::from(3)][..]);
+    /// let v = Value::from([Value::from(1), Value::from(2), Value::from(3)]);
     ///
     /// assert_eq!(Some(vec![1.into(), 2.into(), 3.into()]), v.into_list());
     /// ```
@@ -465,6 +510,35 @@ impl Value {
     pub fn into_list(self) -> Option<Vec<Value>> {
         match self {
             Self::List(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// If this value is a hash map, return the associated `HashMap<MapKey, Value>`. Return `None`
+    /// oterwhise. In contrast to [`Self::as_hash_map`], this method consumes the value to
+    /// return the owned hash map.
+    ///
+    /// ```
+    /// # use std::collections::HashMap;
+    /// # use windpike::{MapKey,Value};
+    /// let v = Value::from([
+    ///     (MapKey::from("a"), Value::from(1)),
+    ///     (MapKey::from("b"), Value::from("value")),
+    /// ]);
+    ///
+    /// assert_eq!(
+    ///     Some(HashMap::from([
+    ///         ("a".into(), 1.into()),
+    ///         ("b".into(), "value".into())
+    ///     ])),
+    ///     v.into_hash_map()
+    /// );
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn into_hash_map(self) -> Option<HashMap<MapKey, Value>> {
+        match self {
+            Self::HashMap(value) => Some(value),
             _ => None,
         }
     }
