@@ -121,7 +121,6 @@ pub use crate::{
     net::{Host, ToHosts},
     record::{Record, RecordSet},
     result_code::ResultCode,
-    user::User,
     value::{FloatValue, MapKey, Value},
 };
 
@@ -141,5 +140,4 @@ pub mod operations;
 pub mod policy;
 mod record;
 mod result_code;
-mod user;
 mod value;
