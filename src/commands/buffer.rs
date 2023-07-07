@@ -11,7 +11,7 @@ use bytes::{Buf, BufMut, BytesMut};
 
 use crate::{
     commands::field_type::FieldType,
-    msgpack::Write,
+    msgpack::{Read, Write},
     operations::{Operation, OperationBin, OperationData, OperationType},
     policy::{
         BasePolicy, BatchPolicy, CommitLevel, ConsistencyLevel, Expiration, GenerationPolicy,
@@ -123,18 +123,6 @@ impl Buffer {
             buffer: BytesMut::with_capacity(4096),
             reclaim_threshold,
         }
-    }
-
-    pub fn advance(&mut self, cnt: usize) {
-        self.buffer.advance(cnt);
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.buffer.is_empty()
-    }
-
-    pub fn peek(&self) -> Option<u8> {
-        self.buffer.first().copied()
     }
 
     pub fn clear(&mut self, size: usize) -> Result<()> {
@@ -735,58 +723,8 @@ impl Buffer {
         self.buffer.len()
     }
 
-    pub fn read_bool(&mut self) -> bool {
-        self.buffer.get_u8() != 0
-    }
-
-    pub fn read_u8(&mut self) -> u8 {
-        self.buffer.get_u8()
-    }
-
-    pub fn read_u16(&mut self) -> u16 {
-        self.buffer.get_u16()
-    }
-
-    pub fn read_u32(&mut self) -> u32 {
-        self.buffer.get_u32()
-    }
-
-    pub fn read_u64(&mut self) -> u64 {
-        self.buffer.get_u64()
-    }
-
-    pub fn read_i8(&mut self) -> i8 {
-        self.buffer.get_i8()
-    }
-
-    pub fn read_i16(&mut self) -> i16 {
-        self.buffer.get_i16()
-    }
-
-    pub fn read_i32(&mut self) -> i32 {
-        self.buffer.get_i32()
-    }
-
-    pub fn read_i64(&mut self) -> i64 {
-        self.buffer.get_i64()
-    }
-
-    pub fn read_f32(&mut self) -> f32 {
-        self.buffer.get_f32()
-    }
-
-    pub fn read_f64(&mut self) -> f64 {
-        self.buffer.get_f64()
-    }
-
     pub fn read_msg_size(&mut self) -> usize {
         ProtoHeader::read_from(&mut self.buffer).size
-    }
-
-    pub fn read_str(&mut self, len: usize) -> Result<String> {
-        let mut buf = vec![0; len];
-        self.buffer.copy_to_slice(&mut buf);
-        String::from_utf8(buf).map_err(Into::into)
     }
 
     pub fn read_bytes(&mut self, pos: usize, count: usize) -> &[u8] {
@@ -795,12 +733,6 @@ impl Buffer {
 
     pub fn read_slice(&mut self, count: usize) -> &[u8] {
         &self.buffer[..count]
-    }
-
-    pub fn read_blob(&mut self, len: usize) -> Vec<u8> {
-        let mut buf = vec![0; len];
-        self.buffer.copy_to_slice(&mut buf);
-        buf
     }
 
     pub fn write_u16_le(&mut self, val: u16) -> usize {
@@ -835,6 +767,102 @@ impl AsRef<[u8]> for Buffer {
 impl AsMut<[u8]> for Buffer {
     fn as_mut(&mut self) -> &mut [u8] {
         &mut self.buffer
+    }
+}
+
+impl Read for Buffer {
+    #[inline]
+    fn read_u8(&mut self) -> u8 {
+        self.buffer.get_u8()
+    }
+
+    #[inline]
+    fn read_u16(&mut self) -> u16 {
+        self.buffer.get_u16()
+    }
+
+    #[inline]
+    fn read_u32(&mut self) -> u32 {
+        self.buffer.get_u32()
+    }
+
+    #[inline]
+    fn read_u64(&mut self) -> u64 {
+        self.buffer.get_u64()
+    }
+
+    #[inline]
+    fn read_i8(&mut self) -> i8 {
+        self.buffer.get_i8()
+    }
+
+    #[inline]
+    fn read_i16(&mut self) -> i16 {
+        self.buffer.get_i16()
+    }
+
+    #[inline]
+    fn read_i32(&mut self) -> i32 {
+        self.buffer.get_i32()
+    }
+
+    #[inline]
+    fn read_i64(&mut self) -> i64 {
+        self.buffer.get_i64()
+    }
+
+    #[inline]
+    fn read_f32(&mut self) -> f32 {
+        self.buffer.get_f32()
+    }
+
+    #[inline]
+    fn read_f64(&mut self) -> f64 {
+        self.buffer.get_f64()
+    }
+
+    #[inline]
+    fn read_bool(&mut self) -> bool {
+        self.buffer.get_u8() != 0
+    }
+
+    #[inline]
+    fn read_bytes(&mut self, len: usize) -> Vec<u8> {
+        let mut buf = vec![0; len];
+        self.buffer.copy_to_slice(&mut buf);
+        buf
+    }
+
+    #[inline]
+    fn read_str(&mut self, len: usize) -> Result<String> {
+        let mut buf = vec![0; len];
+        self.buffer.copy_to_slice(&mut buf);
+        String::from_utf8(buf).map_err(Into::into)
+    }
+
+    #[inline]
+    fn read_geo(&mut self, len: usize) -> Result<String> {
+        self.advance(1);
+        let ncells = self.read_u16() as usize;
+        let header_size = ncells * 8;
+
+        self.advance(header_size);
+        self.read_str(len - header_size - 3)
+    }
+
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
+    }
+
+    #[inline]
+    fn advance(&mut self, count: usize) {
+        self.buffer.advance(count);
+    }
+
+    #[inline]
+    fn peek(&self) -> Option<u8> {
+        self.buffer.first().copied()
     }
 }
 

@@ -36,7 +36,7 @@ impl BasePolicy {
     /// Default value for the [`Self::timeout`] parameter.
     pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
-    /// Deadline for current transaction based on specified timeout. For internal use only.
+    /// Deadline for current transaction based on specified timeout.
     #[must_use]
     pub(crate) fn deadline(&self) -> Option<Instant> {
         (!self.timeout.is_zero()).then(|| Instant::now() + self.timeout)

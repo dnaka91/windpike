@@ -6,7 +6,7 @@
 
 use bytes::BufMut;
 
-use crate::commands::ParseParticleError;
+use crate::commands::{buffer::BufferError, ParseParticleError};
 
 pub(crate) mod decoder;
 pub(crate) mod encoder;
@@ -23,6 +23,29 @@ pub enum MsgpackError {
     Buffer(#[from] crate::commands::buffer::BufferError),
     #[error("the marker `{0}` isn't valid for the data type")]
     InvalidMarker(u8),
+}
+
+pub(crate) trait Read {
+    fn read_u8(&mut self) -> u8;
+    fn read_u16(&mut self) -> u16;
+    fn read_u32(&mut self) -> u32;
+    fn read_u64(&mut self) -> u64;
+    fn read_i8(&mut self) -> i8;
+    fn read_i16(&mut self) -> i16;
+    fn read_i32(&mut self) -> i32;
+    fn read_i64(&mut self) -> i64;
+    fn read_f32(&mut self) -> f32;
+    fn read_f64(&mut self) -> f64;
+
+    fn read_bytes(&mut self, len: usize) -> Vec<u8>;
+    fn read_str(&mut self, len: usize) -> Result<String, BufferError>;
+
+    fn read_bool(&mut self) -> bool;
+    fn read_geo(&mut self, len: usize) -> Result<String, BufferError>;
+
+    fn is_empty(&self) -> bool;
+    fn advance(&mut self, count: usize);
+    fn peek(&self) -> Option<u8>;
 }
 
 pub(crate) trait Write {

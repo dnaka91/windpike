@@ -3,10 +3,7 @@ use std::{collections::HashMap, fmt, result::Result as StdResult, vec::Vec};
 use ordered_float::OrderedFloat;
 
 use crate::{
-    commands::{
-        buffer::{Buffer, BufferError},
-        ParseParticleError, ParticleType,
-    },
+    commands::{buffer::BufferError, ParseParticleError, ParticleType},
     errors::Result,
     msgpack::{self, decoder, encoder, MsgpackError},
 };
@@ -24,13 +21,23 @@ macro_rules! from {
 /// Container for floating point bin values stored in the Aerospike database.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum FloatValue {
-    /// Container for single precision float values.
+    /// 32-bit floating point number.
     F32(OrderedFloat<f32>),
-    /// Container for double precision float values.
+    /// 64-bit floating point number.
     F64(OrderedFloat<f64>),
 }
 
 impl FloatValue {
+    /// If this value is a 32-bit floating point number, return the associated [`f32`]. Return
+    /// [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::FloatValue;
+    /// let v = FloatValue::from(5.0_f32);
+    ///
+    /// assert_eq!(Some(5.0), v.as_f32());
+    /// assert_eq!(None, v.as_f64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_f32(&self) -> Option<f32> {
@@ -40,6 +47,16 @@ impl FloatValue {
         }
     }
 
+    /// If this value is a 64-bit floating point number, return the associated [`f64`]. Return
+    /// [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::FloatValue;
+    /// let v = FloatValue::from(5.0_f64);
+    ///
+    /// assert_eq!(Some(5.0), v.as_f64());
+    /// assert_eq!(None, v.as_f32());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
@@ -62,15 +79,31 @@ impl fmt::Display for FloatValue {
     }
 }
 
+/// Key for a [`Value::HashMap`] entry, which is a subset of the [`Value`] type, as only a limited
+/// set of its variants are allowed to be used as map keys.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum MapKey {
+    /// 64-bit signed integer.
     Int(i64),
+    /// 64-bit unsigned integer.
     Uint(u64),
+    /// Floating point number.
     Float(FloatValue),
+    /// String value
     String(String),
 }
 
 impl MapKey {
+    /// If this value is a 64-bit signed integer, return the associated [`i64`]. Return [`None`]
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use windpike::MapKey;
+    /// let v = MapKey::from(10_i64);
+    ///
+    /// assert_eq!(Some(10), v.as_i64());
+    /// assert_eq!(None, v.as_u64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_i64(&self) -> Option<i64> {
@@ -80,6 +113,16 @@ impl MapKey {
         }
     }
 
+    /// If this value is a 64-bit unsigned integer, return the associated [`u64`]. Return [`None`]
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use windpike::MapKey;
+    /// let v = MapKey::from(10_u64);
+    ///
+    /// assert_eq!(Some(10), v.as_u64());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_u64(&self) -> Option<u64> {
@@ -89,6 +132,16 @@ impl MapKey {
         }
     }
 
+    /// If this value is a 32-bit floating point number, return the associated [`f32`]. Return
+    /// [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::MapKey;
+    /// let v = MapKey::from(5.0_f32);
+    ///
+    /// assert_eq!(Some(5.0), v.as_f32());
+    /// assert_eq!(None, v.as_f64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_f32(&self) -> Option<f32> {
@@ -98,6 +151,16 @@ impl MapKey {
         }
     }
 
+    /// If this value is a 64-bit floating point number, return the associated [`f64`]. Return
+    /// [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::MapKey;
+    /// let v = MapKey::from(5.0_f64);
+    ///
+    /// assert_eq!(Some(5.0), v.as_f64());
+    /// assert_eq!(None, v.as_f32());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
@@ -107,6 +170,15 @@ impl MapKey {
         }
     }
 
+    /// If this value is a string, return the associated [`&str`]. Return [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::MapKey;
+    /// let v = MapKey::from("key");
+    ///
+    /// assert_eq!(Some("key"), v.as_str());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
@@ -141,49 +213,47 @@ pub enum Value {
     Nil,
     /// Boolean value.
     Bool(bool),
-    /// Integer value. All integers are represented as 64-bit numerics in Aerospike.
+    /// 64-bit signed integer. All integers are represented as 64-bit numerics in Aerospike.
     Int(i64),
-    /// Unsigned integer value. The largest integer value that can be stored in a record bin is
-    /// `i64::max_value()`; however the list and map data types can store integer values (and keys)
-    /// up to `u64::max_value()`.
+    /// 64-bit unsigned integer.
+    ///
+    /// The biggest integer value that can be stored in a record is [`i64::MAX`]. However, the
+    /// [`Self::List`] and [`Self::HashMap`] variants can store integer values up to [`u64::MAX`].
     ///
     /// # Panics
     ///
     /// Attempting to store an `u64` value as a record bin value will cause a panic. Use casting to
     /// store and retrieve `u64` values.
     Uint(u64),
-    /// Floating point value. All floating point values are stored in 64-bit IEEE-754 format in
-    /// Aerospike. Aerospike server v3.6.0 and later support double data type.
+    /// 32-bit or 64-bit Floating point number.
     Float(FloatValue),
     /// String value.
     String(String),
-    /// Byte array value.
+    /// Byte vector value.
     Blob(Vec<u8>),
-    /// List data type is an ordered collection of values. Lists can contain values of any
-    /// supported data type. List data order is maintained on writes and reads.
+    /// Ordered collection of values, that can contain any other value.
     List(Vec<Value>),
-    /// Map data type is a collection of key-value pairs. Each key can only appear once in a
-    /// collection and is associated with a value. Map keys and values can be any supported data
-    /// type.
+    /// Key-value pair collection of values. The key is limited to the variants of the [`MapKey`],
+    /// as hash maps can't store every possible variant that this type represents.
     HashMap(HashMap<MapKey, Value>),
-    /// GeoJSON data type are JSON formatted strings to encode geospatial information.
+    /// String value that contains valid GeoJSON. In case the encoded content turns out to be
+    /// malformed, an error will be returned by the Aerospike server.
     GeoJson(String),
-    /// HLL value
+    /// [HyperLogLog](https://docs.aerospike.com/server/guide/data-types/hll) value.
     Hll(Vec<u8>),
 }
 
 impl Value {
-    /// Return the particle type for the value used in the wire protocol.
-    /// For internal use only.
+    /// Determine the particle type for the value used in the wire protocol.
     #[must_use]
     pub(crate) fn particle_type(&self) -> ParticleType {
-        match *self {
+        match self {
             Self::Nil => ParticleType::Null,
             Self::Bool(_) => ParticleType::Bool,
             Self::Int(_) => ParticleType::Integer,
             Self::Uint(_) => panic!(
-                "Aerospike does not support u64 natively on server-side. Use casting to store and \
-                 retrieve u64 values."
+                "Aerospike doesn't support 64-bit unsinged integers natively. Cast forth and back \
+                 between i64 to store u64 values."
             ),
             Self::Float(_) => ParticleType::Float,
             Self::String(_) => ParticleType::String,
@@ -195,6 +265,15 @@ impl Value {
         }
     }
 
+    /// If this value is a boolean, return the associated [`bool`]. Return [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(true);
+    ///
+    /// assert_eq!(Some(true), v.as_bool());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
     #[inline]
     #[must_use]
     pub const fn as_bool(&self) -> Option<bool> {
@@ -204,6 +283,16 @@ impl Value {
         }
     }
 
+    /// If this value is a 64-bit signed integer, return the associated [`i64`]. Return [`None`]
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(10_i64);
+    ///
+    /// assert_eq!(Some(10), v.as_i64());
+    /// assert_eq!(None, v.as_u64());
+    /// ```
     #[inline]
     #[must_use]
     pub const fn as_i64(&self) -> Option<i64> {
@@ -213,6 +302,16 @@ impl Value {
         }
     }
 
+    /// If this value is a 64-bit unsigned integer, return the associated [`u64`]. Return [`None`]
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(10_u64);
+    ///
+    /// assert_eq!(Some(10), v.as_u64());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
     #[inline]
     #[must_use]
     pub const fn as_u64(&self) -> Option<u64> {
@@ -222,6 +321,16 @@ impl Value {
         }
     }
 
+    /// If this value is a 32-bit floating point number, return the associated [`f32`]. Return
+    /// [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(5.0_f32);
+    ///
+    /// assert_eq!(Some(5.0), v.as_f32());
+    /// assert_eq!(None, v.as_f64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_f32(&self) -> Option<f32> {
@@ -231,6 +340,16 @@ impl Value {
         }
     }
 
+    /// If this value is a 64-bit floating point number, return the associated [`f64`]. Return
+    /// [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(5.0_f64);
+    ///
+    /// assert_eq!(Some(5.0), v.as_f64());
+    /// assert_eq!(None, v.as_f32());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_f64(&self) -> Option<f64> {
@@ -240,6 +359,15 @@ impl Value {
         }
     }
 
+    /// If this value is a string, return the associated [`&str`]. Return [`None`] oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from("value");
+    ///
+    /// assert_eq!(Some("value"), v.as_str());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
@@ -249,6 +377,16 @@ impl Value {
         }
     }
 
+    /// If this value is a blob, return the associated [`&[u8]`](slice). Return [`None`]
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(&[1, 2, 3][..]);
+    ///
+    /// assert_eq!(Some(&[1, 2, 3][..]), v.as_bytes());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> Option<&[u8]> {
@@ -258,6 +396,16 @@ impl Value {
         }
     }
 
+    /// If this value is a list, return the associated [`&[Value]`](slice). Return [`None`]
+    /// oterwhise.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(&[Value::from(1), Value::from("value")][..]);
+    ///
+    /// assert_eq!(Some(&[1.into(), "value".into()][..]), v.as_list());
+    /// assert_eq!(None, v.as_i64());
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_list(&self) -> Option<&[Value]> {
@@ -267,6 +415,15 @@ impl Value {
         }
     }
 
+    /// If this value is a string, return the associated [`String`]. Return [`None`] oterwhise. In
+    /// contrast to [`Self::as_str`], this method consumes the value to return the owned string.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from("value");
+    ///
+    /// assert_eq!(Some(String::from("value")), v.into_string());
+    /// ```
     #[inline]
     #[must_use]
     pub fn into_string(self) -> Option<String> {
@@ -276,6 +433,15 @@ impl Value {
         }
     }
 
+    /// If this value is a blob, return the associated [`Vec<u8>`]. Return [`None`] oterwhise. In
+    /// contrast to [`Self::as_bytes`], this method consumes the value to return the owned vector.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(&[1, 2, 3][..]);
+    ///
+    /// assert_eq!(Some(vec![1, 2, 3]), v.into_bytes());
+    /// ```
     #[inline]
     #[must_use]
     pub fn into_bytes(self) -> Option<Vec<u8>> {
@@ -285,6 +451,15 @@ impl Value {
         }
     }
 
+    /// If this value is a list, return the associated [`Vec<Value>`]. Return [`None`] oterwhise. In
+    /// contrast to [`Self::as_list`], this method consumes the value to return the owned vector.
+    ///
+    /// ```
+    /// # use windpike::Value;
+    /// let v = Value::from(&[Value::from(1), Value::from(2), Value::from(3)][..]);
+    ///
+    /// assert_eq!(Some(vec![1.into(), 2.into(), 3.into()]), v.into_list());
+    /// ```
     #[inline]
     #[must_use]
     pub fn into_list(self) -> Option<Vec<Value>> {
@@ -294,35 +469,33 @@ impl Value {
         }
     }
 
-    /// Calculate the size in bytes that the representation on wire for this value will require.
-    /// For internal use only.
+    /// Calculate the size this value requires in encoded form.
     pub(crate) fn estimate_size(&self) -> usize {
         match self {
             Self::Nil => 0,
             Self::Bool(_) => 1,
             Self::Int(_) | Self::Float(_) => 8,
             Self::Uint(_) => panic!(
-                "Aerospike does not support u64 natively on server-side. Use casting to store and \
-                 retrieve u64 values."
+                "Aerospike doesn't support 64-bit unsinged integers natively. Cast forth and back \
+                 between i64 to store u64 values."
             ),
             Self::String(s) => s.len(),
             Self::Blob(b) => b.len(),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(&mut msgpack::Sink, self),
-            Self::GeoJson(s) => 1 + 2 + s.len(), // flags + ncells + jsonstr
+            Self::GeoJson(s) => 3 + s.len(),
             Self::Hll(h) => h.len(),
         }
     }
 
-    /// Serialize the value into the given buffer.
-    /// For internal use only.
+    /// Serialize the value into the given writer.
     pub(crate) fn write_to(&self, w: &mut impl msgpack::Write) -> usize {
         match self {
             Self::Nil => 0,
             Self::Bool(value) => w.write_bool(*value),
             Self::Int(value) => w.write_i64(*value),
             Self::Uint(_) => panic!(
-                "Aerospike does not support u64 natively on server-side. Use casting to store and \
-                 retrieve u64 values."
+                "Aerospike doesn't support 64-bit unsinged integers natively. Cast forth and back \
+                 between i64 to store u64 values."
             ),
             Self::Float(value) => match value {
                 FloatValue::F32(value) => w.write_f32(value.0),
@@ -332,6 +505,26 @@ impl Value {
             Self::Blob(value) | Self::Hll(value) => w.write_bytes(value),
             Self::List(_) | Self::HashMap(_) => encoder::pack_value(w, self),
             Self::GeoJson(value) => w.write_geo(value),
+        }
+    }
+
+    /// Deserialize the value out of the given reader.
+    pub(crate) fn read_from(
+        r: &mut impl msgpack::Read,
+        particle_type: u8,
+        length: usize,
+    ) -> Result<Self, ParticleError> {
+        match ParticleType::try_from(particle_type)? {
+            ParticleType::Null => Ok(Value::Nil),
+            ParticleType::Integer => Ok(Value::Int(r.read_i64())),
+            ParticleType::Float => Ok(Value::Float(r.read_f64().into())),
+            ParticleType::String => Ok(Value::String(r.read_str(length)?)),
+            ParticleType::Blob => Ok(Value::Blob(r.read_bytes(length))),
+            ParticleType::Bool => Ok(Value::Bool(r.read_bool())),
+            ParticleType::Hll => Ok(Value::Hll(r.read_bytes(length))),
+            ParticleType::Map => Ok(decoder::unpack_value_map(r)?),
+            ParticleType::List => Ok(decoder::unpack_value_list(r)?),
+            ParticleType::GeoJson => Ok(Value::GeoJson(r.read_geo(length)?)),
         }
     }
 }
@@ -379,6 +572,24 @@ impl From<FloatValue> for Value {
     }
 }
 
+impl<const N: usize> From<[u8; N]> for Value {
+    fn from(value: [u8; N]) -> Self {
+        Self::Blob(value.into())
+    }
+}
+
+impl<const N: usize> From<[Value; N]> for Value {
+    fn from(value: [Value; N]) -> Self {
+        Self::List(value.into())
+    }
+}
+
+impl<const N: usize> From<[(MapKey, Self); N]> for Value {
+    fn from(value: [(MapKey, Self); N]) -> Self {
+        Self::HashMap(value.into())
+    }
+}
+
 impl From<MapKey> for Value {
     fn from(value: MapKey) -> Self {
         match value {
@@ -390,43 +601,21 @@ impl From<MapKey> for Value {
     }
 }
 
+/// Errors that can happen when parsing content markers from the wire format of an encoded value.
 #[derive(Debug, thiserror::Error)]
 pub enum ParticleError {
+    /// The encountered particle type is not known.
     #[error("particle type not recognized")]
     UnrecognizedParticle(#[from] ParseParticleError),
+    /// The encountered particle type is currently not supported.
     #[error("particle type `{0:?}` not supported for the target type")]
     Unsupported(u8),
+    /// Failed to read from the data buffer.
     #[error("buffer error")]
     Buffer(#[from] BufferError),
+    /// Failed to decode MessagePack encoded data.
     #[error("MessagePack error")]
     Msgpack(#[from] MsgpackError),
-}
-
-pub(crate) fn bytes_to_particle(
-    ptype: u8,
-    buf: &mut Buffer,
-    len: usize,
-) -> Result<Value, ParticleError> {
-    match ParticleType::try_from(ptype)? {
-        ParticleType::Null => Ok(Value::Nil),
-        ParticleType::Integer => Ok(Value::Int(buf.read_i64())),
-        ParticleType::Float => Ok(Value::Float(buf.read_f64().into())),
-        ParticleType::String => Ok(Value::String(buf.read_str(len)?)),
-        ParticleType::Blob => Ok(Value::Blob(buf.read_blob(len))),
-        ParticleType::Bool => Ok(Value::Bool(buf.read_bool())),
-        ParticleType::Hll => Ok(Value::Hll(buf.read_blob(len))),
-        ParticleType::Map => Ok(decoder::unpack_value_map(buf)?),
-        ParticleType::List => Ok(decoder::unpack_value_list(buf)?),
-        ParticleType::GeoJson => {
-            buf.advance(1);
-            let ncells = buf.read_u16() as usize;
-            let header_size = ncells * 8;
-
-            buf.advance(header_size);
-            let value = buf.read_str(len - header_size - 3)?;
-            Ok(Value::GeoJson(value))
-        }
-    }
 }
 
 #[cfg(test)]

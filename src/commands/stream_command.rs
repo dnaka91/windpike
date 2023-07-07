@@ -9,7 +9,7 @@ use super::{
     Command, CommandError, Result,
 };
 use crate::{
-    cluster::Node, net::Connection, value::bytes_to_particle, Key, Record, ResultCode, UserKey,
+    cluster::Node, msgpack::Read, net::Connection, Key, Record, ResultCode, UserKey, Value,
 };
 
 pub struct StreamCommand {
@@ -88,7 +88,7 @@ impl StreamCommand {
 
             let particle_bytes_size = op_size - (4 + name_size);
             conn.read_buffer(particle_bytes_size).await?;
-            let value = bytes_to_particle(particle_type, conn.buffer(), particle_bytes_size)?;
+            let value = Value::read_from(conn.buffer(), particle_type, particle_bytes_size)?;
 
             bins.insert(name, value);
         }
@@ -123,8 +123,8 @@ impl StreamCommand {
                     let particle_type = conn.buffer().read_u8();
                     let particle_bytes_size = field_len - 2;
                     orig_key = Some(UserKey::read_from(
-                        particle_type,
                         conn.buffer(),
+                        particle_type,
                         particle_bytes_size,
                     )?);
                 }

@@ -31,7 +31,7 @@ pub struct Record {
 }
 
 impl Record {
-    /// Construct a new record. For internal use only.
+    /// Construct a new record.
     #[must_use]
     pub(crate) const fn new(
         key: Option<Key>,

@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use tracing::warn;
 
-use super::{Marker, MsgpackError, Result};
+use super::{Marker, MsgpackError, Read, Result};
 use crate::{
-    commands::{buffer::Buffer, ParticleType},
+    commands::ParticleType,
     value::{MapKey, Value},
 };
 
-pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
+pub(crate) fn unpack_value_list(buf: &mut impl Read) -> Result<Value> {
     if buf.is_empty() {
         return Ok(Value::List(Vec::new()));
     }
@@ -19,7 +19,7 @@ pub fn unpack_value_list(buf: &mut Buffer) -> Result<Value> {
     Ok(value)
 }
 
-pub fn unpack_value_map(buf: &mut Buffer) -> Result<Value> {
+pub(crate) fn unpack_value_map(buf: &mut impl Read) -> Result<Value> {
     if buf.is_empty() {
         return Ok(Value::from(HashMap::new()));
     }
@@ -30,7 +30,7 @@ pub fn unpack_value_map(buf: &mut Buffer) -> Result<Value> {
     Ok(value)
 }
 
-fn unpack_array(buf: &mut Buffer, mut count: usize) -> Result<Value> {
+fn unpack_array(buf: &mut impl Read, mut count: usize) -> Result<Value> {
     if count > 0 && is_ext(buf.peek()) {
         unpack_value(buf).ok();
         count -= 1;
@@ -45,7 +45,7 @@ fn unpack_array(buf: &mut Buffer, mut count: usize) -> Result<Value> {
     Ok(Value::from(list))
 }
 
-fn unpack_map(buf: &mut Buffer, mut count: usize) -> Result<Value> {
+fn unpack_map(buf: &mut impl Read, mut count: usize) -> Result<Value> {
     if count > 0 && is_ext(buf.peek()) {
         unpack_value(buf).ok();
         unpack_value(buf).ok();
@@ -62,7 +62,7 @@ fn unpack_map(buf: &mut Buffer, mut count: usize) -> Result<Value> {
     Ok(Value::from(map))
 }
 
-fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
+fn unpack_blob(buf: &mut impl Read, count: usize) -> Result<Value> {
     let vtype = buf.read_u8();
     let count = count - 1;
 
@@ -71,7 +71,7 @@ fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
             let val = buf.read_str(count)?;
             Ok(Value::String(val))
         }
-        ParticleType::Blob => Ok(Value::Blob(buf.read_blob(count))),
+        ParticleType::Blob => Ok(Value::Blob(buf.read_bytes(count))),
         ParticleType::GeoJson => {
             let val = buf.read_str(count)?;
             Ok(Value::GeoJson(val))
@@ -80,7 +80,7 @@ fn unpack_blob(buf: &mut Buffer, count: usize) -> Result<Value> {
     }
 }
 
-fn unpack_string(buf: &mut Buffer, count: usize) -> Result<String> {
+fn unpack_string(buf: &mut impl Read, count: usize) -> Result<String> {
     let vtype = buf.read_u8();
     let count = count - 1;
 
@@ -90,7 +90,7 @@ fn unpack_string(buf: &mut Buffer, count: usize) -> Result<String> {
     }
 }
 
-fn unpack_map_key(buf: &mut Buffer) -> Result<MapKey> {
+fn unpack_map_key(buf: &mut impl Read) -> Result<MapKey> {
     let marker = buf.read_u8();
 
     match Marker::from(marker) {
@@ -123,7 +123,7 @@ fn unpack_map_key(buf: &mut Buffer) -> Result<MapKey> {
     }
 }
 
-fn unpack_value(buf: &mut Buffer) -> Result<Value> {
+fn unpack_value(buf: &mut impl Read) -> Result<Value> {
     let marker = Marker::from(buf.read_u8());
 
     match marker {

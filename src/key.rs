@@ -2,11 +2,17 @@ use std::borrow::Cow;
 
 use ripemd::{Digest, Ripemd160};
 
-use crate::{
-    commands::{buffer::Buffer, ParticleType},
-    msgpack,
-    value::ParticleError,
-};
+use crate::{commands::ParticleType, msgpack, value::ParticleError};
+
+macro_rules! from {
+    ($to:ty, $variant:ident, $($from:ty),+) => {
+        $(impl From<$from> for $to {
+            fn from(value: $from) -> Self {
+                Self::$variant(value.into())
+            }
+        })+
+    };
+}
 
 /// Unique record identifier. Records can be identified using a specified namespace, an optional
 /// set name and a user defined key which must be unique within a set. Records can also be
@@ -109,96 +115,22 @@ impl UserKey {
     }
 
     pub(crate) fn read_from(
-        ptype: u8,
-        buf: &mut Buffer,
-        len: usize,
+        r: &mut impl msgpack::Read,
+        particle_type: u8,
+        length: usize,
     ) -> Result<Self, ParticleError> {
-        Ok(match ParticleType::try_from(ptype)? {
-            ParticleType::Integer => Self::Int(buf.read_i64()),
-            ParticleType::String => Self::String(buf.read_str(len)?.into()),
-            ParticleType::Blob => Self::Blob(buf.read_blob(len).into()),
-            _ => return Err(ParticleError::Unsupported(ptype)),
+        Ok(match ParticleType::try_from(particle_type)? {
+            ParticleType::Integer => Self::Int(r.read_i64()),
+            ParticleType::String => Self::String(r.read_str(length)?.into()),
+            ParticleType::Blob => Self::Blob(r.read_bytes(length).into()),
+            _ => return Err(ParticleError::Unsupported(particle_type)),
         })
     }
 }
 
-impl From<i8> for UserKey {
-    fn from(value: i8) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<i16> for UserKey {
-    fn from(value: i16) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<i32> for UserKey {
-    fn from(value: i32) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<i64> for UserKey {
-    fn from(value: i64) -> Self {
-        Self::Int(value)
-    }
-}
-
-impl From<u8> for UserKey {
-    fn from(value: u8) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<u16> for UserKey {
-    fn from(value: u16) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<u32> for UserKey {
-    fn from(value: u32) -> Self {
-        Self::Int(value.into())
-    }
-}
-
-impl From<String> for UserKey {
-    fn from(value: String) -> Self {
-        Self::String(value.into())
-    }
-}
-
-impl From<&'static str> for UserKey {
-    fn from(value: &'static str) -> Self {
-        Self::String(value.into())
-    }
-}
-
-impl From<Cow<'static, str>> for UserKey {
-    fn from(value: Cow<'static, str>) -> Self {
-        Self::String(value)
-    }
-}
-
-impl From<Vec<u8>> for UserKey {
-    fn from(value: Vec<u8>) -> Self {
-        Self::Blob(value.into())
-    }
-}
-
-impl From<&'static [u8]> for UserKey {
-    fn from(value: &'static [u8]) -> Self {
-        Self::Blob(value.into())
-    }
-}
-
-impl From<Cow<'static, [u8]>> for UserKey {
-    fn from(value: Cow<'static, [u8]>) -> Self {
-        Self::Blob(value)
-    }
-}
+from!(UserKey, Int, i8, i16, i32, i64, u8, u16, u32);
+from!(UserKey, String, &'static str, String, Cow<'static, str>);
+from!(UserKey, Blob, &'static [u8], Vec<u8>, Cow<'static, [u8]>);
 
 #[cfg(test)]
 mod tests {
@@ -236,50 +168,41 @@ mod tests {
         assert_eq!(digest!(1i64), "82d7213b469812947c109a6d341e3b5b1dedec1f");
 
         assert_eq!(
-            digest!(i64::min_value()),
+            digest!(i64::MIN),
             "7185c2a47fb02c996daed26b4e01b83240aee9d4"
         );
         assert_eq!(
-            digest!(i64::max_value()),
+            digest!(i64::MAX),
             "1698328974afa62c8e069860c1516f780d63dbb8"
         );
         assert_eq!(
-            digest!(i32::min_value()),
+            digest!(i32::MIN),
             "d635a867b755f8f54cdc6275e6fb437df82a728c"
         );
         assert_eq!(
-            digest!(i32::max_value()),
+            digest!(i32::MAX),
             "fa8c47b8b898af1bbcb20af0d729ca68359a2645"
         );
         assert_eq!(
-            digest!(i16::min_value()),
+            digest!(i16::MIN),
             "7f41e9dd1f3fe3694be0430e04c8bfc7d51ec2af"
         );
         assert_eq!(
-            digest!(i16::max_value()),
+            digest!(i16::MAX),
             "309fc9c2619c4f65ff7f4cd82085c3ee7a31fc7c"
         );
-        assert_eq!(
-            digest!(i8::min_value()),
-            "93191e549f8f3548d7e2cfc958ddc8c65bcbe4c6"
-        );
-        assert_eq!(
-            digest!(i8::max_value()),
-            "a58f7d98bf60e10fe369c82030b1c9dee053def9"
-        );
+        assert_eq!(digest!(i8::MIN), "93191e549f8f3548d7e2cfc958ddc8c65bcbe4c6");
+        assert_eq!(digest!(i8::MAX), "a58f7d98bf60e10fe369c82030b1c9dee053def9");
 
         assert_eq!(
-            digest!(u32::max_value()),
+            digest!(u32::MAX),
             "2cdf52bf5641027042b9cf9a499e509a58b330e2"
         );
         assert_eq!(
-            digest!(u16::max_value()),
+            digest!(u16::MAX),
             "3f0dd44352749a9fd5b7ec44213441ef54c46d57"
         );
-        assert_eq!(
-            digest!(u8::max_value()),
-            "5a7dd3ea237c30c8735b051524e66fd401a10f6a"
-        );
+        assert_eq!(digest!(u8::MAX), "5a7dd3ea237c30c8735b051524e66fd401a10f6a");
     }
 
     #[test]

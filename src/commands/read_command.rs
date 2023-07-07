@@ -13,9 +13,9 @@ use super::{Command, CommandError, Result, SingleCommand};
 use crate::{
     as_list,
     cluster::{Cluster, Node},
+    msgpack::Read,
     net::Connection,
     policy::BasePolicy,
-    value::bytes_to_particle,
     Bins, Key, Record, ResultCode, Value,
 };
 
@@ -65,7 +65,7 @@ impl<'a> ReadCommand<'a> {
             let name = conn.buffer().read_str(name_size)?;
 
             let particle_bytes_size = op_size - (4 + name_size);
-            let value = bytes_to_particle(particle_type, conn.buffer(), particle_bytes_size)?;
+            let value = Value::read_from(conn.buffer(), particle_type, particle_bytes_size)?;
 
             if value != Value::Nil {
                 // list/map operations may return multiple values for the same bin.

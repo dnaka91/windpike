@@ -9,8 +9,8 @@ use super::{
     Command, CommandError, Result,
 };
 use crate::{
-    cluster::Node, net::Connection, policy::BatchPolicy, value, BatchRead, Record, ResultCode,
-    Value,
+    cluster::Node, msgpack::Read, net::Connection, policy::BatchPolicy, BatchRead, Record,
+    ResultCode, Value,
 };
 
 struct BatchRecord {
@@ -170,8 +170,7 @@ impl BatchReadCommand {
                 let name = conn.buffer().read_str(name_size)?;
                 let particle_bytes_size = op_size - (4 + name_size);
                 conn.read_buffer(particle_bytes_size).await?;
-                let value =
-                    value::bytes_to_particle(particle_type, conn.buffer(), particle_bytes_size)?;
+                let value = Value::read_from(conn.buffer(), particle_type, particle_bytes_size)?;
                 bins.insert(name, value);
             }
 

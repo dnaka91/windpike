@@ -5,7 +5,7 @@ use std::str;
 use super::{buffer::Buffer, CommandError, Result};
 use crate::{
     cluster::Cluster,
-    msgpack::Write,
+    msgpack::{Read, Write},
     net::{Connection, PooledConnection},
     ResultCode,
 };
