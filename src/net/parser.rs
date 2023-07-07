@@ -167,7 +167,7 @@ mod tests {
     proptest! {
         #[test]
         fn read_random_hosts(name in any::<String>(), port in any::<u16>()) {
-            Parser::new(&name,port).read_hosts().ok();
+            Parser::new(&name, port).read_hosts().ok();
         }
 
         #[test]

@@ -359,7 +359,7 @@ from!(Value, Float, f32, f64);
 from!(Value, String, &str, String);
 from!(Value, Blob, &[u8], Vec<u8>);
 from!(Value, List, &[Self], Vec<Self>);
-from!(Value, HashMap, HashMap<MapKey,Self>);
+from!(Value, HashMap, HashMap<MapKey, Self>);
 
 impl From<isize> for Value {
     fn from(value: isize) -> Self {
