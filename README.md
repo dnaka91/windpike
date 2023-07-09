@@ -4,7 +4,7 @@
 [![Repository][crates-img]][crates-url]
 [![Documentation][doc-img]][doc-url]
 
-[build-img]: https://img.shields.io/github/actions/workflow/status/dnaka91/windpike/ci.yml?branch=main&style=for-the-badge
+[build-img]: https://img.shields.io/github/actions/workflow/status/dnaka91/windpike/ci.yml?branch=legacy&style=for-the-badge
 [build-url]: https://github.com/dnaka91/windpike/actions/workflows/ci.yml
 [crates-img]: https://img.shields.io/crates/v/windpike?style=for-the-badge
 [crates-url]: https://crates.io/crates/windpike
