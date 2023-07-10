@@ -1,4 +1,4 @@
-use std::convert::From;
+use std::{borrow::Cow, convert::From};
 
 use crate::value::Value;
 
@@ -40,13 +40,13 @@ pub enum Bins {
     /// Read record header (generation, expiration) only.
     None,
     /// Read specified bin names only.
-    Some(Vec<String>),
+    Some(Vec<Cow<'static, str>>),
 }
 
 impl<I, T> From<I> for Bins
 where
     I: IntoIterator<Item = T>,
-    T: Into<String>,
+    T: Into<Cow<'static, str>>,
 {
     fn from(value: I) -> Self {
         Self::Some(value.into_iter().map(T::into).collect())
@@ -55,11 +55,15 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{Bins, From};
+    use super::{Bins, Cow, From};
 
     #[test]
     fn into_bins() {
-        let bin_names = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
+        let bin_names = vec![
+            Cow::Owned("a".into()),
+            Cow::Owned("b".into()),
+            Cow::Owned("c".into()),
+        ];
         let expected = Bins::Some(bin_names);
 
         assert_eq!(expected, Bins::from(["a", "b", "c"]));
