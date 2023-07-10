@@ -53,7 +53,7 @@
 //!
 //! use windpike::{
 //!     operations::scalar,
-//!     policy::{BasePolicy, ClientPolicy, WritePolicy},
+//!     policies::{BasePolicy, ClientPolicy, WritePolicy},
 //!     Bin, Bins, Client, Key,
 //! };
 //!
@@ -137,7 +137,7 @@ pub mod index;
 mod msgpack;
 mod net;
 pub mod operations;
-pub mod policy;
+pub mod policies;
 mod record;
 mod result_code;
 mod value;

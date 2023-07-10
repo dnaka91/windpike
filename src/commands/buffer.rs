@@ -13,7 +13,7 @@ use crate::{
     commands::field_type::FieldType,
     msgpack::{Read, Write},
     operations::{Operation, OperationBin, OperationData, OperationType},
-    policy::{
+    policies::{
         BasePolicy, BatchPolicy, CommitLevel, ConsistencyLevel, Expiration, GenerationPolicy,
         RecordExistsAction, ScanPolicy, WritePolicy,
     },

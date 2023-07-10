@@ -15,7 +15,7 @@ macro_rules! as_values {
 /// ```rust
 /// use windpike::{
 ///     as_list,
-///     policy::{ClientPolicy, WritePolicy},
+///     policies::{ClientPolicy, WritePolicy},
 ///     Bin, Client, Key,
 /// };
 ///
@@ -50,7 +50,7 @@ macro_rules! as_list {
 /// Write a map value to a record.
 ///
 /// ```rust
-/// use windpike::{Bin, Key, as_map, Client, policy::ClientPolicy, policy::WritePolicy};
+/// use windpike::{Bin, Key, as_map, Client, policies::ClientPolicy, policies::WritePolicy};
 ///
 /// #[tokio::main]
 /// async fn main() {

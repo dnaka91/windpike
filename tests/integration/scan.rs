@@ -6,7 +6,7 @@ use std::sync::{
 use tokio::sync::Mutex;
 use windpike::{
     self,
-    policy::{ScanPolicy, WritePolicy},
+    policies::{ScanPolicy, WritePolicy},
     Bin, Bins, Client, Key, RecordSet,
 };
 

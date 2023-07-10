@@ -1,6 +1,6 @@
 use windpike::{
     errors::{ClusterError, Error},
-    policy::ClientPolicy,
+    policies::ClientPolicy,
     Client,
 };
 

@@ -1,7 +1,7 @@
 use windpike::{
     as_list,
     operations::{hll, hll::Policy},
-    policy::{BasePolicy, WritePolicy},
+    policies::{BasePolicy, WritePolicy},
     Bins, Key, Value,
 };
 

@@ -13,7 +13,7 @@ use crate::{
     index::{CollectionIndexType, IndexTask, IndexType},
     net::ToHosts,
     operations::{Operation, OperationType},
-    policy::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
+    policies::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
     BatchRead, Bin, Bins, Key, Record, RecordSet, ResultCode,
 };
 
@@ -64,7 +64,7 @@ impl Client {
     /// Using an environment variable to set the list of seed hosts.
     ///
     /// ```rust
-    /// use windpike::{policy::ClientPolicy, Client};
+    /// use windpike::{policies::ClientPolicy, Client};
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -111,7 +111,7 @@ impl Client {
     /// ```rust
     /// use windpike::{
     ///     errors::CommandError,
-    ///     policy::{BasePolicy, ClientPolicy},
+    ///     policies::{BasePolicy, ClientPolicy},
     ///     Client, Key, ResultCode,
     /// };
     ///
@@ -137,7 +137,7 @@ impl Client {
     /// ```rust
     /// use windpike::{
     ///     errors::CommandError,
-    ///     policy::{BasePolicy, ClientPolicy},
+    ///     policies::{BasePolicy, ClientPolicy},
     ///     Bins, Client, Key, ResultCode,
     /// };
     ///
@@ -190,7 +190,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     policy::{BatchPolicy, ClientPolicy},
+    ///     policies::{BatchPolicy, ClientPolicy},
     ///     BatchRead, Bins, Client, Key,
     /// };
     ///
@@ -237,7 +237,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     policy::{ClientPolicy, WritePolicy},
+    ///     policies::{ClientPolicy, WritePolicy},
     ///     Bin, Client, Key,
     /// };
     ///
@@ -260,8 +260,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     policy,
-    ///     policy::{ClientPolicy, WritePolicy},
+    ///     policies::{self, ClientPolicy, WritePolicy},
     ///     Bin, Client, Key,
     /// };
     ///
@@ -274,7 +273,7 @@ impl Client {
     ///     let key = Key::new("test", "test", "mykey");
     ///     let bin = Bin::new("i", 42);
     ///     let mut policy = WritePolicy::default();
-    ///     policy.expiration = policy::Expiration::Seconds(10);
+    ///     policy.expiration = policies::Expiration::Seconds(10);
     ///     match client.put(&policy, &key, &vec![bin]).await {
     ///         Ok(()) => println!("Record written"),
     ///         Err(err) => println!("Error writing record: {err}"),
@@ -307,7 +306,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     policy::{ClientPolicy, WritePolicy},
+    ///     policies::{ClientPolicy, WritePolicy},
     ///     Bin, Client, Key,
     /// };
     ///
@@ -390,7 +389,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     policy::{ClientPolicy, WritePolicy},
+    ///     policies::{ClientPolicy, WritePolicy},
     ///     Client, Key,
     /// };
     ///
@@ -423,8 +422,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     policy,
-    ///     policy::{ClientPolicy, WritePolicy},
+    ///     policies::{self, ClientPolicy, WritePolicy},
     ///     Client, Key,
     /// };
     ///
@@ -436,7 +434,7 @@ impl Client {
     ///
     ///     let key = Key::new("test", "test", "mykey");
     ///     let mut policy = WritePolicy::default();
-    ///     policy.expiration = policy::Expiration::NamespaceDefault;
+    ///     policy.expiration = policies::Expiration::NamespaceDefault;
     ///     match client.touch(&policy, &key).await {
     ///         Ok(()) => println!("Record expiration updated"),
     ///         Err(err) => println!("Error writing record: {}", err),
@@ -469,7 +467,7 @@ impl Client {
     /// ```rust
     /// use windpike::{
     ///     operations::scalar,
-    ///     policy::{ClientPolicy, WritePolicy},
+    ///     policies::{ClientPolicy, WritePolicy},
     ///     Bin, Client, Key,
     /// };
     ///
@@ -511,7 +509,7 @@ impl Client {
     ///
     /// ```rust
     /// use windpike::{
-    ///     policy::{ClientPolicy, ScanPolicy},
+    ///     policies::{ClientPolicy, ScanPolicy},
     ///     Bins, Client,
     /// };
     ///
@@ -621,7 +619,7 @@ impl Client {
     /// within set `bar` and bin `baz`:
     ///
     /// ```rust
-    /// use windpike::{index::IndexType, policy::ClientPolicy, Client};
+    /// use windpike::{index::IndexType, policies::ClientPolicy, Client};
     ///
     /// #[tokio::main]
     /// async fn main() {

@@ -14,7 +14,7 @@ pub struct Record {
     /// Identifier for the record, by which it can be found in the database.
     ///
     /// When reading a record the key is usually not set, unless the
-    /// [`BasePolicy::send_key`](crate::policy::BasePolicy::send_key) parameter is set to `true`.
+    /// [`BasePolicy::send_key`](crate::policies::BasePolicy::send_key) parameter is set to `true`.
     pub key: Option<Key>,
     /// Content of the record, which is categories in named bins. Each entry can contain simple
     /// values, lists, or even maps to create nested structures within.
@@ -23,7 +23,7 @@ pub struct Record {
     /// modification (including the initial creation).
     ///
     /// In write operations, the generation can be used to create conditional writes by utilizing
-    /// the [`WritePolicy::generation_policy`](crate::policy::WritePolicy::generation_policy).
+    /// the [`WritePolicy::generation_policy`](crate::policies::WritePolicy::generation_policy).
     pub generation: u32,
     /// Seconds from the _Citrusleaf epoch time_ (Jan 01 2010, 00:00:00 UTC) after which this
     /// record will expire.

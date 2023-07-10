@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use windpike::{
     as_list, as_map,
     operations::{cdt, map},
-    policy::{BasePolicy, WritePolicy},
+    policies::{BasePolicy, WritePolicy},
     Bin, Bins, Key, Value,
 };
 

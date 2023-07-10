@@ -12,7 +12,7 @@ use crate::{
         buffer::{Buffer, MessageHeader, ProtoHeader, StreamMessageHeader, TOTAL_HEADER_SIZE},
         AdminCommand,
     },
-    policy::ClientPolicy,
+    policies::ClientPolicy,
 };
 
 #[derive(Debug)]

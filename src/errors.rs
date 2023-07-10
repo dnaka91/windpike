@@ -7,7 +7,7 @@
 //! ```rust
 //! use windpike::{
 //!     errors::CommandError,
-//!     policy::{BasePolicy, ClientPolicy},
+//!     policies::{BasePolicy, ClientPolicy},
 //!     Bins, Client, Key, ResultCode,
 //! };
 //!
