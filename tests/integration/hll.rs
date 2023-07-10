@@ -1,5 +1,4 @@
 use windpike::{
-    as_list,
     operations::{hll, hll::Policy},
     policies::{BasePolicy, WritePolicy},
     Bins, Key, Value,
@@ -56,7 +55,7 @@ async fn hll() {
     let rec = client.operate(&wpolicy, &key, ops).await.unwrap();
     assert_eq!(
         *rec.bins.get("bin").unwrap(),
-        as_list!(4, 0),
+        windpike::list!(4, 0),
         "index bits did not match"
     );
 

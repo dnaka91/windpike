@@ -1,5 +1,4 @@
 use windpike::{
-    as_list, as_map,
     operations::scalar,
     policies::{BasePolicy, WritePolicy},
     Bin, Bins, Key, Value,
@@ -18,9 +17,9 @@ async fn connect() {
 
     let bins = [
         Bin::new("bin999", "test string"),
-        Bin::new("bin vec![int]", as_list![1u32, 2u32, 3u32]),
+        Bin::new("bin vec![int]", windpike::list![1u32, 2u32, 3u32]),
         Bin::new("bin vec![u8]", Value::from(vec![1u8, 2u8, 3u8])),
-        Bin::new("bin map", as_map!(1 => 1, 2 => 2, 3 => "hi!")),
+        Bin::new("bin map", windpike::map!(1 => 1, 2 => 2, 3 => "hi!")),
         Bin::new("bin f64", 1.64f64),
         Bin::new("bin Nil", Value::Nil), // Writing None erases the bin!
         Bin::new(
@@ -37,14 +36,17 @@ async fn connect() {
     let bins = record.bins;
     assert_eq!(bins.len(), 7);
     assert_eq!(bins.get("bin999"), Some(&Value::from("test string")));
-    assert_eq!(bins.get("bin vec![int]"), Some(&as_list![1u32, 2u32, 3u32]));
+    assert_eq!(
+        bins.get("bin vec![int]"),
+        Some(&windpike::list![1u32, 2u32, 3u32])
+    );
     assert_eq!(
         bins.get("bin vec![u8]"),
         Some(&Value::from(vec![1u8, 2u8, 3u8]))
     );
     assert_eq!(
         bins.get("bin map"),
-        Some(&as_map!(1 => 1, 2 => 2, 3 => "hi!"))
+        Some(&windpike::map!(1 => 1, 2 => 2, 3 => "hi!"))
     );
     assert_eq!(bins.get("bin f64"), Some(&Value::from(1.64f64)));
     assert_eq!(

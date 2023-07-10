@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use windpike::{
-    as_list, as_map,
     operations::{cdt, map},
     policies::{BasePolicy, WritePolicy},
     Bin, Bins, Key, Value,
@@ -22,7 +21,7 @@ async fn map_operations() {
 
     client.delete(&wpolicy, &key).await.unwrap();
 
-    let val = as_map!("a" => 1, "b" => 2);
+    let val = windpike::map!("a" => 1, "b" => 2);
     let bin_name = "bin";
     let bin = Bin::new(bin_name, val);
     let bins = vec![bin];
@@ -43,7 +42,7 @@ async fn map_operations() {
     let rec = client.get(&rpolicy, &key, Bins::All).await.unwrap();
     assert_eq!(
         *rec.bins.get(bin_name).unwrap(),
-        as_map!("a" => 1, "b" => 2, "c" => 3)
+        windpike::map!("a" => 1, "b" => 2, "c" => 3)
     );
 
     let mut items = HashMap::new();
@@ -77,7 +76,7 @@ async fn map_operations() {
     let inc = map::increment_value(mpolicy, bin_name, &k, &i);
     let rec = client.operate(&wpolicy, &key, &[dec, inc]).await.unwrap();
     // returns values from multiple ops returned as list
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(5, 12));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(5, 12));
 
     let op = map::clear(bin_name);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
@@ -86,7 +85,7 @@ async fn map_operations() {
 
     client.delete(&wpolicy, &key).await.unwrap();
 
-    let val = as_map!("a" => 1, "b" => 2, "c" => 3, "d" => 4, "e" => 5);
+    let val = windpike::map!("a" => 1, "b" => 2, "c" => 3, "d" => 4, "e" => 5);
     let bin_name = "bin";
     let bin = Bin::new(bin_name, val);
     let bins = vec![bin];
@@ -99,16 +98,16 @@ async fn map_operations() {
 
     let op = map::get_by_index_range(bin_name, 1, 2, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(2, 3));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(2, 3));
 
     let op = map::get_by_index_range_from(bin_name, 3, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(4, 5));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(4, 5));
 
     let val = Value::from(5);
     let op = map::get_by_value(bin_name, &val, map::ReturnType::Index);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(4));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(4));
 
     let beg = Value::from(3);
     let end = Value::from(5);
@@ -122,7 +121,7 @@ async fn map_operations() {
 
     let op = map::get_by_rank_range(bin_name, 2, 3, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(3, 4, 5));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(3, 4, 5));
 
     let op = map::get_by_rank_range_from(bin_name, 2, map::ReturnType::Count);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
@@ -188,11 +187,11 @@ async fn map_operations() {
 
     let op = map::remove_by_index_range(bin_name, 1, 2, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(3, 4));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(3, 4));
 
     let op = map::remove_by_index_range_from(bin_name, 1, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(5));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(5));
 
     client.delete(&wpolicy, &key).await.unwrap();
     client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -203,14 +202,14 @@ async fn map_operations() {
 
     let op = map::remove_by_rank_range(bin_name, 1, 2, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(3, 4));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(3, 4));
 
     client.delete(&wpolicy, &key).await.unwrap();
     client.put(&wpolicy, &key, &bins).await.unwrap();
 
     let op = map::remove_by_rank_range_from(bin_name, 3, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(4, 5));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(4, 5));
 
     client.delete(&wpolicy, &key).await.unwrap();
     client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -218,7 +217,7 @@ async fn map_operations() {
     let mkey = Value::from("b");
     let op = map::remove_by_key_relative_index_range(bin_name, &mkey, 2, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(4, 5));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(4, 5));
 
     let mkey = Value::from("c");
     let op = map::remove_by_key_relative_index_range_count(
@@ -229,7 +228,7 @@ async fn map_operations() {
         map::ReturnType::Value,
     );
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(3));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(3));
 
     client.delete(&wpolicy, &key).await.unwrap();
     client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -243,12 +242,12 @@ async fn map_operations() {
         map::ReturnType::Value,
     );
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(5));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(5));
 
     let mkey = Value::from(2);
     let op = map::remove_by_value_relative_rank_range(bin_name, &mkey, 1, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(3, 4));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(3, 4));
 
     client.delete(&wpolicy, &key).await.unwrap();
     client.put(&wpolicy, &key, &bins).await.unwrap();
@@ -256,27 +255,30 @@ async fn map_operations() {
     let mkey = Value::from("a");
     let op = map::get_by_key_relative_index_range(bin_name, &mkey, 1, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(2, 3, 4, 5));
+    assert_eq!(
+        *rec.bins.get(bin_name).unwrap(),
+        windpike::list!(2, 3, 4, 5)
+    );
 
     let mkey = Value::from("a");
     let op =
         map::get_by_key_relative_index_range_count(bin_name, &mkey, 1, 2, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(2, 3));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(2, 3));
 
     let mkey = Value::from(2);
     let op = map::get_by_value_relative_rank_range(bin_name, &mkey, 1, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(3, 4, 5));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(3, 4, 5));
 
     let mkey = Value::from(2);
     let op =
         map::get_by_value_relative_rank_range_count(bin_name, &mkey, 1, 1, map::ReturnType::Value);
     let rec = client.operate(&wpolicy, &key, &[op]).await.unwrap();
-    assert_eq!(*rec.bins.get(bin_name).unwrap(), as_list!(3));
+    assert_eq!(*rec.bins.get(bin_name).unwrap(), windpike::list!(3));
 
     let mkey = Value::from("ctxtest");
-    let mval = as_map!("x" => 7, "y" => 8, "z" => 9);
+    let mval = windpike::map!("x" => 7, "y" => 8, "z" => 9);
     let op = map::put(mpolicy, bin_name, &mkey, &mval);
     client.operate(&wpolicy, &key, &[op]).await.unwrap();
 

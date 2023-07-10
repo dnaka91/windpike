@@ -11,7 +11,6 @@ use tracing::warn;
 
 use super::{Command, CommandError, Result, SingleCommand};
 use crate::{
-    as_list,
     cluster::{Cluster, Node},
     msgpack::Read,
     net::Connection,
@@ -76,7 +75,7 @@ impl<'a> ReadCommand<'a> {
                     Occupied(entry) => match entry.into_mut() {
                         Value::List(list) => list.push(value),
                         prev => {
-                            *prev = as_list!(prev.clone(), value);
+                            *prev = crate::list!(prev.clone(), value);
                         }
                     },
                 }

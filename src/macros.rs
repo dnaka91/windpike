@@ -1,6 +1,6 @@
 /// Constructs a [`Vec`]<[`Value`](crate::Value)> of from a list of native data types.
 #[macro_export]
-macro_rules! as_values {
+macro_rules! values {
     ($($v:expr),* $(,)?) => {{
         vec![$($crate::Value::from($v),)*]
     }};
@@ -14,7 +14,6 @@ macro_rules! as_values {
 ///
 /// ```rust
 /// use windpike::{
-///     as_list,
 ///     policies::{ClientPolicy, WritePolicy},
 ///     Bin, Client, Key,
 /// };
@@ -26,7 +25,7 @@ macro_rules! as_values {
 ///         .unwrap();
 ///
 ///     let key = Key::new("test", "test", "mykey");
-///     let bin = Bin::new("list", as_list!("a", 1, true));
+///     let bin = Bin::new("list", windpike::list!("a", 1, true));
 ///
 ///     client
 ///         .put(&WritePolicy::default(), &key, &[bin])
@@ -35,10 +34,10 @@ macro_rules! as_values {
 /// }
 /// ```
 #[macro_export]
-macro_rules! as_list {
+macro_rules! list {
     ($($v:expr),* $(,)?) => {{
         $crate::Value::List(
-            $crate::as_values!($($v,)*)
+            $crate::values!($($v,)*)
         )
     }};
 }
@@ -50,7 +49,7 @@ macro_rules! as_list {
 /// Write a map value to a record.
 ///
 /// ```rust
-/// use windpike::{Bin, Key, as_map, Client, policies::ClientPolicy, policies::WritePolicy};
+/// use windpike::{Bin, Key, Client, policies::ClientPolicy, policies::WritePolicy};
 ///
 /// #[tokio::main]
 /// async fn main() {
@@ -59,7 +58,7 @@ macro_rules! as_list {
 ///         .unwrap();
 ///
 ///     let key = Key::new("test", "test", "mykey");
-///     let bin = Bin::new("map", as_map!("a" => true, 2 => 10.0));
+///     let bin = Bin::new("map", windpike::map!("a" => true, 2 => 10.0));
 ///
 ///     client
 ///         .put(&WritePolicy::default(), &key, &[bin])
@@ -68,7 +67,7 @@ macro_rules! as_list {
 /// }
 /// ```
 #[macro_export]
-macro_rules! as_map {
+macro_rules! map {
     ($($k:expr => $v:expr),* $(,)?) => {{
         $crate::Value::HashMap(
             [$(($crate::MapKey::from($k), $crate::Value::from($v)),)*].into()
