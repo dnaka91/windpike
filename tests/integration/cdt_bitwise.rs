@@ -3,7 +3,7 @@ use windpike::{
         bitwise,
         bitwise::{OverflowAction, Policy},
     },
-    policy::WritePolicy,
+    policies::WritePolicy,
     Key, Value,
 };
 

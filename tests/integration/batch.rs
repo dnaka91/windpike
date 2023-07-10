@@ -1,5 +1,5 @@
 use windpike::{
-    policy::{BatchPolicy, Concurrency, WritePolicy},
+    policies::{BatchPolicy, Concurrency, WritePolicy},
     BatchRead, Bin, Bins, Key,
 };
 

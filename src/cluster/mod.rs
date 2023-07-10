@@ -25,7 +25,7 @@ use self::{
 };
 use crate::{
     net::{Host, NetError},
-    policy::ClientPolicy,
+    policies::ClientPolicy,
 };
 
 type Result<T, E = ClusterError> = std::result::Result<T, E>;

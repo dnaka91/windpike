@@ -13,7 +13,7 @@ use super::{node_validator::NodeValidator, ClusterError, NodeError, NodeRefreshE
 use crate::{
     commands::Message,
     net::{Host, NetError, Pool, PooledConnection},
-    policy::ClientPolicy,
+    policies::ClientPolicy,
 };
 
 pub const PARTITIONS: usize = 4096;

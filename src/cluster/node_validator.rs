@@ -6,7 +6,7 @@ use super::{node::FeatureSupport, Cluster, NodeError, Result};
 use crate::{
     commands::Message,
     net::{Connection, Host},
-    policy::ClientPolicy,
+    policies::ClientPolicy,
 };
 
 // Validates a Database server node

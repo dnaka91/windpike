@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use bb8::{ManageConnection, RunError};
 
 use super::{Connection, Host, NetError, Result};
-use crate::policy::ClientPolicy;
+use crate::policies::ClientPolicy;
 
 struct NodeConnectionManager {
     host: Host,

@@ -137,7 +137,7 @@ pub mod index;
 mod msgpack;
 mod net;
 pub mod operations;
-pub mod policy;
+pub mod policies;
 mod record;
 mod result_code;
 mod value;

@@ -6,7 +6,7 @@ use crate::{
     cluster::{partition::Partition, Cluster, Node},
     commands::BatchReadCommand,
     errors::{Error, Result},
-    policy::{BatchPolicy, Concurrency},
+    policies::{BatchPolicy, Concurrency},
     Bins, Key, Record,
 };
 

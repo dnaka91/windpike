@@ -7,7 +7,7 @@ use super::{Command, CommandError, Result};
 use crate::{
     cluster::{partition::Partition, Cluster, Node},
     net::Connection,
-    policy::BasePolicy,
+    policies::BasePolicy,
     Key,
 };
 

@@ -9,7 +9,7 @@ use super::{
     Command, CommandError, Result,
 };
 use crate::{
-    cluster::Node, msgpack::Read, net::Connection, policy::BatchPolicy, BatchRead, Record,
+    cluster::Node, msgpack::Read, net::Connection, policies::BatchPolicy, BatchRead, Record,
     ResultCode, Value,
 };
 

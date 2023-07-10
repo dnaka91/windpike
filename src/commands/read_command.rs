@@ -15,7 +15,7 @@ use crate::{
     cluster::{Cluster, Node},
     msgpack::Read,
     net::Connection,
-    policy::BasePolicy,
+    policies::BasePolicy,
     Bins, Key, Record, ResultCode, Value,
 };
 

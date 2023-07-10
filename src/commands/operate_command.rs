@@ -7,7 +7,7 @@ use crate::{
     cluster::{Cluster, Node},
     net::Connection,
     operations::Operation,
-    policy::WritePolicy,
+    policies::WritePolicy,
     Bins, Key,
 };
 

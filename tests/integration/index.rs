@@ -1,6 +1,6 @@
 use windpike::{
     index::{IndexType, Status},
-    policy::WritePolicy,
+    policies::WritePolicy,
     Bin, Client, Key,
 };
 

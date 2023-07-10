@@ -1,7 +1,7 @@
 use windpike::{
     as_list, as_map,
     operations::scalar,
-    policy::{BasePolicy, WritePolicy},
+    policies::{BasePolicy, WritePolicy},
     Bin, Bins, Key, Value,
 };
 

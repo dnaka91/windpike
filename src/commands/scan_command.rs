@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use tokio::sync::mpsc;
 
 use super::{Command, Result, SingleCommand, StreamCommand};
-use crate::{cluster::Node, net::Connection, policy::ScanPolicy, Bins, Record};
+use crate::{cluster::Node, net::Connection, policies::ScanPolicy, Bins, Record};
 
 pub struct ScanCommand<'a> {
     stream_command: StreamCommand,

@@ -13,7 +13,7 @@ use crate::{
     index::{CollectionIndexType, IndexTask, IndexType},
     net::ToHosts,
     operations::{Operation, OperationType},
-    policy::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
+    policies::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
     BatchRead, Bin, Bins, Key, Record, RecordSet, ResultCode,
 };
 
