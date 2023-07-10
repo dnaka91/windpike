@@ -14,12 +14,12 @@ use crate::{
 
 pub struct StreamCommand {
     node: Arc<Node>,
-    tx: mpsc::Sender<Result<Record>>,
+    tx: mpsc::Sender<Result<Record<'static>>>,
     task_id: u64,
 }
 
 impl StreamCommand {
-    pub fn new(node: Arc<Node>, tx: mpsc::Sender<Result<Record>>, task_id: u64) -> Self {
+    pub fn new(node: Arc<Node>, tx: mpsc::Sender<Result<Record<'static>>>, task_id: u64) -> Self {
         Self { node, tx, task_id }
     }
 
@@ -47,7 +47,7 @@ impl StreamCommand {
     async fn parse_record(
         conn: &mut Connection,
         proto: ProtoHeader,
-    ) -> Result<(Option<Record>, bool)> {
+    ) -> Result<(Option<Record<'static>>, bool)> {
         let header = conn.read_stream_message_header(proto).await?;
 
         if header.result_code != ResultCode::Ok {
@@ -97,7 +97,7 @@ impl StreamCommand {
         Ok((Some(record), true))
     }
 
-    pub async fn parse_key(conn: &mut Connection, field_count: u16) -> Result<Key> {
+    pub async fn parse_key(conn: &mut Connection, field_count: u16) -> Result<Key<'static>> {
         let mut digest = [0; 20];
         let mut namespace = String::new();
         let mut set_name = String::new();

@@ -21,13 +21,18 @@ use crate::{
 
 pub struct ReadCommand<'a> {
     pub single_command: SingleCommand<'a>,
-    pub record: Option<Record>,
+    pub record: Option<Record<'a>>,
     policy: &'a BasePolicy,
     bins: Bins,
 }
 
 impl<'a> ReadCommand<'a> {
-    pub fn new(policy: &'a BasePolicy, cluster: Arc<Cluster>, key: &'a Key, bins: Bins) -> Self {
+    pub fn new(
+        policy: &'a BasePolicy,
+        cluster: Arc<Cluster>,
+        key: &'a Key<'a>,
+        bins: Bins,
+    ) -> Self {
         ReadCommand {
             single_command: SingleCommand::new(cluster, key),
             bins,
@@ -46,7 +51,7 @@ impl<'a> ReadCommand<'a> {
         field_count: u16,
         generation: u32,
         expiration: u32,
-    ) -> Result<Record> {
+    ) -> Result<Record<'static>> {
         let mut bins: HashMap<String, Value> = HashMap::with_capacity(op_count.into());
 
         // There can be fields in the response (setname etc). For now, ignore them. Expose them to

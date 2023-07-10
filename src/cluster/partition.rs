@@ -17,7 +17,7 @@ impl<'a> Partition<'a> {
     }
 
     #[must_use]
-    pub fn new_by_key(key: &'a Key) -> Self {
+    pub fn new_by_key(key: &'a Key<'a>) -> Self {
         Partition {
             namespace: &key.namespace,
 

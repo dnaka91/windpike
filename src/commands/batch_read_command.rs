@@ -15,18 +15,18 @@ use crate::{
 
 struct BatchRecord {
     batch_index: usize,
-    record: Option<Record>,
+    record: Option<Record<'static>>,
 }
 
 #[derive(Clone, Debug)]
-pub struct BatchReadCommand {
+pub struct BatchReadCommand<'a> {
     policy: BatchPolicy,
     pub node: Arc<Node>,
-    pub batch_reads: Vec<BatchRead>,
+    pub batch_reads: Vec<BatchRead<'a>>,
 }
 
-impl BatchReadCommand {
-    pub fn new(policy: &BatchPolicy, node: Arc<Node>, batch_reads: Vec<BatchRead>) -> Self {
+impl<'a> BatchReadCommand<'a> {
+    pub fn new(policy: &BatchPolicy, node: Arc<Node>, batch_reads: Vec<BatchRead<'a>>) -> Self {
         Self {
             policy: policy.clone(),
             node,
@@ -186,7 +186,7 @@ impl BatchReadCommand {
 }
 
 #[async_trait]
-impl Command for BatchReadCommand {
+impl<'a> Command for BatchReadCommand<'a> {
     fn prepare_buffer(&mut self, conn: &mut Connection) -> Result<()> {
         conn.buffer()
             .set_batch_read(&self.policy, &self.batch_reads)

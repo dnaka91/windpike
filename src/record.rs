@@ -10,12 +10,12 @@ use crate::{commands::CommandError, Key, Value};
 
 /// A single, uniquely identifiable database entry.
 #[derive(Clone, Debug)]
-pub struct Record {
+pub struct Record<'a> {
     /// Identifier for the record, by which it can be found in the database.
     ///
     /// When reading a record the key is usually not set, unless the
     /// [`BasePolicy::send_key`](crate::policy::BasePolicy::send_key) parameter is set to `true`.
-    pub key: Option<Key>,
+    pub key: Option<Key<'a>>,
     /// Content of the record, which is categories in named bins. Each entry can contain simple
     /// values, lists, or even maps to create nested structures within.
     pub bins: HashMap<String, Value>,
@@ -30,11 +30,11 @@ pub struct Record {
     expiration: u32,
 }
 
-impl Record {
+impl<'a> Record<'a> {
     /// Construct a new record.
     #[must_use]
     pub(crate) const fn new(
-        key: Option<Key>,
+        key: Option<Key<'a>>,
         bins: HashMap<String, Value>,
         generation: u32,
         expiration: u32,
@@ -71,14 +71,14 @@ fn citrusleaf_epoch() -> SystemTime {
 ///
 /// During a query/scan, multiple tasks will load the record from the cluster nodes and queue them
 /// up for consumption through this set.
-pub struct RecordSet {
-    queue: mpsc::Receiver<Result<Record, CommandError>>,
+pub struct RecordSet<'a> {
+    queue: mpsc::Receiver<Result<Record<'a>, CommandError>>,
     task_id: u64,
 }
 
-impl RecordSet {
+impl<'a> RecordSet<'a> {
     #[must_use]
-    pub(crate) fn new(queue: mpsc::Receiver<Result<Record, CommandError>>) -> Self {
+    pub(crate) fn new(queue: mpsc::Receiver<Result<Record<'a>, CommandError>>) -> Self {
         Self {
             queue,
             task_id: rand::thread_rng().gen(),
@@ -93,7 +93,7 @@ impl RecordSet {
     /// Get the next record in the set, potentially wait for it if not available yet. Once [`None`]
     /// is returned, the set is considered resumed and subsequent calls will always return [`None`]
     /// immediately.
-    pub async fn next(&mut self) -> Option<Result<Record, CommandError>> {
+    pub async fn next(&mut self) -> Option<Result<Record<'a>, CommandError>> {
         self.queue.recv().await
     }
 }

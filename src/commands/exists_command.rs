@@ -18,7 +18,7 @@ pub struct ExistsCommand<'a> {
 }
 
 impl<'a> ExistsCommand<'a> {
-    pub fn new(policy: &'a WritePolicy, cluster: Arc<Cluster>, key: &'a Key) -> Self {
+    pub fn new(policy: &'a WritePolicy, cluster: Arc<Cluster>, key: &'a Key<'a>) -> Self {
         ExistsCommand {
             single_command: SingleCommand::new(cluster, key),
             policy,

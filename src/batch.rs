@@ -22,8 +22,8 @@ impl BatchExecutor {
     pub async fn execute_batch_read(
         &self,
         policy: &BatchPolicy,
-        batch_reads: Vec<BatchRead>,
-    ) -> Result<Vec<BatchRead>> {
+        batch_reads: Vec<BatchRead<'static>>,
+    ) -> Result<Vec<BatchRead<'static>>> {
         let jobs = self
             .get_batch_nodes(&batch_reads)
             .await
@@ -31,7 +31,7 @@ impl BatchExecutor {
             .map(|(node, reads)| BatchReadCommand::new(policy, node, reads))
             .collect();
         let reads = self.execute_batch_jobs(jobs, &policy.concurrency).await?;
-        let mut res: Vec<BatchRead> = vec![];
+        let mut res = vec![];
         for mut read in reads {
             res.append(&mut read.batch_reads);
         }
@@ -40,9 +40,9 @@ impl BatchExecutor {
 
     async fn execute_batch_jobs(
         &self,
-        jobs: Vec<BatchReadCommand>,
+        jobs: Vec<BatchReadCommand<'static>>,
         concurrency: &Concurrency,
-    ) -> Result<Vec<BatchReadCommand>> {
+    ) -> Result<Vec<BatchReadCommand<'static>>> {
         let threads = match *concurrency {
             Concurrency::Sequential => 1,
             Concurrency::Parallel(max) => {
@@ -91,10 +91,10 @@ impl BatchExecutor {
         }
     }
 
-    async fn get_batch_nodes(
+    async fn get_batch_nodes<'a>(
         &self,
-        batch_reads: &[BatchRead],
-    ) -> HashMap<String, (Arc<Node>, Vec<BatchRead>)> {
+        batch_reads: &[BatchRead<'a>],
+    ) -> HashMap<String, (Arc<Node>, Vec<BatchRead<'a>>)> {
         let mut map = HashMap::new();
         for (_, batch_read) in batch_reads.iter().enumerate() {
             if let Some(node) = self.node_for_key(&batch_read.key).await {
@@ -107,7 +107,7 @@ impl BatchExecutor {
         map
     }
 
-    async fn node_for_key(&self, key: &Key) -> Option<Arc<Node>> {
+    async fn node_for_key(&self, key: &Key<'_>) -> Option<Arc<Node>> {
         let partition = Partition::new_by_key(key);
         self.cluster.get_node(&partition).await
     }
@@ -115,21 +115,21 @@ impl BatchExecutor {
 
 /// Key and bin names used in batch read commands where variable bins are needed for each key.
 #[derive(Clone, Debug)]
-pub struct BatchRead {
+pub struct BatchRead<'a> {
     /// Key.
-    pub key: Key,
+    pub key: Key<'a>,
 
     /// Bins to retrieve for this key.
     pub bins: Bins,
 
     /// Will contain the record after the batch read operation.
-    pub record: Option<Record>,
+    pub record: Option<Record<'static>>,
 }
 
-impl BatchRead {
+impl<'a> BatchRead<'a> {
     /// Create a new `BatchRead` instance for the given key and bin selector.
     #[must_use]
-    pub const fn new(key: Key, bins: Bins) -> Self {
+    pub const fn new(key: Key<'a>, bins: Bins) -> Self {
         Self {
             key,
             bins,

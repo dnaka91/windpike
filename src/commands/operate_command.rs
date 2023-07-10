@@ -21,7 +21,7 @@ impl<'a> OperateCommand<'a> {
     pub fn new(
         policy: &'a WritePolicy,
         cluster: Arc<Cluster>,
-        key: &'a Key,
+        key: &'a Key<'a>,
         operations: &'a [Operation<'a>],
     ) -> Self {
         OperateCommand {

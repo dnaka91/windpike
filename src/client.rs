@@ -163,12 +163,12 @@ impl Client {
     ///
     /// # Panics
     /// Panics if the return is invalid
-    pub async fn get<T>(
+    pub async fn get<'a, T>(
         &self,
-        policy: &BasePolicy,
-        key: &Key,
+        policy: &'a BasePolicy,
+        key: &'a Key<'a>,
         bins: T,
-    ) -> Result<Record, CommandError>
+    ) -> Result<Record<'a>, CommandError>
     where
         T: Into<Bins> + Send + Sync + 'static,
     {
@@ -222,8 +222,8 @@ impl Client {
     pub async fn batch_get(
         &self,
         policy: &BatchPolicy,
-        batch_reads: Vec<BatchRead>,
-    ) -> Result<Vec<BatchRead>> {
+        batch_reads: Vec<BatchRead<'static>>,
+    ) -> Result<Vec<BatchRead<'static>>> {
         let executor = BatchExecutor::new(Arc::clone(&self.cluster));
         executor.execute_batch_read(policy, batch_reads).await
     }
@@ -284,7 +284,7 @@ impl Client {
     pub async fn put<'a, 'b>(
         &self,
         policy: &'a WritePolicy,
-        key: &'a Key,
+        key: &'a Key<'a>,
         bins: &'a [Bin<'b>],
     ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
@@ -330,7 +330,7 @@ impl Client {
     pub async fn add<'a, 'b>(
         &self,
         policy: &'a WritePolicy,
-        key: &'a Key,
+        key: &'a Key<'a>,
         bins: &'a [Bin<'b>],
     ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
@@ -349,7 +349,7 @@ impl Client {
     pub async fn append<'a, 'b>(
         &self,
         policy: &'a WritePolicy,
-        key: &'a Key,
+        key: &'a Key<'a>,
         bins: &'a [Bin<'b>],
     ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
@@ -368,7 +368,7 @@ impl Client {
     pub async fn prepend<'a, 'b>(
         &self,
         policy: &'a WritePolicy,
-        key: &'a Key,
+        key: &'a Key<'a>,
         bins: &'a [Bin<'b>],
     ) -> Result<(), CommandError> {
         let mut command = WriteCommand::new(
@@ -408,7 +408,7 @@ impl Client {
     ///     }
     /// }
     /// ```
-    pub async fn delete(&self, policy: &WritePolicy, key: &Key) -> Result<bool, CommandError> {
+    pub async fn delete(&self, policy: &WritePolicy, key: &Key<'_>) -> Result<bool, CommandError> {
         let mut command = DeleteCommand::new(policy, Arc::clone(&self.cluster), key);
         command.execute().await?;
         Ok(command.existed)
@@ -443,13 +443,13 @@ impl Client {
     ///     }
     /// }
     /// ```
-    pub async fn touch(&self, policy: &WritePolicy, key: &Key) -> Result<(), CommandError> {
+    pub async fn touch(&self, policy: &WritePolicy, key: &Key<'_>) -> Result<(), CommandError> {
         let mut command = TouchCommand::new(policy, Arc::clone(&self.cluster), key);
         command.execute().await
     }
 
     /// Determine if a record key exists. The policy can be used to specify timeouts.
-    pub async fn exists(&self, policy: &WritePolicy, key: &Key) -> Result<bool, CommandError> {
+    pub async fn exists(&self, policy: &WritePolicy, key: &Key<'_>) -> Result<bool, CommandError> {
         let mut command = ExistsCommand::new(policy, Arc::clone(&self.cluster), key);
         command.execute().await?;
         Ok(command.exists)
@@ -490,12 +490,12 @@ impl Client {
     /// ```
     /// # Panics
     ///  Panics if the return is invalid
-    pub async fn operate(
+    pub async fn operate<'a>(
         &self,
-        policy: &WritePolicy,
-        key: &Key,
-        ops: &[Operation<'_>],
-    ) -> Result<Record, CommandError> {
+        policy: &'a WritePolicy,
+        key: &'a Key<'a>,
+        ops: &'a [Operation<'a>],
+    ) -> Result<Record<'a>, CommandError> {
         let mut command = OperateCommand::new(policy, Arc::clone(&self.cluster), key, ops);
         command.execute().await?;
         Ok(command.read_command.record.unwrap())
@@ -548,7 +548,7 @@ impl Client {
         namespace: &str,
         set_name: &str,
         bins: T,
-    ) -> Result<RecordSet>
+    ) -> Result<RecordSet<'static>>
     where
         T: Into<Bins> + Send + Sync + 'static,
     {

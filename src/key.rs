@@ -18,18 +18,18 @@ macro_rules! from {
 /// set name and a user defined key which must be unique within a set. Records can also be
 /// identified by namespace/digest, which is the combination used on the server.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Key {
+pub struct Key<'a> {
     /// Namespace.
-    pub namespace: Cow<'static, str>,
+    pub namespace: Cow<'a, str>,
     /// Set name.
-    pub set_name: Cow<'static, str>,
+    pub set_name: Cow<'a, str>,
     /// Original user key.
     pub user_key: Option<UserKey>,
     /// Unique server hash value generated from set name and user key.
     pub(crate) digest: [u8; 20],
 }
 
-impl Key {
+impl<'a> Key<'a> {
     /// Construct a new key given a namespace, a set name and a user key value.
     ///
     /// # Panics

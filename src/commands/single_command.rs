@@ -13,12 +13,12 @@ use crate::{
 
 pub struct SingleCommand<'a> {
     cluster: Arc<Cluster>,
-    pub key: &'a Key,
+    pub key: &'a Key<'a>,
     partition: Partition<'a>,
 }
 
 impl<'a> SingleCommand<'a> {
-    pub fn new(cluster: Arc<Cluster>, key: &'a Key) -> Self {
+    pub fn new(cluster: Arc<Cluster>, key: &'a Key<'a>) -> Self {
         let partition = Partition::new_by_key(key);
         SingleCommand {
             cluster,

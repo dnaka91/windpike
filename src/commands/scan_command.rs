@@ -23,7 +23,7 @@ impl<'a> ScanCommand<'a> {
         namespace: &'a str,
         set_name: &'a str,
         bins: Bins,
-        tx: mpsc::Sender<Result<Record>>,
+        tx: mpsc::Sender<Result<Record<'static>>>,
         task_id: u64,
         partitions: Vec<u16>,
     ) -> Self {

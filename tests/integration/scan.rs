@@ -77,7 +77,7 @@ async fn scan_multi_consumer() {
     client.close();
 }
 
-async fn count_results(rs: &mut RecordSet) -> usize {
+async fn count_results(rs: &mut RecordSet<'_>) -> usize {
     let mut count = 0;
     while let Some(Ok(_)) = rs.next().await {
         count += 1;

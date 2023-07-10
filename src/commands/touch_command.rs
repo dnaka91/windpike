@@ -17,7 +17,7 @@ pub struct TouchCommand<'a> {
 }
 
 impl<'a> TouchCommand<'a> {
-    pub fn new(policy: &'a WritePolicy, cluster: Arc<Cluster>, key: &'a Key) -> Self {
+    pub fn new(policy: &'a WritePolicy, cluster: Arc<Cluster>, key: &'a Key<'a>) -> Self {
         TouchCommand {
             single_command: SingleCommand::new(cluster, key),
             policy,

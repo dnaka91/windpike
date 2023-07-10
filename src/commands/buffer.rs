@@ -166,7 +166,7 @@ impl Buffer {
         &mut self,
         policy: &WritePolicy,
         op_type: OperationType,
-        key: &Key,
+        key: &Key<'_>,
         bins: &[Bin<'_>],
     ) -> Result<()> {
         let (key_size, field_count) = estimate_key_size(key, policy.as_ref().send_key);
@@ -197,7 +197,7 @@ impl Buffer {
     }
 
     // Writes the command for write operations
-    pub fn set_delete(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
+    pub fn set_delete(&mut self, policy: &WritePolicy, key: &Key<'_>) -> Result<()> {
         let (key_size, field_count) = estimate_key_size(key, false);
 
         self.clear(TOTAL_HEADER_SIZE + key_size)?;
@@ -218,7 +218,7 @@ impl Buffer {
     }
 
     // Writes the command for touch operations
-    pub fn set_touch(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
+    pub fn set_touch(&mut self, policy: &WritePolicy, key: &Key<'_>) -> Result<()> {
         let (key_size, field_count) = estimate_key_size(key, policy.as_ref().send_key);
 
         self.clear(TOTAL_HEADER_SIZE + key_size + OPERATION_HEADER_SIZE)?;
@@ -241,7 +241,7 @@ impl Buffer {
     }
 
     // Writes the command for exist operations
-    pub fn set_exists(&mut self, policy: &WritePolicy, key: &Key) -> Result<()> {
+    pub fn set_exists(&mut self, policy: &WritePolicy, key: &Key<'_>) -> Result<()> {
         let (key_size, field_count) = estimate_key_size(key, false);
 
         self.clear(TOTAL_HEADER_SIZE + key_size)?;
@@ -262,7 +262,7 @@ impl Buffer {
     }
 
     // Writes the command for get operations
-    pub fn set_read(&mut self, policy: &BasePolicy, key: &Key, bins: &Bins) -> Result<()> {
+    pub fn set_read(&mut self, policy: &BasePolicy, key: &Key<'_>, bins: &Bins) -> Result<()> {
         match bins {
             Bins::None => self.set_read_header(policy, key),
             Bins::All => self.set_read_for_key_only(policy, key),
@@ -297,7 +297,7 @@ impl Buffer {
     }
 
     // Writes the command for getting metadata operations
-    pub fn set_read_header(&mut self, policy: &BasePolicy, key: &Key) -> Result<()> {
+    pub fn set_read_header(&mut self, policy: &BasePolicy, key: &Key<'_>) -> Result<()> {
         let (key_size, field_count) = estimate_key_size(key, policy.send_key);
         let op_size = estimate_operation_size_for_bin_name("");
 
@@ -320,7 +320,7 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn set_read_for_key_only(&mut self, policy: &BasePolicy, key: &Key) -> Result<()> {
+    pub fn set_read_for_key_only(&mut self, policy: &BasePolicy, key: &Key<'_>) -> Result<()> {
         let (key_size, field_count) = estimate_key_size(key, policy.send_key);
 
         self.clear(TOTAL_HEADER_SIZE + key_size)?;
@@ -344,14 +344,14 @@ impl Buffer {
     pub fn set_batch_read(
         &mut self,
         policy: &BatchPolicy,
-        batch_reads: &[BatchRead],
+        batch_reads: &[BatchRead<'_>],
     ) -> Result<()> {
         let field_count_row = if policy.send_set_name { 2 } else { 1 };
 
         let field_count = 1;
         let mut field_size = FIELD_HEADER_SIZE + 5;
 
-        let mut prev: Option<&BatchRead> = None;
+        let mut prev = None;
         for batch_read in batch_reads {
             field_size += batch_read.key.digest.len() + 4;
             match prev {
@@ -453,7 +453,7 @@ impl Buffer {
     pub fn set_operate<'a>(
         &mut self,
         policy: &WritePolicy,
-        key: &Key,
+        key: &Key<'_>,
         operations: &'a [Operation<'a>],
     ) -> Result<()> {
         let mut read_attr = ReadAttr::empty();
@@ -646,7 +646,7 @@ impl Buffer {
 
     // Header write for write operations.
 
-    fn write_key(&mut self, key: &Key, send_key: bool) {
+    fn write_key(&mut self, key: &Key<'_>, send_key: bool) {
         // Write key into buffer.
         if !key.namespace.is_empty() {
             self.write_field_string(&key.namespace, FieldType::Namespace);
@@ -938,7 +938,7 @@ impl Write for Buffer {
     }
 }
 
-fn estimate_key_size(key: &Key, send_user_key: bool) -> (usize, u16) {
+fn estimate_key_size(key: &Key<'_>, send_user_key: bool) -> (usize, u16) {
     let mut size = 0;
     let mut count = 0;
 

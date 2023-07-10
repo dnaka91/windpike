@@ -23,7 +23,7 @@ impl<'a, 'b> WriteCommand<'a> {
     pub fn new(
         policy: &'a WritePolicy,
         cluster: Arc<Cluster>,
-        key: &'a Key,
+        key: &'a Key<'a>,
         bins: &'a [Bin<'b>],
         operation: OperationType,
     ) -> Self {

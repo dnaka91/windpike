@@ -18,7 +18,7 @@ pub struct DeleteCommand<'a> {
 }
 
 impl<'a> DeleteCommand<'a> {
-    pub fn new(policy: &'a WritePolicy, cluster: Arc<Cluster>, key: &'a Key) -> Self {
+    pub fn new(policy: &'a WritePolicy, cluster: Arc<Cluster>, key: &'a Key<'a>) -> Self {
         DeleteCommand {
             single_command: SingleCommand::new(cluster, key),
             policy,
