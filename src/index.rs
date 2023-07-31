@@ -9,33 +9,29 @@ use crate::{
     errors::{Error, Result},
 };
 
-/// Status of task
+/// Current status of an indexing task, as reported by the [`CreateIndex::query_status`] and
+/// [`CreateIndex::wait_till_complete`] methods.
 #[derive(Clone, Copy, Debug)]
 pub enum Status {
-    /// long running task not found
+    /// Task for the index operation not found.
     NotFound,
-    /// long running task in progress
+    /// Operation is still in progress.
     InProgress,
-    /// long running task completed
+    /// Successfully completed indexing operation.
     Complete,
 }
 
 /// Struct for querying index creation status
 #[derive(Clone, Debug)]
-pub struct IndexTask {
+pub struct CreateIndex {
     cluster: Arc<Cluster>,
     namespace: String,
     index_name: String,
 }
 
-static SUCCESS_PATTERN: &str = "load_pct=";
-static FAIL_PATTERN_201: &str = "FAIL:201";
-static FAIL_PATTERN_203: &str = "FAIL:203";
-static DELMITER: &str = ";";
-
-impl IndexTask {
+impl CreateIndex {
     /// Initializes `IndexTask` from client, creation should only be expose to Client
-    pub fn new(cluster: Arc<Cluster>, namespace: String, index_name: String) -> Self {
+    pub(crate) fn new(cluster: Arc<Cluster>, namespace: String, index_name: String) -> Self {
         Self {
             cluster,
             namespace,
@@ -47,37 +43,35 @@ impl IndexTask {
         format!("sindex/{namespace}/{index_name}")
     }
 
+    /// Parse the raw string response, trying to extract the status of an indexing operation.
+    ///
+    /// Operations can immediately complete, or take time, depending on the size of data they're
+    /// built upon. The progress is indicated by the `load_pct` value, which is encoded in a list
+    /// of key-values. Each list item is separated by `;` and the key and value are separated by
+    /// `=` each.
     fn parse_response(response: &str) -> Result<Status> {
-        match response.find(SUCCESS_PATTERN) {
-            None => {
-                if response.contains(FAIL_PATTERN_201) || response.contains(FAIL_PATTERN_203) {
-                    Ok(Status::NotFound)
-                } else {
-                    Err(Error::BadResponse(format!(
-                        "code 201 and 203 missing. Response: {response}"
-                    )))
-                }
-            }
-            Some(pattern_index) => {
-                let percent_begin = pattern_index + SUCCESS_PATTERN.len();
+        const ERROR_NOT_FOUND: &str = "FAIL:201";
+        const ERROR_NOT_READABLE: &str = "FAIL:203";
 
-                let percent_end = match response[percent_begin..].find(DELMITER) {
-                    None => {
-                        return Err(Error::BadResponse(format!(
-                            "delimiter missing in response. Response: {response}"
-                        )))
-                    }
-                    Some(percent_end) => percent_end,
-                };
-                let percent_str = &response[percent_begin..percent_begin + percent_end];
-                match percent_str.parse::<isize>() {
-                    Ok(100) => Ok(Status::Complete),
-                    Ok(_) => Ok(Status::InProgress),
-                    Err(_) => Err(Error::BadResponse(
-                        "unexpected load_pct value from server".to_owned(),
-                    )),
-                }
+        let load_pct = response
+            .split(';')
+            .filter_map(|pair| pair.split_once('='))
+            .find_map(|(key, value)| (key == "load_pct").then_some(value));
+
+        if let Some(percentage) = load_pct {
+            match percentage.parse::<i32>() {
+                Ok(100) => Ok(Status::Complete),
+                Ok(i) if (0..100).contains(&i) => Ok(Status::InProgress),
+                Ok(_) | Err(_) => Err(Error::BadResponse(format!(
+                    "invalid load percentage `{percentage}`"
+                ))),
             }
+        } else if response.contains(ERROR_NOT_FOUND) || response.contains(ERROR_NOT_READABLE) {
+            Ok(Status::NotFound)
+        } else {
+            Err(Error::BadResponse(format!(
+                "no load percentage found, but no error reported either (response: {response})"
+            )))
         }
     }
 
@@ -89,32 +83,34 @@ impl IndexTask {
             return Err(Error::Connection("No connected node".to_owned()));
         }
 
-        for node in &nodes {
-            let command = &Self::build_command(&self.namespace, &self.index_name);
-            let response = node.info(&[&command[..]]).await?;
+        let command = Self::build_command(&self.namespace, &self.index_name);
 
-            if !response.contains_key(command) {
-                return Ok(Status::NotFound);
-            }
+        for node in nodes {
+            let response = node
+                .info(&[&command])
+                .await?
+                .get(&command)
+                .map(|r| Self::parse_response(r));
 
-            match Self::parse_response(&response[command]) {
-                Ok(Status::Complete) => {}
-                in_progress_or_error => return in_progress_or_error,
+            match response {
+                Some(Ok(Status::Complete)) => {}
+                Some(other) => return other,
+                None => return Ok(Status::NotFound),
             }
         }
+
         Ok(Status::Complete)
     }
 
     /// Wait until query status is complete, an error occurs, or the timeout has elapsed.
-    pub async fn wait_till_complete(&self, timeout: Option<Duration>) -> Result<Status> {
+    pub async fn wait_till_complete(&self, timeout: Option<Duration>) -> Result<()> {
         const POLL_INTERVAL: Duration = Duration::from_secs(1);
 
         let now = Instant::now();
-        let timeout_elapsed = |deadline| now.elapsed() + POLL_INTERVAL > deadline;
+        let timeout_reached = |deadline| now.elapsed() + POLL_INTERVAL > deadline;
 
         loop {
-            // Sleep first to give task a chance to complete and help avoid case where task hasn't
-            // started yet.
+            // Sleep first to give task a chance to complete
             tokio::time::sleep(POLL_INTERVAL).await;
 
             match self.query_status().await {
@@ -122,10 +118,11 @@ impl IndexTask {
                     return Err(Error::BadResponse("task status not found".to_owned()))
                 }
                 Ok(Status::InProgress) => {} // do nothing and wait
-                error_or_complete => return error_or_complete,
+                Ok(Status::Complete) => return Ok(()),
+                Err(e) => return Err(e),
             }
 
-            if timeout.map_or(false, timeout_elapsed) {
+            if timeout.map_or(false, timeout_reached) {
                 return Err(Error::Timeout("task timeout reached".to_owned()));
             }
         }

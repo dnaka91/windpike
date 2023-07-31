@@ -1,8 +1,4 @@
-use windpike::{
-    index::{IndexType, Status},
-    policies::WritePolicy,
-    Bin, Client, Key,
-};
+use windpike::{index::IndexType, policies::WritePolicy, Bin, Client, Key};
 
 use crate::common::{self, NAMESPACE};
 
@@ -28,7 +24,7 @@ async fn recreate_index() {
     let client = common::client().await;
     let set = create_test_set(&client, EXPECTED).await;
     let bin = "bin";
-    let index = format!("{NAMESPACE}_{}_{}", set, bin);
+    let index = format!("{NAMESPACE}_{set}_{bin}");
 
     let _ = client.drop_index(NAMESPACE, &set, &index).await;
 
@@ -78,10 +74,7 @@ async fn index_task_test() {
         .await
         .unwrap();
 
-    assert!(matches!(
-        index_task.wait_till_complete(None).await,
-        Ok(Status::Complete)
-    ));
+    assert!(index_task.wait_till_complete(None).await.is_ok());
 
     client.close();
 }

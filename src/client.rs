@@ -10,7 +10,7 @@ use crate::{
         TouchCommand, WriteCommand,
     },
     errors::{Error, Result},
-    index::{CollectionIndexType, IndexTask, IndexType},
+    index::{CollectionIndexType, CreateIndex, IndexType},
     net::ToHosts,
     operations::{Operation, OperationType},
     policies::{BasePolicy, BatchPolicy, ClientPolicy, ScanPolicy, WritePolicy},
@@ -643,10 +643,10 @@ impl Client {
         bin_name: &str,
         index_name: &str,
         index_type: IndexType,
-    ) -> Result<IndexTask> {
+    ) -> Result<CreateIndex> {
         self.create_complex_index(namespace, set_name, bin_name, index_name, index_type, None)
             .await?;
-        Ok(IndexTask::new(
+        Ok(CreateIndex::new(
             Arc::clone(&self.cluster),
             namespace.to_owned(),
             index_name.to_owned(),
