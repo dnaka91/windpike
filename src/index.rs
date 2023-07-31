@@ -30,7 +30,6 @@ pub struct CreateIndex {
 }
 
 impl CreateIndex {
-    /// Initializes `IndexTask` from client, creation should only be expose to Client
     pub(crate) fn new(cluster: Arc<Cluster>, namespace: String, index_name: String) -> Self {
         Self {
             cluster,
@@ -75,7 +74,6 @@ impl CreateIndex {
         }
     }
 
-    /// Query the status of index creation across all nodes
     pub async fn query_status(&self) -> Result<Status> {
         let nodes = self.cluster.nodes().await;
 
@@ -102,7 +100,6 @@ impl CreateIndex {
         Ok(Status::Complete)
     }
 
-    /// Wait until query status is complete, an error occurs, or the timeout has elapsed.
     pub async fn wait_till_complete(&self, timeout: Option<Duration>) -> Result<()> {
         const POLL_INTERVAL: Duration = Duration::from_secs(1);
 
