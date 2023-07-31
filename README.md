@@ -37,6 +37,12 @@ If needed, logs can be enabled with the `RUST_LOG` environment variable:
 RUST_LOG=windpike=trace cargo test
 ```
 
+## Acknowledgements
+
+This project is originally based on the official [aerospike Rust crate](https://github.com/aerospike/aerospike-client-rust), as well as the [async rewrite](https://github.com/asynos/aerospike-client-rust/tree/async).
+
+Several parts have been rewritten, but when compared, some docs or functionality still remains similar to the original version. Over time, this project will more and more diverge.
+
 ## License
 
 This project is licensed under [MIT License](LICENSE) (or <http://opensource.org/licenses/MIT>).

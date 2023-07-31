@@ -270,7 +270,7 @@ impl Value {
             Self::Bool(_) => ParticleType::Bool,
             Self::Int(_) => ParticleType::Integer,
             Self::Uint(_) => panic!(
-                "Aerospike doesn't support 64-bit unsinged integers natively. Cast forth and back \
+                "Aerospike doesn't support 64-bit unsigned integers natively. Cast forth and back \
                  between i64 to store u64 values."
             ),
             Self::Float(_) => ParticleType::Float,
@@ -550,7 +550,7 @@ impl Value {
             Self::Bool(_) => 1,
             Self::Int(_) | Self::Float(_) => 8,
             Self::Uint(_) => panic!(
-                "Aerospike doesn't support 64-bit unsinged integers natively. Cast forth and back \
+                "Aerospike doesn't support 64-bit unsigned integers natively. Cast forth and back \
                  between i64 to store u64 values."
             ),
             Self::String(s) => s.len(),
@@ -568,7 +568,7 @@ impl Value {
             Self::Bool(value) => w.write_bool(*value),
             Self::Int(value) => w.write_i64(*value),
             Self::Uint(_) => panic!(
-                "Aerospike doesn't support 64-bit unsinged integers natively. Cast forth and back \
+                "Aerospike doesn't support 64-bit unsigned integers natively. Cast forth and back \
                  between i64 to store u64 values."
             ),
             Self::Float(value) => match value {
