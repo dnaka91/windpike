@@ -24,9 +24,7 @@ pub const PARTITIONS: usize = 4096;
 pub struct Node {
     client_policy: ClientPolicy,
     name: String,
-    host: Host,
     aliases: RwLock<Vec<Host>>,
-    address: String,
 
     connection_pool: Pool,
     failures: AtomicUsize,
@@ -37,7 +35,7 @@ pub struct Node {
     responded: AtomicBool,
     active: AtomicBool,
 
-    features: FeatureSupport,
+    _features: FeatureSupport,
 }
 
 bitflags::bitflags! {
@@ -108,9 +106,6 @@ impl Node {
             client_policy,
             name: nv.name.clone(),
             aliases: RwLock::new(nv.aliases.clone()),
-            address: nv.address.clone(),
-
-            host: nv.aliases[0].clone(),
             failures: AtomicUsize::new(0),
             partition_generation: AtomicIsize::new(-1),
             refresh_count: AtomicUsize::new(0),
@@ -118,32 +113,13 @@ impl Node {
             responded: AtomicBool::new(false),
             active: AtomicBool::new(true),
 
-            features: nv.features,
+            _features: nv.features,
         })
-    }
-
-    // Returns the Node address
-    pub fn address(&self) -> &str {
-        &self.address
     }
 
     // Returns the Node name
     pub fn name(&self) -> &str {
         &self.name
-    }
-
-    // Returns the active client policy
-    pub const fn client_policy(&self) -> &ClientPolicy {
-        &self.client_policy
-    }
-
-    pub fn host(&self) -> Host {
-        self.host.clone()
-    }
-
-    // Return the supported features of the node.
-    pub fn features(&self) -> FeatureSupport {
-        self.features
     }
 
     // Returns the reference count

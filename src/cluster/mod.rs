@@ -241,18 +241,6 @@ impl Cluster {
         &self.client_policy
     }
 
-    pub async fn add_seeds(&self, new_seeds: &[Host]) -> Result<()> {
-        let mut seeds = self.seeds.write().await;
-        seeds.extend_from_slice(new_seeds);
-
-        Ok(())
-    }
-
-    pub async fn alias_exists(&self, host: &Host) -> Result<bool> {
-        let aliases = self.aliases.read().await;
-        Ok(aliases.contains_key(host))
-    }
-
     async fn set_partitions(&self, partitions: HashMap<String, Vec<Arc<Node>>>) {
         let mut partition_map = self.partition_write_map.write().await;
         *partition_map = partitions;

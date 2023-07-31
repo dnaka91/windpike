@@ -718,17 +718,8 @@ impl Buffer {
 
     // Data buffer implementations
 
-    #[must_use]
-    pub fn data_offset(&self) -> usize {
-        self.buffer.len()
-    }
-
     pub fn read_msg_size(&mut self) -> usize {
         ProtoHeader::read_from(&mut self.buffer).size
-    }
-
-    pub fn read_bytes(&mut self, pos: usize, count: usize) -> &[u8] {
-        &self.buffer[pos..pos + count]
     }
 
     pub fn read_slice(&mut self, count: usize) -> &[u8] {
@@ -742,10 +733,6 @@ impl Buffer {
 
     pub fn read_proto_header(&mut self) -> ProtoHeader {
         ProtoHeader::read_from(&mut self.buffer)
-    }
-
-    pub fn read_message_header(&mut self, proto: ProtoHeader) -> MessageHeader {
-        MessageHeader::read_from(&mut self.buffer, proto)
     }
 
     pub fn read_stream_message_header(&mut self, proto: ProtoHeader) -> StreamMessageHeader {

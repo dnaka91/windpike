@@ -77,11 +77,6 @@ impl Connection {
         Ok(self.buffer.read_proto_header())
     }
 
-    pub async fn read_message_header(&mut self, proto: ProtoHeader) -> Result<MessageHeader> {
-        self.read_buffer(MessageHeader::SIZE).await?;
-        Ok(self.buffer.read_message_header(proto))
-    }
-
     pub async fn read_stream_message_header(
         &mut self,
         proto: ProtoHeader,
@@ -93,24 +88,6 @@ impl Connection {
     pub async fn read_header(&mut self) -> Result<MessageHeader> {
         self.read_buffer(TOTAL_HEADER_SIZE).await?;
         Ok(self.buffer.read_header())
-    }
-
-    pub async fn write(&mut self, buf: &[u8]) -> Result<()> {
-        self.conn.write_all(buf).await?;
-        self.refresh();
-        Ok(())
-    }
-
-    pub async fn read(&mut self, buf: &mut [u8]) -> Result<()> {
-        self.conn.read_exact(buf).await?;
-        self.bytes_read += buf.len();
-        self.refresh();
-        Ok(())
-    }
-
-    pub fn is_idle(&self) -> bool {
-        self.idle_deadline
-            .map_or(false, |idle_dl| Instant::now() >= idle_dl)
     }
 
     fn refresh(&mut self) {

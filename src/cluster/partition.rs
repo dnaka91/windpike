@@ -9,14 +9,6 @@ pub struct Partition<'a> {
 
 impl<'a> Partition<'a> {
     #[must_use]
-    pub const fn new(namespace: &'a str, partition_id: usize) -> Self {
-        Partition {
-            namespace,
-            partition_id,
-        }
-    }
-
-    #[must_use]
     pub fn new_by_key(key: &'a Key) -> Self {
         Partition {
             namespace: &key.namespace,
