@@ -500,7 +500,7 @@ impl Cluster {
 
             partitions
                 .get(partition.namespace)
-                .and_then(|node_array| node_array.get(partition.partition_id))
+                .and_then(|node_array| node_array.get(partition.id as usize))
                 .cloned()
         };
 

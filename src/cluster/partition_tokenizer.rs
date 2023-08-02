@@ -30,7 +30,7 @@ pub async fn update(
     for (ns, buffer) in replicas {
         match amap.entry(ns) {
             Vacant(entry) => {
-                entry.insert(vec![Arc::clone(&node); node::PARTITIONS]);
+                entry.insert(vec![Arc::clone(&node); node::PARTITIONS as usize]);
             }
             Occupied(mut entry) => {
                 for (idx, item) in entry.get_mut().iter_mut().enumerate() {

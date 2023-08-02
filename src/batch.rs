@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
 use crate::{
-    cluster::{partition::Partition, Cluster, Node},
+    cluster::{Cluster, Node},
     commands::BatchReadCommand,
     errors::{Error, Result},
     policies::{BatchPolicy, Concurrency},
@@ -108,8 +108,7 @@ impl BatchExecutor {
     }
 
     async fn node_for_key(&self, key: &Key) -> Option<Arc<Node>> {
-        let partition = Partition::new_by_key(key);
-        self.cluster.get_node(&partition).await
+        self.cluster.get_node(&key.into()).await
     }
 }
 

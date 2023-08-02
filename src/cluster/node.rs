@@ -19,7 +19,7 @@ use crate::{
     policies::ClientPolicy,
 };
 
-pub const PARTITIONS: usize = 4096;
+pub const PARTITIONS: u32 = 4096;
 
 /// The node instance holding connections and node settings.
 /// Exposed for usage in the sync client interface.
@@ -282,8 +282,7 @@ impl Node {
 
     // Add an alias to the node
     pub async fn add_alias(&self, alias: Host) {
-        let mut aliases = self.aliases.write().await;
-        aliases.push(alias);
+        self.aliases.write().await.push(alias);
         self.reference_count.fetch_add(1, Ordering::Relaxed);
     }
 

@@ -19,11 +19,10 @@ pub struct SingleCommand<'a> {
 
 impl<'a> SingleCommand<'a> {
     pub fn new(cluster: Arc<Cluster>, key: &'a Key) -> Self {
-        let partition = Partition::new_by_key(key);
         SingleCommand {
             cluster,
             key,
-            partition,
+            partition: key.into(),
         }
     }
 
