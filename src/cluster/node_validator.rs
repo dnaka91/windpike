@@ -2,7 +2,10 @@ use tracing::debug;
 
 use super::{node::FeatureSupport, Cluster, NodeError, Result};
 use crate::{
-    commands::Message,
+    commands::{
+        self,
+        info_cmds::{CLUSTER_NAME, FEATURES, NODE},
+    },
     net::{Connection, Host},
     policies::ClientPolicy,
 };
@@ -48,10 +51,10 @@ async fn validate_alias(
     alias: &Host,
 ) -> Result<(String, FeatureSupport), NodeError> {
     let mut conn = Connection::new(&alias.address(), policy).await?;
-    let mut info_map = Message::info(&mut conn, &["node", "cluster-name", "features"]).await?;
+    let info_map = commands::info_typed(&mut conn, &[NODE, CLUSTER_NAME, FEATURES]).await?;
 
     if let Some(cluster_name) = cluster_name {
-        match info_map.remove("cluster-name") {
+        match info_map.cluster_name {
             None => return Err(NodeError::MissingClusterName),
             Some(info_name) if info_name == cluster_name => {}
             Some(info_name) => {
@@ -63,14 +66,12 @@ async fn validate_alias(
         }
     }
 
-    let node_name = match info_map.remove("node") {
+    let node_name = match info_map.node {
         None => return Err(NodeError::MissingNodeName),
         Some(node_name) => node_name,
     };
 
-    let features = info_map
-        .remove("features")
-        .map_or(FeatureSupport::empty(), |features| features.as_str().into());
+    let features = info_map.features.unwrap_or_else(FeatureSupport::empty);
 
     Ok((node_name, features))
 }

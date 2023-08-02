@@ -20,7 +20,7 @@ use tokio::{
 use tracing::{debug, error, warn};
 
 pub use self::node::Node;
-use self::{node::FeatureSupport, partition::Partition, partition_tokenizer::PartitionTokenizer};
+use self::{node::FeatureSupport, partition::Partition};
 use crate::{
     net::{Host, NetError},
     policies::ClientPolicy,
@@ -267,18 +267,13 @@ impl Cluster {
     }
 
     pub async fn update_partitions(&self, node: Arc<Node>) -> Result<()> {
-        let tokens = {
-            let mut conn = node.get_connection().await?;
-            match PartitionTokenizer::new(&mut conn).await {
-                Ok(tokens) => tokens,
-                Err(e) => {
-                    conn.close().await;
-                    return Err(e);
-                }
-            }
-        };
+        let nmap = partition_tokenizer::update(
+            &mut *node.get_connection().await?,
+            self.partitions(),
+            Arc::clone(&node),
+        )
+        .await?;
 
-        let nmap = tokens.update_partition(self.partitions(), node).await?;
         self.set_partitions(nmap).await;
 
         Ok(())
@@ -422,8 +417,8 @@ impl Cluster {
 
     async fn remove_nodes_and_aliases(&self, mut nodes_to_remove: Vec<Arc<Node>>) {
         for node in &mut nodes_to_remove {
-            for alias in node.aliases().await {
-                self.remove_alias(&alias).await;
+            for alias in &*node.aliases().await {
+                self.remove_alias(alias).await;
             }
         }
         self.remove_nodes(&nodes_to_remove).await;
@@ -442,8 +437,8 @@ impl Cluster {
 
     async fn add_aliases(&self, node: Arc<Node>) {
         let mut aliases = self.aliases.write().await;
-        for alias in node.aliases().await {
-            aliases.insert(alias, Arc::clone(&node));
+        for alias in &*node.aliases().await {
+            aliases.insert(alias.clone(), Arc::clone(&node));
         }
     }
 

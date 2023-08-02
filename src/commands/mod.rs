@@ -25,7 +25,7 @@ pub(crate) use self::{
     batch_read_command::BatchReadCommand,
     delete_command::DeleteCommand,
     exists_command::ExistsCommand,
-    info_command::Message,
+    info_command::{commands as info_cmds, raw as info_raw, typed as info_typed, Info},
     operate_command::OperateCommand,
     particle_type::ParticleType,
     read_command::ReadCommand,

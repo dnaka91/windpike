@@ -6,12 +6,15 @@ use std::{
     },
 };
 
-use tokio::sync::RwLock;
-use tracing::error;
+use tokio::sync::{RwLock, RwLockReadGuard};
 
 use super::{ClusterError, NodeError, NodeRefreshError, Result};
 use crate::{
-    commands::Message,
+    commands::{
+        self,
+        info_cmds::{CLUSTER_NAME, NODE, PARTITION_GENERATION, SERVICES, SERVICES_ALTERNATE},
+        Info,
+    },
     net::{Host, NetError, Pool, PooledConnection},
     policies::ClientPolicy,
 };
@@ -30,9 +33,7 @@ pub struct Node {
     failures: AtomicUsize,
 
     partition_generation: AtomicIsize,
-    refresh_count: AtomicUsize,
     reference_count: AtomicUsize,
-    responded: AtomicBool,
     active: AtomicBool,
 
     _features: FeatureSupport,
@@ -113,9 +114,7 @@ impl Node {
             aliases: RwLock::new(aliases),
             failures: AtomicUsize::new(0),
             partition_generation: AtomicIsize::new(-1),
-            refresh_count: AtomicUsize::new(0),
             reference_count: AtomicUsize::new(0),
-            responded: AtomicBool::new(false),
             active: AtomicBool::new(true),
             _features: features,
         })
@@ -137,108 +136,97 @@ impl Node {
         current_aliases: &HashMap<Host, Arc<Self>>,
     ) -> Result<HashSet<Host>, NodeRefreshError> {
         self.reference_count.store(0, Ordering::Relaxed);
-        self.responded.store(false, Ordering::Relaxed);
-        self.refresh_count.fetch_add(1, Ordering::Relaxed);
+
         let commands = vec![
-            "node",
-            "cluster-name",
-            "partition-generation",
-            self.services_name(),
+            NODE,
+            CLUSTER_NAME,
+            PARTITION_GENERATION,
+            if self.client_policy.use_services_alternate {
+                SERVICES_ALTERNATE
+            } else {
+                SERVICES
+            },
         ];
-        let info_map = self
-            .info(&commands)
+
+        let mut conn = self
+            .get_connection()
             .await
-            .map_err(NodeRefreshError::InfoCommandFailed)?;
-        self.validate_node(&info_map)
+            .map_err(|e| NodeRefreshError::InfoCommandFailed(e.into()))?;
+
+        let mut info = match commands::info_typed(&mut conn, &commands).await {
+            Ok(info) => info,
+            Err(e) => {
+                conn.close().await;
+                return Err(NodeRefreshError::InfoCommandFailed(e.into()));
+            }
+        };
+
+        self.validate_node(&mut info)
             .map_err(NodeRefreshError::ValidationFailed)?;
-        self.responded.store(true, Ordering::Relaxed);
         let friends = self
-            .add_friends(current_aliases, &info_map)
+            .add_friends(current_aliases, &mut info)
             .map_err(NodeRefreshError::FailedAddingFriends)?;
-        self.update_partitions(&info_map)
+        self.update_partitions(&info)
             .map_err(NodeRefreshError::FailedUpdatingPartitions)?;
         self.reset_failures();
+
         Ok(friends)
     }
 
-    // Returns the services that the client should use for the cluster tend
-    fn services_name(&self) -> &'static str {
-        if self.client_policy.use_services_alternate {
-            "services-alternate"
-        } else {
-            "services"
-        }
-    }
-
-    fn validate_node(&self, info_map: &HashMap<String, String>) -> Result<(), NodeError> {
-        self.verify_node_name(info_map)?;
-        self.verify_cluster_name(info_map)?;
-        Ok(())
-    }
-
-    fn verify_node_name(&self, info_map: &HashMap<String, String>) -> Result<(), NodeError> {
-        match info_map.get("node") {
-            None => Err(NodeError::MissingNodeName),
-            Some(info_name) if info_name == &self.name => Ok(()),
+    fn validate_node(&self, info_map: &mut Info) -> Result<(), NodeError> {
+        match info_map.node.take() {
+            None => return Err(NodeError::MissingNodeName),
+            Some(info_name) if info_name == self.name => {}
             Some(info_name) => {
                 self.inactivate();
-                Err(NodeError::NameMismatch {
+                return Err(NodeError::NameMismatch {
                     expected: self.name.clone(),
-                    got: info_name.clone(),
-                })
+                    got: info_name,
+                });
             }
         }
-    }
 
-    fn verify_cluster_name(&self, info_map: &HashMap<String, String>) -> Result<(), NodeError> {
-        self.client_policy.cluster_name.as_ref().map_or_else(
-            || Ok(()),
-            |expected| match info_map.get("cluster-name") {
-                None => Err(NodeError::MissingClusterName),
-                Some(info_name) if info_name == expected => Ok(()),
+        if let Some(expected) = self.client_policy.cluster_name.as_deref() {
+            match info_map.cluster_name.take() {
+                None => return Err(NodeError::MissingClusterName),
+                Some(info_name) if info_name == expected => {}
                 Some(info_name) => {
                     self.inactivate();
-                    Err(NodeError::NameMismatch {
-                        expected: expected.clone(),
+                    return Err(NodeError::NameMismatch {
+                        expected: expected.to_owned(),
                         got: info_name.clone(),
-                    })
+                    });
                 }
-            },
-        )
+            }
+        }
+
+        Ok(())
     }
 
     fn add_friends(
         &self,
         current_aliases: &HashMap<Host, Arc<Self>>,
-        info_map: &HashMap<String, String>,
+        info_map: &mut Info,
     ) -> Result<HashSet<Host>> {
-        Ok(info_map
-            .get(self.services_name())
-            .ok_or(ClusterError::MissingServicesList)?
-            .split(';')
-            .filter(|s| !s.is_empty())
-            .filter_map(|friend| {
-                let (host, port) = if let Some((host, port)) = friend
-                    .split_once(':')
-                    .and_then(|(host, port)| Some(host).zip(port.parse().ok()))
-                {
-                    (host, port)
-                } else {
-                    error!(
-                        got = friend,
-                        "node info from asinfo:services is malformed, expected HOST:PORT",
-                    );
-                    return None;
-                };
+        let friends = if self.client_policy.use_services_alternate {
+            info_map.services_alternate.take()
+        } else {
+            info_map.services.take()
+        };
 
-                let host = self
+        Ok(friends
+            .ok_or(ClusterError::MissingServicesList)?
+            .into_iter()
+            .filter_map(|friend| {
+                let alias = self
                     .client_policy
                     .ip_map
                     .as_ref()
-                    .and_then(|map| map.get(host).map(String::as_str))
-                    .unwrap_or(host);
-
-                let alias = Host::new(host, port);
+                    .and_then(|map| {
+                        map.get(&friend.name)
+                            .map(|name| Host::new(name, friend.port))
+                    })
+                    .unwrap_or(friend);
 
                 if current_aliases.contains_key(&alias) {
                     self.reference_count.fetch_add(1, Ordering::Relaxed);
@@ -250,14 +238,11 @@ impl Node {
             .collect())
     }
 
-    fn update_partitions(&self, info_map: &HashMap<String, String>) -> Result<()> {
-        match info_map.get("partition-generation") {
-            None => return Err(ClusterError::MissingPartitionGeneration),
-            Some(gen_string) => {
-                let gen = gen_string.parse::<isize>()?;
-                self.partition_generation.store(gen, Ordering::Relaxed);
-            }
-        }
+    fn update_partitions(&self, info_map: &Info) -> Result<()> {
+        let gen = info_map
+            .partition_generation
+            .ok_or(ClusterError::MissingPartitionGeneration)?;
+        self.partition_generation.store(gen, Ordering::Relaxed);
 
         Ok(())
     }
@@ -291,8 +276,8 @@ impl Node {
     }
 
     // Get a list of aliases to the node
-    pub async fn aliases(&self) -> Vec<Host> {
-        self.aliases.read().await.to_vec()
+    pub async fn aliases(&self) -> RwLockReadGuard<'_, Vec<Host>> {
+        self.aliases.read().await
     }
 
     // Add an alias to the node
@@ -305,7 +290,7 @@ impl Node {
     // Send info commands to this node
     pub async fn info(&self, commands: &[&str]) -> Result<HashMap<String, String>> {
         let mut conn = self.get_connection().await?;
-        match Message::info(&mut conn, commands).await {
+        match commands::info_raw(&mut conn, commands).await {
             Ok(info) => Ok(info),
             Err(e) => {
                 conn.close().await;
