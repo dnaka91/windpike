@@ -1,8 +1,4 @@
-use std::{
-    fmt, io,
-    net::{SocketAddr, ToSocketAddrs},
-    vec::IntoIter,
-};
+use std::{fmt, io, net::SocketAddr};
 
 use super::{parser::Parser, ParseHostError, Result};
 
@@ -30,13 +26,10 @@ impl Host {
     pub fn address(&self) -> String {
         format!("{}:{}", self.name, self.port)
     }
-}
 
-impl ToSocketAddrs for Host {
-    type Iter = IntoIter<SocketAddr>;
-
-    fn to_socket_addrs(&self) -> io::Result<IntoIter<SocketAddr>> {
-        (self.name.as_str(), self.port).to_socket_addrs()
+    /// Resolve the host into socket addresses.
+    pub async fn to_socket_addrs(&self) -> io::Result<impl Iterator<Item = SocketAddr> + '_> {
+        tokio::net::lookup_host((self.name.as_str(), self.port)).await
     }
 }
 

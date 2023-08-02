@@ -20,9 +20,7 @@ use tokio::{
 use tracing::{debug, error, warn};
 
 pub use self::node::Node;
-use self::{
-    node_validator::NodeValidator, partition::Partition, partition_tokenizer::PartitionTokenizer,
-};
+use self::{node::FeatureSupport, partition::Partition, partition_tokenizer::PartitionTokenizer};
 use crate::{
     net::{Host, NetError},
     policies::ClientPolicy,
@@ -63,6 +61,8 @@ pub enum ClusterError {
 pub enum NodeError {
     #[error("no addresses for host `{host}`")]
     NoAddress { host: Host },
+    #[error("no valid instance for host `{host}`")]
+    NoValidInstance { host: Host },
     #[error("missing node name")]
     MissingNodeName,
     #[error("missing cluster name")]
@@ -108,7 +108,7 @@ pub struct Cluster {
     // Random node index.
     node_index: AtomicUsize,
 
-    client_policy: ClientPolicy,
+    client_policy: Arc<ClientPolicy>,
 
     closed: AtomicBool,
 }
@@ -116,7 +116,7 @@ pub struct Cluster {
 impl Cluster {
     pub async fn new(policy: ClientPolicy, hosts: &[Host]) -> Result<Arc<Self>> {
         let cluster = Arc::new(Self {
-            client_policy: policy,
+            client_policy: Arc::new(policy),
 
             seeds: Arc::new(RwLock::new(hosts.to_vec())),
             aliases: Arc::new(RwLock::new(HashMap::new())),
@@ -233,11 +233,11 @@ impl Cluster {
         }
     }
 
-    pub const fn cluster_name(&self) -> &Option<String> {
-        &self.client_policy.cluster_name
+    pub fn name(&self) -> Option<&str> {
+        self.client_policy.cluster_name.as_deref()
     }
 
-    pub const fn client_policy(&self) -> &ClientPolicy {
+    pub fn client_policy(&self) -> &ClientPolicy {
         &self.client_policy
     }
 
@@ -285,60 +285,48 @@ impl Cluster {
     }
 
     pub async fn seed_nodes(&self) -> Result<bool, NetError> {
-        let seed_array = self.seeds.read().await;
+        let seeds = self.seeds.read().await;
+        let mut list = Vec::<Arc<Node>>::new();
 
-        debug!(seeds_count = seed_array.len(), "seeding the cluster");
+        debug!(seed_count = seeds.len(), "seeding the cluster");
 
-        let mut list: Vec<Arc<Node>> = vec![];
-        for seed in &*seed_array {
-            let mut seed_node_validator = NodeValidator::new(self);
-            if let Err(err) = seed_node_validator.validate_node(self, seed).await {
-                error!(error = ?err, %seed, "failed to validate seed host");
-                continue;
-            };
-
-            for alias in &*seed_node_validator.aliases() {
-                let nv = if *seed == *alias {
-                    seed_node_validator.clone()
-                } else {
-                    let mut nv2 = NodeValidator::new(self);
-                    if let Err(err) = nv2.validate_node(self, seed).await {
-                        error!(error = ?err, %alias, "seeding host failed with error");
-                        continue;
-                    };
-                    nv2
-                };
-
-                if Self::find_node_name(&list, &nv.name) {
+        for seed in &*seeds {
+            let (name, features, aliases) = match node_validator::validate(self, seed).await {
+                Ok(v) => v,
+                Err(err) => {
+                    error!(error = ?err, %seed, "failed to validate seed host");
                     continue;
                 }
+            };
 
-                let node = self.create_node(&nv).await?;
-                let node = Arc::new(node);
-                self.add_aliases(Arc::clone(&node)).await;
-                list.push(node);
+            if list.iter().any(|node| node.name() == name) {
+                continue;
             }
+
+            let node = self.create_node(name, features, aliases).await?;
+            let node = Arc::new(node);
+            self.add_aliases(Arc::clone(&node)).await;
+            list.push(node);
         }
 
         self.add_nodes_and_aliases(&list).await;
-        Ok(!list.is_empty())
-    }
 
-    fn find_node_name(list: &[Arc<Node>], name: &str) -> bool {
-        list.iter().any(|node| node.name() == name)
+        Ok(!list.is_empty())
     }
 
     async fn find_new_nodes_to_add(
         &self,
         hosts: HashSet<Host>,
     ) -> Result<Vec<Arc<Node>>, NetError> {
-        let mut list: Vec<Arc<Node>> = vec![];
+        let mut list = Vec::<Arc<Node>>::new();
 
         for host in hosts {
-            let mut nv = NodeValidator::new(self);
-            if let Err(err) = nv.validate_node(self, &host).await {
-                error!(error = ?err, %host, "node validation failed");
-                continue;
+            let (name, features, aliases) = match node_validator::validate(self, &host).await {
+                Ok(v) => v,
+                Err(err) => {
+                    error!(error = ?err, %host, "node validation failed");
+                    continue;
+                }
             };
 
             // Duplicate node name found. This usually occurs when the server
@@ -346,13 +334,13 @@ impl Cluster {
             // for the same node. Add new host to list of alias filters
             // and do not add new node.
             let mut dup = false;
-            match self.get_node_by_name(&nv.name).await {
+            match self.get_node_by_name(&name).await {
                 Some(node) => {
                     self.add_alias(host, Arc::clone(&node)).await;
                     dup = true;
                 }
                 None => {
-                    if let Some(node) = list.iter().find(|n| n.name() == nv.name) {
+                    if let Some(node) = list.iter().find(|n| n.name() == name) {
                         self.add_alias(host, Arc::clone(node)).await;
                         dup = true;
                     }
@@ -360,7 +348,7 @@ impl Cluster {
             };
 
             if !dup {
-                let node = self.create_node(&nv).await?;
+                let node = self.create_node(name, features, aliases).await?;
                 list.push(Arc::new(node));
             }
         }
@@ -368,8 +356,13 @@ impl Cluster {
         Ok(list)
     }
 
-    async fn create_node(&self, nv: &NodeValidator) -> Result<Node, NetError> {
-        Node::new(self.client_policy.clone(), nv).await
+    async fn create_node(
+        &self,
+        name: String,
+        features: FeatureSupport,
+        aliases: Vec<Host>,
+    ) -> Result<Node, NetError> {
+        Node::new(Arc::clone(&self.client_policy), name, features, aliases).await
     }
 
     async fn find_nodes_to_remove(&self, refresh_count: usize) -> Result<Vec<Arc<Node>>, NetError> {

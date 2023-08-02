@@ -9,7 +9,7 @@ use std::{
 use tokio::sync::RwLock;
 use tracing::error;
 
-use super::{node_validator::NodeValidator, ClusterError, NodeError, NodeRefreshError, Result};
+use super::{ClusterError, NodeError, NodeRefreshError, Result};
 use crate::{
     commands::Message,
     net::{Host, NetError, Pool, PooledConnection},
@@ -22,7 +22,7 @@ pub const PARTITIONS: usize = 4096;
 /// Exposed for usage in the sync client interface.
 #[derive(Debug)]
 pub struct Node {
-    client_policy: ClientPolicy,
+    client_policy: Arc<ClientPolicy>,
     name: String,
     aliases: RwLock<Vec<Host>>,
 
@@ -100,20 +100,24 @@ impl From<&str> for FeatureSupport {
 }
 
 impl Node {
-    pub async fn new(client_policy: ClientPolicy, nv: &NodeValidator) -> Result<Self, NetError> {
+    pub async fn new(
+        client_policy: Arc<ClientPolicy>,
+        name: String,
+        features: FeatureSupport,
+        aliases: Vec<Host>,
+    ) -> Result<Self, NetError> {
         Ok(Self {
-            connection_pool: Pool::new(nv.aliases[0].clone(), client_policy.clone()).await?,
+            connection_pool: Pool::new(aliases[0].clone(), Arc::clone(&client_policy)).await?,
             client_policy,
-            name: nv.name.clone(),
-            aliases: RwLock::new(nv.aliases.clone()),
+            name,
+            aliases: RwLock::new(aliases),
             failures: AtomicUsize::new(0),
             partition_generation: AtomicIsize::new(-1),
             refresh_count: AtomicUsize::new(0),
             reference_count: AtomicUsize::new(0),
             responded: AtomicBool::new(false),
             active: AtomicBool::new(true),
-
-            _features: nv.features,
+            _features: features,
         })
     }
 
@@ -158,7 +162,7 @@ impl Node {
     }
 
     // Returns the services that the client should use for the cluster tend
-    const fn services_name(&self) -> &'static str {
+    fn services_name(&self) -> &'static str {
         if self.client_policy.use_services_alternate {
             "services-alternate"
         } else {

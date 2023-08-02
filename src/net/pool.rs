@@ -1,5 +1,6 @@
 use std::{
     ops::{Deref, DerefMut},
+    sync::Arc,
     time::Duration,
 };
 
@@ -11,7 +12,7 @@ use crate::policies::ClientPolicy;
 
 struct NodeConnectionManager {
     host: Host,
-    policy: ClientPolicy,
+    policy: Arc<ClientPolicy>,
 }
 
 #[async_trait]
@@ -40,7 +41,7 @@ impl ManageConnection for NodeConnectionManager {
 pub struct Pool(bb8::Pool<NodeConnectionManager>);
 
 impl Pool {
-    pub async fn new(host: Host, policy: ClientPolicy) -> Result<Self> {
+    pub async fn new(host: Host, policy: Arc<ClientPolicy>) -> Result<Self> {
         bb8::Builder::new()
             .max_size(policy.max_conns_per_node)
             .idle_timeout(policy.idle_timeout)
